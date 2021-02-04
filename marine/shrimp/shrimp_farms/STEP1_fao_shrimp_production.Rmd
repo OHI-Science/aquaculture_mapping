@@ -22,25 +22,23 @@ library(here)
 library(stringr)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data"
-source(here('aquaculture/marine/salmon/salmon_farm/R/fao_mar_clean.R')) # functions specific to mariculture dealing with compound countries
+source(here('marine/salmon/salmon_farm/R/fao_mar_clean.R')) # functions specific to mariculture dealing with compound countries
 source('https://raw.githubusercontent.com/OHI-Science/ohiprep_v2019/gh-pages/workflow/R/fao_fxn.R') # function for cleaning FAO files
-
+source(here('workflow/common.R'))
 
 ```
-
-
 
 
 Subset the data to include only the species (shrimp) and countries we are interested in. Then summarize by total tonnes of shrimp per country/year. (There are multiple shrimp species)
 
 ```{r}
 
-fao <- read.csv(here("aquaculture/data/fao_mariculture_clean.csv")) %>%
+fao <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   filter(environment %in% c("Marine", "Brackishwater"))
 
 
 ## Read in fao data and get a species list for salmon 
-species_list <- read.csv(here("aquaculture/marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
+species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
   distinct(species, aq_group)
 
 # the list of species we are including
@@ -58,7 +56,7 @@ fao_shrimp_taxa_prod <- fao %>%
   summarize(fao_tonnes_production = sum(value)) %>%
   arrange(country, iso3c, species, year)
   
-write.csv(fao_shrimp_taxa_prod, here("aquaculture/marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp_taxa_production.csv"), row.names=FALSE)
+write.csv(fao_shrimp_taxa_prod, here("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp_taxa_production.csv"), row.names=FALSE)
 
 # include only shrimp
 fao_shrimp <- fao %>%
@@ -70,14 +68,16 @@ fao_shrimp <- fao %>%
   summarize(fao_tonnes_production = sum(value)) %>%
   arrange(country, iso3c, year)
  
-write.csv(fao_shrimp, here("aquaculture/marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv"), row.names=FALSE)
-        
- explore <- read_csv(here("aquaculture/marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv")) %>%
+write.csv(fao_shrimp, here("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv"), row.names=FALSE)
+
+
+## Do some exploration: 
+
+ explore <- read_csv(here("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv")) %>%
    filter(year==2017) %>%
    arrange(-fao_tonnes_production) %>%
    mutate(percent = round((fao_tonnes_production/sum(fao_tonnes_production)*100),2))
 
-sum(explore$percent[1:9])
 sum(explore$fao_tonnes_production)
 
 asc_countries <- c("Australia", "Bangladesh", "Belize", "China", "Colombia", "Ecuador", "Guatemala", "Honduras", "India", "Indonesia", "Madagascar", "Mexico", "New Caledonia", "Nicaragua", "Panama", "Peru", "Thailand", "Venezuela, Boliv Rep of", "Viet Nam")

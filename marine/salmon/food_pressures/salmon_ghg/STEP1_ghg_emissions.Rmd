@@ -55,12 +55,12 @@ farmed_emissions <- read_csv(file.path("/home/shares/food-systems/Food_footprint
 salmon_production <- read_csv(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/salmon/salmon_farm.csv"))
 
 
-fao <- read.csv(here("aquaculture/data/fao_mariculture_clean.csv")) %>%
+fao <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   filter(environment %in% c("Marine", "Brackishwater"))
 
 
 ## Read in fao data and get a species list for salmon 
-species_list <- read.csv(here("aquaculture/marine/species_groups/int/marine_groups.csv"))  %>%
+species_list <- read.csv(here("marine/species_groups/int/marine_groups.csv"))  %>%
   distinct(species, aq_group)
 
 # the list of species we are including

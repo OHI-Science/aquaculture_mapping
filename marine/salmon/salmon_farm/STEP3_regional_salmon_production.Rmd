@@ -144,7 +144,7 @@ dim(norway_mar)
 norway_mar_gf <- norway_mar_gf %>%
 dplyr::select(region, species, variable, units, year, value, gapfilled) %>%
   filter(species != "Total")
-write.csv(norway_mar_gf, here("aquaculture/marine/salmon/salmon_farm/data/norway_mariculture_gf.csv"), row.names=FALSE ) 
+write.csv(norway_mar_gf, here("marine/salmon/salmon_farm/data/norway_mariculture_gf.csv"), row.names=FALSE ) 
   
 ```
 
@@ -167,7 +167,7 @@ region_splits <- data.frame(region = c("Trøndelag", "Trøndelag",
     
 
 # sum salmon production among species
-production <- read.csv(here("aquaculture/marine/salmon/salmon_farm/data/norway_mariculture_gf.csv")) %>%
+production <- read.csv(here("marine/salmon/salmon_farm/data/norway_mariculture_gf.csv")) %>%
   filter(variable=="tonnes_fish") %>%
   filter(species %in% c("Salmon")) %>%
   filter(year == 2017) %>%
@@ -280,26 +280,6 @@ can_prod <- can_prod %>%
 
 ```
 
-
-# New Zealand
-Data from: https://www.aquaculture.org.nz/industry/farming-areas/
-
-Assuming King Salmon is analogous to Atlantic Salmon.
-
-```{r}
-# 
-# nz_reg <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
-#   filter(GID_0 == "NZL") 
-# 
-# 
-# nz_prod <- data.frame(iso3c = c("NZL"),
-#                       region=c("Southland", "Canterbury", "Marlborough"),
-#                       year = 2017,
-#                       prop_production = c(0.29, 0.16, 0.55))
-                                                      
-```
-
-
 ## Denmark
 
 Data from http://maps.helcom.fi/website/mapservice/
@@ -371,8 +351,8 @@ swe_prod <- swe_prod_reg %>%
 
 all_prod <- Reduce(function(x, y) merge(x, y, all=TRUE), list(chile_prod, nor_prod, uk_prod, can_prod, dnk_prod, swe_prod, fin_prod))
 
-write_csv(all_prod, here("aquaculture/marine/salmon/salmon_farm/data/proportional_regional_production.csv"))
+write_csv(all_prod, here("marine/salmon/salmon_farm/data/proportional_regional_production.csv"))
 
-# all_prod <-  read_csv(here("aquaculture/marine/salmon/salmon_farm/data/proportional_regional_production.csv"))
+# all_prod <-  read_csv(here("marine/salmon/salmon_farm/data/proportional_regional_production.csv"))
 ```
 

@@ -32,13 +32,12 @@ library(spatialEco)
 
 food_raster <- raster(nrows=2160, ncols=4320, xmn=-180, xmx=180, ymn=-90, ymx=90)
 
-
-
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
 
-fao_finfish_spp <- read_csv("aquaculture/marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish_taxa_production.csv") %>%
+fao_finfish_spp <- read_csv("marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish_taxa_production.csv") %>%
   dplyr::filter(year == 2017)
-fao_finfish <- read_csv("aquaculture/marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish.csv") %>%
+
+fao_finfish <- read_csv("marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish.csv") %>%
   dplyr::filter(year == 2017)
 
 unique(fao_finfish$country)
@@ -60,16 +59,17 @@ https://gis.asc-aqua.org/arcgis_app/
 Maps from ASC
 
 ```{r}
-ASC_data <- st_read(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/ASC_all_sf.shp"))
+ASC_data <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/ASC_data/ASC_all_sf.shp"))
 
 ASC_finfish <- ASC_data %>%
   dplyr::filter(aq_grop == "marine_fish_general")
 
 unique(ASC_finfish$crt_cnt)
 
-#  [1] "Turkey"                   "Croatia"                  "Greece"                   "Albania"                  "Spain"                   
-#  [6] "Japan"                    "Netherlands"              "Denmark"                  "Australia"                "Mexico"                  
-# [11] "Panama"                   "United States of America" "Germany"                  "Viet Nam"                 "Thailand"
+#  [1] "Turkey"                   "Croatia"                  "Greece"                   "Albania"                 
+#  [5] "Spain"                    "Japan"                    "Netherlands"              "Denmark"                 
+#  [9] "Australia"                "Mexico"                   "Panama"                   "United States of America"
+# [13] "Germany"                  "Viet Nam"                 "Thailand"  
                                     
 
 ## what is in ASC and not in FAO
@@ -77,7 +77,7 @@ setdiff(ASC_finfish$crt_cnt, fao_finfish$country)
 # [1] "Netherlands" "Denmark"     "Germany"   
 
 
-## what is in FAO and not ASC -- this is what we need to find alternative data sources for (28 countries)
+## what is in FAO and not ASC -- this is what we need to find alternative data sources for (25 countries)
 setdiff(fao_finfish$country, ASC_finfish$crt_cnt)
 #  [1] "Bangladesh"               "Cambodia"                 "China"                    "Costa Rica"               "Cyprus"                  
 #  [6] "Egypt"                    "France"                   "India"                    "Indonesia"                "Iran (Islamic Rep. of)"  
@@ -125,6 +125,11 @@ gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id")
 
 Data comes from https://gis.asc-aqua.org/arcgis_app/ 
 
+Source:
+Aquaculture Stewardship Council Data Mapping Study, n.d. . Aquaculture Stewardship Council. [Accessed November 11, 2020] 
+https://gis.asc-aqua.org/arcgis_app/
+
+
 ```{r}
 
 # get iso3c codes
@@ -151,7 +156,7 @@ farms_all_fin <- farms_all_fin %>%
   cbind(iso3c = all_pts_latlon$iso3c)
 
 ## save farm location
-write.csv(farms_all_fin, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/ASC_finfish_farm_lat_lon.csv"), row.names = FALSE)
+write.csv(farms_all_fin, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/ASC_finfish_farm_lat_lon.csv"), row.names = FALSE)
 
 ```
 
@@ -167,6 +172,11 @@ Now we will map the remaining countries with marine finfish farms that are not i
 ##  Europe - EMODNET: Malta, Greece, Norway, Cyprus, Spain 
 https://www.emodnet-humanactivities.eu/search-results.php?dataname=Finfish+Production
 https://www.emodnet-humanactivities.eu/view-data.php
+
+Source:
+EMODnet Human Activities: Finfish production, 2019. [Accessed December 8, 2020] 
+https://www.emodnet-humanactivities.eu/search-results.php?dataname=Finfish+Production
+
 
 ```{r}
 
@@ -242,7 +252,7 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
   )) %>%
   dplyr::select(-COUNTRY)
 
- write_csv(farms_eu_final, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ESP_CYP_NOR_GRC_MLT.csv"))
+ write_csv(farms_eu_final, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ESP_CYP_NOR_GRC_MLT.csv"))
 
 ```
 
@@ -250,6 +260,8 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
 ## Italy
 From http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/italy/en/
 
+Source:
+NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
 
 ```{r}
 ## read in thailand shp file
@@ -282,7 +294,7 @@ farms_ita <- farms_ita %>%
   mutate(iso3c="ITA")
 
 
-write_csv(farms_ita, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ita.csv"))
+write_csv(farms_ita, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ita.csv"))
 
 
 farms_ita <-  st_as_sf(farms_ita, coords = c("lon", "lat"), 
@@ -295,6 +307,10 @@ mapview(farms_ita)
 http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/mediterranean-basin/en/
 
  - It says both Tuna and Finfish, but we'll assume france and israel are just finfish...
+ 
+Source:
+NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
+
 ```{r}
 ## read in thailand shp file
 france_file <- file.path(path, "FAO_NASO/NASO/Point/Mediterranean.kml")
@@ -336,7 +352,7 @@ farms_fra <- farms_fra %>%
   dplyr::select(-country, -geometry)
 
 
-write_csv(farms_fra, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_fra_isr.csv"))
+write_csv(farms_fra, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_fra_isr.csv"))
 
 
 farms_fra <-  st_as_sf(farms_fra, coords = c("lon", "lat"), 
@@ -349,6 +365,10 @@ mapview(farms_fra)
 ## Indonesia
 NASO maps 
  - Per the FAO aquaculture sector report, Indonesia basically only grows grouper/milkfish, so I will assume this is all grouper/milkfish.
+ 
+Source: 
+NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
+
 ```{r}
 indo_file <- file.path(path, "FAO_NASO/NASO/Point/Indonesia.kml")
 
@@ -371,7 +391,7 @@ farms_idn <- farms_idn %>%
   mutate(iso3c = "IDN")
 
 
-write_csv(farms_idn, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_idn.csv"))
+write_csv(farms_idn, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_idn.csv"))
 
 
 farms_idn <-  st_as_sf(farms_idn, coords = c("lon", "lat"), 
@@ -388,9 +408,10 @@ mapview(farms_idn)
  - According to the table, by these criteria, there are 112 marine tank farm systems in Portugal. 
  - I will equally allocate 112 points along the coast of Portugal.
  
- Source: 
-  - Estatísticas da Pesca: 2019, 2020. Instituto Nacional de Estatística.
-  - Estatísticas da Pesca: 2019, 2020
+Source: 
+Estatísticas da Pesca, 2020. . Instituto Nacional de Estatística. [Accessed December 21, 2020]
+  
+  
  
 ```{r}
 world <- rnaturalearth::ne_coastline(scale = 110) # world map with 10m resolution
@@ -445,7 +466,7 @@ farms_prt <-  st_as_sf(farms_prt, coords = c("lon", "lat"),
 mapview(farms_prt)
 
 ## write to farms folder 
-write_csv(farms_prt_final, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_prt.csv"))
+write_csv(farms_prt_final, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_prt.csv"))
 ```
 
  
@@ -453,6 +474,8 @@ write_csv(farms_prt_final, here("aquaculture/marine/marine_fish_general/finfish_
 
 The only species the FAO reports for Iran is "Marine fishes nei", and I can't find any information on number of marine farms there might be in Iran. Therefore I will place one farm on the Caspian Sea coast. 
 
+Source:
+NA
 
 ```{r}
 
@@ -460,7 +483,7 @@ farms_irn <- data.frame(lat = c(37.392419247868425),
                         lon = c(50.1602963496454)) %>%
   mutate(iso3c = "IRN")
 
-write_csv(farms_irn, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_irn.csv"))
+write_csv(farms_irn, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_irn.csv"))
 
 ## visualize it 
 farms_irn <-  st_as_sf(farms_irn, coords = c("lon", "lat"), 
@@ -473,13 +496,16 @@ mapview(farms_irn)
 ## China 
 Can't find any datasets of marine finfish farm locations in China. Therefore I will place one farm on the coast of China.
 
+Source: 
+NA
+
 ```{r}
 
 farms_chn <- data.frame(lat = c(26.649767732301385),
                         lon = c(119.94149300994019)) %>%
   mutate(iso3c = "CHN")
 
-write_csv(farms_chn, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_chn.csv"))
+write_csv(farms_chn, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_chn.csv"))
 
 ## visualize it 
 farms_chn <-  st_as_sf(farms_chn, coords = c("lon", "lat"), 
@@ -493,8 +519,8 @@ mapview(farms_chn)
  - There is really only one marine fish aquaculture producer in Saudi Arabia, and it happens to be the same company that produces almost all of its shrimp. It is one of the largest facilities in the world. http://www.naqua.com.sa/barramundi.php
  - I'll place a point there: 20.287253, 40.030864
  
-Source: Same as shrimp
-
+Source:
+National Aquaculture Group, n.d. [Accessed November 12, 2020]. http://www.naqua.com.sa/about-us.php
 
 ```{r}
 
@@ -502,7 +528,7 @@ farms_sau <- data.frame(lat = c(20.287253),
                         lon = c(40.030864)) %>%
   mutate(iso3c = "SAU")
 
-write_csv(farms_sau, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_sau.csv"))
+write_csv(farms_sau, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_sau.csv"))
 
 ## visualize it 
 farms_sau <-  st_as_sf(farms_sau, coords = c("lon", "lat"), 
@@ -516,6 +542,8 @@ mapview(farms_sau)
 
 Can't find any datasets of marine finfish farm locations. Therefore I will place one farm on the coast. It probably doesn't matter, since Mauritius is so small anyways. 
 
+Source:
+NA
 
 ```{r}
 
@@ -523,7 +551,7 @@ farms_mus <- data.frame(lat = c(-20.005039247819017),
                         lon = c(57.67022708374523)) %>%
   mutate(iso3c = "MUS")
 
-write_csv(farms_mus, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_mus.csv"))
+write_csv(farms_mus, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_mus.csv"))
 
 ## visualize it 
 farms_mus <-  st_as_sf(farms_mus, coords = c("lon", "lat"), 
@@ -542,6 +570,9 @@ http://www.fishfarm.ae/facilities.html
 The above is also corroborated by the FAO here: http://www.fao.org/fishery/countrysector/naso_uae/en
 
 I will place a point off of the coast of Dibba Al Fujairah: 25.604715925918068, 56.340214330776234
+
+Source: 
+National Aquaculture Sector Overview. United Arab Emirates, 2016. , National Aquaculture Sector Overview Fact Sheets.
  
 ```{r}
 
@@ -549,7 +580,7 @@ farms_are <- data.frame(lat = c(25.604715925918068),
                         lon = c(56.340214330776234)) %>%
   mutate(iso3c = "ARE")
 
-write_csv(farms_are, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_are.csv"))
+write_csv(farms_are, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_are.csv"))
 
 ## visualize it 
 farms_are <-  st_as_sf(farms_are, coords = c("lon", "lat"), 
@@ -578,6 +609,8 @@ imported for sea bass and sea bream production while bluefin tuna are imported f
 
  - I'll place 20 points along the coast of Monastir
  
+Source: 
+Aquaculture Industry Small but Growing: Tunisia, 2017. Fishery and Agriculture Society, Tunis. 
  
 ```{r}
 ## load municipality shapefile, downloaded from here: https://gadm.org/download_country_v3.html
@@ -637,7 +670,7 @@ farms_tun <-  st_as_sf(farms_tun, coords = c("lon", "lat"),
 mapview(farms_tun)
 
 ## write to farms folder 
-write_csv(farms_tun_final, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_tun.csv"))
+write_csv(farms_tun_final, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_tun.csv"))
 ```
 
 
@@ -710,6 +743,8 @@ https://digitalarchive.worldfishcenter.org/bitstream/handle/20.500.12348/3610/Pu
  24.466470314555245, 121.84309342644401
  24.43396678054247, 121.80292466585698
  
+Source:
+Lee, C.-S., 1983. Production and marketing of milkfish in Taiwan: an economic analysis.
  
 ```{r}
 milkfish_points <- data.frame(lat = c(23.396775208505524, 23.391435122712778, 23.379465182872867, 23.37173018517046, 23.328815202320154, 23.30989854415313, 23.286248936869796, 23.24808538030484, 23.098351835751856, 23.08684757757559, 22.84129712135721, 22.83607641104833, 22.823893974670515, 22.808703955682557, 22.427007004796724, 22.42449445979184, 22.419155150689896, 22.413920334638384, 22.41119815232611, 22.40868532131159, 22.729748162448605, 22.73478926413642, 22.73995620049436, 22.74096436042943, 22.746257078096264, 22.74965943121689,  23.094448352409827, 23.100673804589537, 23.110708254441576, 23.118419405368904, 23.12715198105829, 23.13662711164484, 24.718398599156366, 24.72276233035146, 24.7123233460693, 24.734911520797553, 24.707959248912765, 24.70256809420227, 24.59561929860139, 24.591466187548917, 24.466470314555245, 24.43396678054247),
@@ -762,7 +797,9 @@ https://www.researchgate.net/publication/49753615_Real-Time_Quantitative_PCR_Ass
  - Linbian: 1 points
  22.412837508670247, 120.5141089682018
  
- 
+Source:
+Kuo, H.-C., Wang, T.-Y., Chen, P.-P., Chen, Y.-M., Chuang, H.-C., Chen, T.-Y., 2011. Real-Time Quantitative PCR Assay for Monitoring of Nervous Necrosis Virus Infection in Grouper Aquaculture. Journal of Clinical Microbiology 49, 1090–1096. https://doi.org/10.1128/JCM.01016-10
+
 ```{r}
 grouper_points <- data.frame(lat = c(23.366020730714546, 23.344101510137286, 23.11902593130365, 23.124310527454163, 23.130061175003874, 22.412837508670247, 22.5060215233288, 22.495712950055186, 22.489210224135196, 22.478900398348003, 22.963578173481825, 22.958915389973615, 22.958796842534618, 22.95887587417216, 22.962708853156307, 22.910490254668936, 22.900053951559105, 22.88771910346936, 22.87475049020418, 22.85735162493687, 23.033784880994748, 23.01988231566828, 22.990894265701648, 22.969242998130003),
                              lon = c(120.12803212666465, 120.11599409273818, 120.05874863883409, 120.07531112355083, 120.08122629666394, 120.5141089682018, 120.361518692894, 120.37199003646582, 120.38503630058813, 120.40220243759113, 120.16265849315296, 120.16450385288077, 120.16420344548321,  120.16630629726609, 120.16480426027832, 120.17469982002679, 120.17658809509712, 120.18208125893808, 120.18637279318882, 120.18688777729894, 120.07405573439489, 120.09946161715932, 120.14268135694375, 120.15847420298654))
@@ -782,7 +819,7 @@ farms_twn <-  st_as_sf(all_points_twn, coords = c("lon", "lat"),
 mapview(farms_twn)
 
 ## write to farms folder 
-write_csv(all_points_twn, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_twn.csv"))
+write_csv(all_points_twn, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_twn.csv"))
 
 
 
@@ -801,13 +838,17 @@ https://www.martec.co.cr/#aquaculture
  - Also states that they are the only company in the world to produce Spotted Rose Snapper commercially, and their farms are 3 miles off shore.... based on this I will place one point 3 miles offshore of where "Martec Industries" is located on google maps. 
 
 9.423478373794573, -84.20910189917947
+
+
+Source:
+Martec Industries Aquaculture , n.d. . Martec.  https://www.martec.co.cr/#aquaculture
  
 ```{r}
 farms_cri <- data.frame(lat = c(9.423478373794573),
                         lon = c(-84.20910189917947)) %>%
   mutate(iso3c = "CRI")
 
-write_csv(farms_cri, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_cri.csv"))
+write_csv(farms_cri, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_cri.csv"))
 
 ## visualize it 
 farms_cri <-  st_as_sf(farms_cri, coords = c("lon", "lat"), 
@@ -832,6 +873,9 @@ There is a map provided by the FAO (2010) here: http://www.fao.org/fishery/count
  - Suez: 29.944394112057978, 32.54627145839493 : Production = 750
  - South Sinai: 27.80632012228518, 34.29387671355847 : Production = 30 
  
+Source:
+FAO Fisheries & Aquaculture - National Aquaculture Sector Overview - Egypt, 2010. , National Aquaculture Sector Overview Fact Sheets.
+ 
 ```{r}
 farms_egy <- data.frame(lat = c(31.360400495764903, 31.15023941171644, 31.319036258284083, 31.491306679824632, 31.52619128473819, 31.275726202441984, 29.944394112057978, 27.80632012228518),
                         lon = c(27.236078999801336, 29.81109569981684, 30.225935332660324, 31.4278324391214, 31.849352783373792, 32.30190584291966, 32.54627145839493,  34.29387671355847),
@@ -839,7 +883,7 @@ farms_egy <- data.frame(lat = c(31.360400495764903, 31.15023941171644, 31.319036
                         subrgn_name = c("Mersa Matruh", "Alexandria", "Behira", "Dakahlia", "Damietta", "Port Said", "Suez", "South Sinai")) %>%
   mutate(iso3c = "EGY")
 
-write_csv(farms_egy, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_egy.csv"))
+write_csv(farms_egy, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_egy.csv"))
 
 ## visualize it 
 farms_egy <-  st_as_sf(farms_egy, coords = c("lon", "lat"), 
@@ -857,13 +901,15 @@ http://www.cmfri.org.in/division/mariculture
 
 9.28696221512509, 79.13007737814245
 
+Source:
+Indian Council of Agriculture Research - Central Marine Fisheries Research Institute, 2015.  http://www.cmfri.org.in/division/mariculture
  
 ```{r}
 farms_ind <- data.frame(lat = c(9.28696221512509),
                         lon = c(79.13007737814245)) %>%
   mutate(iso3c = "IND")
 
-write_csv(farms_ind, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ind.csv"))
+write_csv(farms_ind, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ind.csv"))
 
 ## visualize it 
 farms_ind <-  st_as_sf(farms_ind, coords = c("lon", "lat"), 
@@ -881,6 +927,9 @@ https://www.sfa.gov.sg/food-farming/food-farms/farming-in-singapore
  - Seems like a pretty reliable source.
  
 I'll place 109 farms equally along the coast of Singapore.
+
+Source: 
+Food Farms in Singapore, 2019. . Singapore Food Agency. [Accessed December 17, 2020] https://www.sfa.gov.sg/food-farming/food-farms/farming-in-singapore
 
 ```{r}
 world <- rnaturalearth::ne_coastline(scale = 10) # world map with 10m resolution
@@ -935,7 +984,7 @@ farms_sgp <-  st_as_sf(farms_sgp, coords = c("lon", "lat"),
 mapview(farms_sgp)
 
 ## write to farms folder 
-write_csv(farms_sgp_final, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_sgp.csv"))
+write_csv(farms_sgp_final, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_sgp.csv"))
 ```
 
 ## Malaysia
@@ -947,6 +996,9 @@ coast of Peninsular Malaysia."
 
  - I can only find the broad suitable areas: https://www.dof.gov.my/ 
  - Broad suitable areas https://www.dof.gov.my/index.php/pages/view/78. I'll use these and use the area as a production estimate. Saved onto aurora /home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Malaysia/malaysia_finfish_farms.csv. 
+ 
+Source:
+Aquaculture Industrial Zone Area for High Impact Projects (HIP), n.d. . Department of Fisheries Malaysia. [Accessed November 12, 2020] https://www.dof.gov.my/index.php/pages/view/78
  
 ```{r}
 malaysia_finfish_loc <- read_csv("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Malaysia/malaysia_finfish_farms.csv") %>%
@@ -967,7 +1019,7 @@ farms_mys <- data.frame(lat=c(2.131733588116292, 2.8071936098459522, 5.384539285
                         lon=c(102.40118069215845, 103.49758024234029, 100.35040003558889, 103.49881667894354, 102.40627304737939)) %>%
   mutate(iso3c = "MYS")
 
-write_csv(farms_mys, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_mys.csv"))
+write_csv(farms_mys, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_mys.csv"))
 
 ## visualize it 
 farms_mys <-  st_as_sf(farms_mys, coords = c("lon", "lat"), 
@@ -980,12 +1032,15 @@ mapview(farms_mys)
 
 There isn't much information. I will place a point randomly on the coast of Bangladesh. 
 
+Source:
+NA
+
 ```{r}
 farms_bgd <- data.frame(lat=c(21.802433819366538),
                         lon=c(90.40418040967)) %>%
   mutate(iso3c = "BGD")
 
-write_csv(farms_bgd, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_bgd.csv"))
+write_csv(farms_bgd, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_bgd.csv"))
 
 ## visualize it 
 farms_bgd <-  st_as_sf(farms_bgd, coords = c("lon", "lat"), 
@@ -1006,12 +1061,15 @@ Prey Nob: 10.53427341558665, 103.57357940185497
 Stoeng Hav: 10.748668380457524, 103.6089106992865
 Thomnob Rolork: 10.647924480438327, 103.5006922685572
  
+Source:
+Chankakada, M., Sros, K., Ramana, O., Phearum, H., Laining, A., Rimmer, M.A., Somony, T., Viseth, H., 2020. Asian Seabass Farming Practices in Cambodia 5.
+
 ```{r}
 farms_khm <- data.frame(lat=c(10.53427341558665, 10.748668380457524, 10.647924480438327),
                         lon=c(103.57357940185497, 103.6089106992865, 103.5006922685572)) %>%
   mutate(iso3c = "KHM")
 
-write_csv(farms_khm, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_khm.csv"))
+write_csv(farms_khm, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_khm.csv"))
 
 ## visualize it 
 farms_khm <-  st_as_sf(farms_khm, coords = c("lon", "lat"), 
@@ -1025,6 +1083,9 @@ mapview(farms_khm)
 
 http://www.fao.org/fishery/countrysector/naso_korea/en
  - Lists 612 finfish farms. I will place 612 farms along the coast of South Korea. 
+ 
+Source:
+National Aquaculture Sector Overview. Korea, 2005. , National Aquaculture Sector Overview Fact Sheets.
  
 ```{r}
 world <- rnaturalearth::ne_coastline(scale = 110) # world map with 10m resolution
@@ -1078,7 +1139,7 @@ farms_kor <-  st_as_sf(farms_kor, coords = c("lon", "lat"),
 mapview(farms_kor)
 
 ## write to farms folder 
-write_csv(farms_kor_final, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_kor.csv"))
+write_csv(farms_kor_final, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_kor.csv"))
 ```
 
 
@@ -1086,6 +1147,8 @@ write_csv(farms_kor_final, here("aquaculture/marine/marine_fish_general/finfish_
 The only  species listed is Milkfish. 
 There is no exact number listed, however I know that there are a lot of milkfish farms in the Philippines, as it is their oldest aquaculture method. There are definitely over 300. I will randomly place over 300 farms along the coast of the philippines. 
 
+Source:
+NA
 
 ```{r}
 world <- rnaturalearth::ne_coastline(scale = 110) # world map with 10m resolution
@@ -1139,7 +1202,7 @@ farms_phl <-  st_as_sf(farms_phl, coords = c("lon", "lat"),
 mapview(farms_phl)
 
 ## write to farms folder 
-write_csv(farms_phl_final, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_phl.csv"))
+write_csv(farms_phl_final, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_phl.csv"))
 ```
 
 
@@ -1178,13 +1241,15 @@ Cheung Sha Wan: 22.235400816169882, 114.00599898096631
 Yim Tin Tsai (East): 22.454708931476908, 114.22148845386273
 Tung Lung Chau: 22.25579039550771, 114.28554310187128
  
+Source:
+Marine fish culture, pond fish culture and oyster culture, n.d. . Agriculture, Fisheries, and Conservation Department; The Government of the Hong Kong Special Administrative Region.  https://www.afcd.gov.hk/english/fisheries/fish_aqu/fish_aqu_mpo/fish_aqu_mpo.html
  
 ```{r}
 farms_hkg <- data.frame(lat_lon = c("22.537974350807968, 114.22465750899093", "22.549021238266082, 114.27266261841545", "22.549243173819686, 114.29054140885648", "22.545901930448537, 114.29912254835972", "22.524524976629923, 114.28385013462695", "22.507936457313377, 114.30641749235996", "22.47796934657302, 114.35412559932351", "22.459641511472412, 114.360272945696", "22.4435502213444, 114.35400029960742", "22.46853714662761, 114.2720207303674", "22.42337637093222, 114.27819733339493", "22.349528341786087, 114.35178911904846", "22.367924650829952, 114.31997002657292", "22.368469602475702, 114.3230438982345", "22.3691151827537, 114.30143307907038", "22.341819373881275, 114.31744391160476", "22.35464650188533, 114.26990023341041", "22.274992746117093, 114.29389242171153", "22.164051938726015, 114.25252757025574", "22.20591578796148, 114.12923505969019", "22.221779736133797, 114.12958553008323", "22.352165476146805, 114.05569941361628", "22.45358281100093, 114.2079128367368", "22.235400816169882, 114.00599898096631", "22.454708931476908, 114.22148845386273", "22.25579039550771, 114.28554310187128")) %>%
   separate(lat_lon, into = c("lat", "lon"), sep = ",") %>%
   mutate(iso3c = "HKG")
 
-write_csv(farms_hkg, here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_hkg.csv"))
+write_csv(farms_hkg, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_hkg.csv"))
 
 ## visualize it 
 farms_hkg <-  st_as_sf(farms_hkg, coords = c("lon", "lat"), 
@@ -1196,7 +1261,7 @@ mapview(farms_hkg)
 # Join cell count dataframes
 
 ```{r}
-farm_files <- list.files(here::here("aquaculture/marine/marine_fish_general/finfish_farms/data/finfish_sites"), full=TRUE)
+farm_files <- list.files(here::here("marine/marine_fish_general/finfish_farms/data/finfish_sites"), full=TRUE)
 all_farms = plyr::ldply(farm_files, read_csv)
 
 all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
@@ -1204,7 +1269,7 @@ all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"),
 
 mapview(all_farms_sf)
 
-write.csv(all_farms, here::here("aquaculture/marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon.csv"), row.names = FALSE)
+write.csv(all_farms, here::here("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon.csv"), row.names = FALSE)
 
 
 ```

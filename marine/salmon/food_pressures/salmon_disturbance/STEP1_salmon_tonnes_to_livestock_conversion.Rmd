@@ -45,7 +45,7 @@ Calculating conversion factor converting production of salmon reported in tonnag
 ### Norwegian Fisheries Directorate data wrangling
 First we're going to read in the production data we have, and keep all the years. 
 ```{r wrangling production data}
-nor_prod <- read_csv(here("aquaculture/marine/salmon/salmon_farm/data/norway_mariculture_gf.csv")) %>% 
+nor_prod <- read_csv(here("marine/salmon/salmon_farm/data/norway_mariculture_gf.csv")) %>% 
   filter(species == "Salmon") %>% 
   dplyr:: select(year, region,variable, value) %>% 
   spread(variable, value) %>% 

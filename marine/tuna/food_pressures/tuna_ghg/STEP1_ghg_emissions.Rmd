@@ -55,7 +55,7 @@ farmed_emissions <- read_csv(file.path("/home/shares/food-systems/Food_footprint
 
 tuna_production <- read_csv(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/tuna/tuna_farm.csv"))
 
-fao_tuna_spp <- read_csv(here("aquaculture/marine/tuna/tuna_farms/data/fao_mariculture_tuna_taxa_production.csv"))
+fao_tuna_spp <- read_csv(here("marine/tuna/tuna_farms/data/fao_mariculture_tuna_taxa_production.csv"))
 
 ```
  

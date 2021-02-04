@@ -104,7 +104,7 @@ mapview(farms_sf_correct) # this all looks reasonable, no crazy points
 # FAO salmon production data per country
 ```{r}
 
-fao <- read.csv(here("aquaculture/marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
+fao <- read.csv(here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
   dplyr::filter(year == 2017) %>%
   dplyr::select(iso3c, fao_tonnes_production)
 
@@ -125,7 +125,7 @@ summary(farms_sf_correct) # make sure no production NA values
 # get areas with regional production data and calculate production per farm
 ```{r}
 
-rgn_prod <- read_csv(here("aquaculture/marine/salmon/salmon_farm/data/proportional_regional_production.csv")) %>%
+rgn_prod <- read_csv(here("marine/salmon/salmon_farm/data/proportional_regional_production.csv")) %>%
   dplyr::select(iso3c, NAME_1 = region, prop_production)
 
 rgn_prod_country <- unique(rgn_prod$iso3c)
@@ -169,7 +169,7 @@ sum(test2$fao_tonnes_production) # 1303255
 
 ```{r}
 
-rgn_prod <- read_csv(here("aquaculture/marine/salmon/salmon_farm/data/proportional_regional_production.csv")) %>%
+rgn_prod <- read_csv(here("marine/salmon/salmon_farm/data/proportional_regional_production.csv")) %>%
   dplyr::select(iso3c, NAME_1 = region, prop_production)
 rgn_prod_country <- unique(rgn_prod$iso3c)
 

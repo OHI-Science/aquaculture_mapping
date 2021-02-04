@@ -33,9 +33,9 @@ library(spatialEco)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
 
-fao_tuna_spp <- read_csv("aquaculture/marine/tuna/tuna_farms/data/fao_mariculture_tuna_taxa_production.csv") %>%
+fao_tuna_spp <- read_csv("marine/tuna/tuna_farms/data/fao_mariculture_tuna_taxa_production.csv") %>%
   dplyr::filter(year == 2017)
-fao_tuna <- read_csv("aquaculture/marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv") %>%
+fao_tuna <- read_csv("marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv") %>%
   dplyr::filter(year == 2017)
 
 unique(fao_tuna$country)
@@ -91,6 +91,11 @@ Now we will map the remaining countries with marine tuna farms. Workflow will be
 ##  Europe - EMODNET: Spain, Malta
 https://www.emodnet-humanactivities.eu/search-results.php?dataname=Finfish+Production
 https://www.emodnet-humanactivities.eu/view-data.php
+
+Source:
+EMODnet Human Activities: Finfish production, 2019. [Accessed December 8, 2020] 
+https://www.emodnet-humanactivities.eu/search-results.php?dataname=Finfish+Production
+
 
 ```{r}
 
@@ -160,7 +165,7 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
   )) %>%
   dplyr::select(-COUNTRY)
 
- write_csv(farms_eu_final, here("aquaculture/marine/tuna/tuna_farms/data/tuna_sites/farms_ESP_MLT.csv"))
+ write_csv(farms_eu_final, here("marine/tuna/tuna_farms/data/tuna_sites/farms_ESP_MLT.csv"))
 
 ```
 
@@ -169,6 +174,10 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
 http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/mediterranean-basin/en/
 
  - It says both Tuna and Finfish, but we'll assume Croatia and Turkey are tuna...
+ 
+Source:
+NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/ 
+ 
 ```{r}
 ## read in thailand shp file
 med_file <- file.path(path, "FAO_NASO/NASO/Point/Mediterranean.kml")
@@ -210,7 +219,7 @@ farms_med <- farms_med %>%
   dplyr::select(-country, -geometry)
 
 
-write_csv(farms_med, here("aquaculture/marine/tuna/tuna_farms/data/tuna_sites/farms_hrv_tur.csv"))
+write_csv(farms_med, here("marine/tuna/tuna_farms/data/tuna_sites/farms_hrv_tur.csv"))
 
 
 farms_med <-  st_as_sf(farms_med, coords = c("lon", "lat"),
@@ -232,6 +241,9 @@ Source: https://www.pir.sa.gov.au/aquaculture/aquaculture_public_register
 
  - To download the appropriate data, go here: https://www.aginsight.sa.gov.au/?Bookmark=Ox473rlD. Filter for the appropriate layers, i.e. Tuna leases. Click "Select focus", and draw a circle (or square) around your area of interest. You will then be prompted to download an excel or csv file which will contain the lease holder information, and a url to the lease. 
  - We will scrape the coordinates from each lease document url that is shown in the download from the aquaculture public register to obtain the lat lon points needed. 
+ 
+Source:  
+Aquaculture public register - Government of South Australia, 2017. [Accessed November 14, 2020] https://www.pir.sa.gov.au/aquaculture/aquaculture_public_register
 
 ```{r}
 south_au <- read_csv(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Australia/south_au_leases.csv")) 
@@ -321,7 +333,7 @@ farms_aus_map <-  st_as_sf(lat_lon_final, coords = c("lon", "lat"),
 mapview(farms_aus_map)
 
 
-write_csv(lat_lon_final, here("aquaculture/marine/tuna/tuna_farms/data/tuna_sites/farms_AUS.csv"))
+write_csv(lat_lon_final, here("marine/tuna/tuna_farms/data/tuna_sites/farms_AUS.csv"))
 ```
 
 
@@ -330,6 +342,9 @@ http://www.fao.org/fishery/countrysector/naso_japan/en
 Currently 92 firms are operating the Atlantic bluefin tuna aquaculture, and the total number of aquaculture firms and cages are regulated by the government since 2012.
 
 I'll place 92 farms along Japan's coast
+
+Source:
+FAO Fisheries & Aquaculture - National Aquaculture Sector Overview - Japan, 2017. National Aquaculture Sector Overview Fact Sheets.
 
 ```{r}
 world <- rnaturalearth::ne_coastline(scale = 110) # world map with 10m resolution
@@ -384,7 +399,7 @@ farms_jpn <-  st_as_sf(farms_jpn, coords = c("lon", "lat"),
 mapview(farms_jpn)
 
 ## write to farms folder 
-write_csv(farms_jpn_final, here("aquaculture/marine/tuna/tuna_farms/data/tuna_sites/farms_jpn.csv"))
+write_csv(farms_jpn_final, here("marine/tuna/tuna_farms/data/tuna_sites/farms_jpn.csv"))
 ```
 
 
@@ -408,6 +423,10 @@ Only located in Baja California and Baja California Sur
  
 **Based on this, I will place 13 farms in Salsipuedes Bay.**
 
+
+Source:
+Monterey Bay Aquarium Seafood Watch Report on Pacific Bluefin Tuna Farming in Mexico, 2016.
+
 ```{r}
 
 farms_mex <- data.frame(lat = c(31.972882899404116, 31.96836856413186, 31.963417102445995, 31.95861101663323, 31.955698114940013, 31.952930772763118, 31.95030900327055, 31.945939221180044, 31.932974311561416, 31.929769220541903, 31.95016334721594, 31.959630510399904, 31.96764042474878),
@@ -421,7 +440,7 @@ farms_mex_map <-  st_as_sf(farms_mex, coords = c("lon", "lat"),
 mapview(farms_mex_map)
 
 
-write_csv(farms_mex, here("aquaculture/marine/tuna/tuna_farms/data/tuna_sites/farms_MEX.csv"))
+write_csv(farms_mex, here("marine/tuna/tuna_farms/data/tuna_sites/farms_MEX.csv"))
 
 
 ```
@@ -430,7 +449,7 @@ write_csv(farms_mex, here("aquaculture/marine/tuna/tuna_farms/data/tuna_sites/fa
 # Join cell count dataframes
 
 ```{r}
-farm_files <- list.files(here::here("aquaculture/marine/tuna/tuna_farms/data/tuna_sites"), full=TRUE)
+farm_files <- list.files(here::here("marine/tuna/tuna_farms/data/tuna_sites"), full=TRUE)
 all_farms = plyr::ldply(farm_files, read_csv)
 
 all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
@@ -438,7 +457,7 @@ all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"),
 
 mapview(all_farms_sf)
 
-write.csv(all_farms, here::here("aquaculture/marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon.csv"), row.names = FALSE)
+write.csv(all_farms, here::here("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon.csv"), row.names = FALSE)
 
 ```
 

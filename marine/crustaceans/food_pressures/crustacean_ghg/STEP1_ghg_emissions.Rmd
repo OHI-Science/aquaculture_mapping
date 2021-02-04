@@ -55,7 +55,7 @@ farmed_emissions <- read_csv(file.path("/home/shares/food-systems/Food_footprint
 
 crustacean_production <- read_csv(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/crustaceans/crustaceans_farm.csv"))
 
-fao_crustacean_spp <- read_csv(here("aquaculture/marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans_taxa_production.csv"))
+fao_crustacean_spp <- read_csv(here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans_taxa_production.csv"))
 
 ```
  

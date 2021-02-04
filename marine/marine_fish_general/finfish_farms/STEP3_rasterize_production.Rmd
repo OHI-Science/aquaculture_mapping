@@ -40,7 +40,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-farms <- read.csv(here::here("aquaculture/marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon.csv"))
+farms <- read.csv(here::here("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon.csv"))
 
 farms_sf <-  st_as_sf(farms, coords = c("lon", "lat"), 
                  crs = crs(gadm_latlon), agr = "constant")
@@ -106,7 +106,7 @@ table(farms_sf_correct$check)
 # FAO shrimp production data per country
 ```{r}
 
-fao <- read.csv(here::here("aquaculture/marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish.csv")) %>%
+fao <- read.csv(here::here("marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish.csv")) %>%
   dplyr::filter(year == 2017) %>%
   dplyr::select(iso3c, fao_tonnes_production)
 
@@ -181,7 +181,7 @@ test <- farm_production %>%
 farms_sf_prod <- st_as_sf(farm_production)
 
 ## write the production data so that we can use it for the nutrient layer. 
-st_write(farms_sf_prod, "aquaculture/marine/marine_fish_general/finfish_nutrient/prod_data_by_cell_iso3c.shp")
+st_write(farms_sf_prod, "marine/marine_fish_general/finfish_nutrient/prod_data_by_cell_iso3c.shp")
 ```
 
 ## convert to raster, with the value of each cell equalling the sum tonnes per farm for all farms landing in cell.

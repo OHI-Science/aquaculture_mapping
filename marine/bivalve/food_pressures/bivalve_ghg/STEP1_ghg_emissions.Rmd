@@ -54,7 +54,7 @@ farmed_emissions <- read_csv(file.path("/home/shares/food-systems/Food_footprint
 
 bivalve_production <- read_csv(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/bivalve/bivalve_farm.csv"))
 
-fao_bivalve_spp <- read_csv(here("aquaculture/marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve_taxa_production.csv"))
+fao_bivalve_spp <- read_csv(here("marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve_taxa_production.csv"))
 
 ```
  

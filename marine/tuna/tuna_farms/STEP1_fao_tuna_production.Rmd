@@ -22,25 +22,22 @@ library(here)
 library(stringr)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data"
-source(here('aquaculture/marine/salmon/salmon_farm/R/fao_mar_clean.R')) # functions specific to mariculture dealing with compound countries
+source(here('marine/salmon/salmon_farm/R/fao_mar_clean.R')) # functions specific to mariculture dealing with compound countries
 source('https://raw.githubusercontent.com/OHI-Science/ohiprep_v2019/gh-pages/workflow/R/fao_fxn.R') # function for cleaning FAO files
-
+source(here('workflow/common.R'))
 
 ```
-
-
-
 
 Subset the data to include only the species (tuna) and countries we are interested in. Then summarize by total tonnes of tuna per country/year. (There are multiple tuna species)
 
 ```{r}
 
-fao <- read.csv(here("aquaculture/data/fao_mariculture_clean.csv")) %>%
+fao <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   filter(environment %in% c("Marine", "Brackishwater"))
 
 
 ## Read in fao data and get a species list for tuna
-species_list <- read.csv(here("aquaculture/marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
+species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
   distinct(species, aq_group)
 
 # the list of species we are including
@@ -58,7 +55,7 @@ fao_tuna_taxa_prod <- fao %>%
   summarize(fao_tonnes_production = sum(value)) %>%
   arrange(country, iso3c, species, year)
   
-write.csv(fao_tuna_taxa_prod, here("aquaculture/marine/tuna/tuna_farms/data/fao_mariculture_tuna_taxa_production.csv"), row.names=FALSE)
+write.csv(fao_tuna_taxa_prod, here("marine/tuna/tuna_farms/data/fao_mariculture_tuna_taxa_production.csv"), row.names=FALSE)
 
 # include only tuna
 fao_tuna <- fao %>%
@@ -70,13 +67,11 @@ fao_tuna <- fao %>%
   summarize(fao_tonnes_production = sum(value)) %>%
   arrange(country, iso3c, year) 
  
-write.csv(fao_tuna, here("aquaculture/marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv"), row.names=FALSE)
+write.csv(fao_tuna, here("marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv"), row.names=FALSE)
         
- explore <- read_csv(here("aquaculture/marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv")) %>%
+ explore <- read_csv(here("marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv")) %>%
    filter(year==2017) %>%
    arrange(-fao_tonnes_production) %>%
    mutate(percent = round((fao_tonnes_production/sum(fao_tonnes_production))*100, 2))
-
-sum(explore$percent[1:7])
 ```
 

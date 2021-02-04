@@ -7,8 +7,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-
-
 ```{r}
 
 library(here)
@@ -21,7 +19,6 @@ source(here::here("_spatial/template_raster.R"))
 
 
 ```
-
 
 # Global regions
 
@@ -41,7 +38,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-farms <- read.csv(here::here("aquaculture/marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon.csv"))
+farms <- read.csv(here::here("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon.csv"))
 
 farms_sf <-  st_as_sf(farms, coords = c("lon", "lat"), 
                  crs = crs(gadm_latlon), agr = "constant")
@@ -71,7 +68,7 @@ table(farms_sf$check)
 # FAO crustacean production data per country
 ```{r}
 
-fao <- read.csv(here::here("aquaculture/marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
+fao <- read.csv(here::here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
   dplyr::filter(year == 2017) %>%
   dplyr::select(iso3c, fao_tonnes_production)
 

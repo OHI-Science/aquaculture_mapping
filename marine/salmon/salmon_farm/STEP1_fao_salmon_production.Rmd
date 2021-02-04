@@ -7,7 +7,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-All data is ultimately adjusted to FAO production data.  This script cleans the fao mariculture data and subsets it to to the relevant years of data and species (salmonids).
+All data is ultimately adjusted to FAO production data.  This script cleans the fao mariculture data and subsets it to the relevant years of data and species (salmonids).
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -22,9 +22,9 @@ library(here)
 library(stringr)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data"
-source(here('aquaculture/marine/salmon/salmon_farm/R/fao_mar_clean.R')) # functions specific to mariculture dealing with compound countries
+source(here('marine/salmon/salmon_farm/R/fao_mar_clean.R')) # functions specific to mariculture dealing with compound countries
 source('https://raw.githubusercontent.com/OHI-Science/ohiprep_v2019/gh-pages/workflow/R/fao_fxn.R') # function for cleaning FAO files
-
+source(here('workflow/common.R'))
 
 ```
 
@@ -33,12 +33,12 @@ Subset the data to include only the species and countries we are interested in. 
 
 ```{r}
 
-fao <- read.csv(here("aquaculture/data/fao_mariculture_clean.csv")) %>%
+fao <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   filter(environment %in% c("Marine", "Brackishwater"))
 
 
 ## Read in fao data and get a species list for salmon 
-species_list <- read.csv(here("aquaculture/marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
+species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
   distinct(species, aq_group)
 
 # the list of species we are including
@@ -55,15 +55,14 @@ fao_salmon <- fao %>%
   summarize(fao_tonnes_production = sum(value)) %>%
   arrange(country, iso3c, year)
  
-write.csv(fao_salmon, here("aquaculture/marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv"), row.names=FALSE)
+write.csv(fao_salmon, here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv"), row.names=FALSE)
         
- explore <- read_csv(here("aquaculture/marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
+ explore <- read_csv(here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
    filter(year==2017) %>%
    arrange(-fao_tonnes_production) %>%
    dplyr::mutate(percent = round((fao_tonnes_production/sum(fao_tonnes_production))*100,2))
 
-sum(explore$percent[1:9])
-
-sum(explore$fao_tonnes_production)
+sum(explore$fao_tonnes_production) # 2753752
+sum(explore$percent) # 100.01
 ```
 

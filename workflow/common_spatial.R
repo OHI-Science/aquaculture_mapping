@@ -19,7 +19,7 @@ food_raster <- raster(nrows=2160, ncols=4320, xmn=-180, xmx=180, ymn=-90, ymx=90
 # loads the unique food regions and associated naming and numbering conventions commonly seen/used
     food_rgns <- read_csv(here("_spatial/_output/food_rgns.csv"))    
 
-    
 
-
+# make not in function 
+`%notin%` <- Negate(`%in%`) 
  

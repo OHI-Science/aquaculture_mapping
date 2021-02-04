@@ -18,7 +18,7 @@ library(raster)
 library(mapview)
 
 source(here::here("_spatial/template_raster.R"))
-
+source(here::here('workflow/common.R'))
 
 ```
 
@@ -41,7 +41,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-farms <- read.csv(here::here("aquaculture/marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon.csv"))
+farms <- read.csv(here::here("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon.csv"))
 
 farms_sf <-  st_as_sf(farms, coords = c("lon", "lat"), 
                  crs = crs(gadm_latlon), agr = "constant")
@@ -70,7 +70,7 @@ table(farms_sf$check)
 # FAO tuna production data per country
 ```{r}
 
-fao <- read.csv(here::here("aquaculture/marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv")) %>%
+fao <- read.csv(here::here("marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv")) %>%
   dplyr::filter(year == 2017) %>%
   dplyr::select(iso3c, fao_tonnes_production)
 
@@ -123,7 +123,7 @@ farms_sf_prod <- st_as_sf(farm_production)
 mapview(farms_sf_prod)
 
 ## write the production data so that we can use it for the nutrient layer. 
-st_write(farms_sf_prod, "aquaculture/marine/tuna/tuna_nutrient/prod_data_by_cell_iso3c.shp")
+st_write(farms_sf_prod, "marine/tuna/tuna_nutrient/prod_data_by_cell_iso3c.shp")
 
 ```
 

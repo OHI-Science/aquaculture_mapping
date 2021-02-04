@@ -47,15 +47,15 @@ Bivalves:
 N = 0, P = 0
 
 ```{r}
-fao <- read.csv(here("aquaculture/data/fao_mariculture_clean.csv")) %>%
+fao <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   filter(environment %in% c("Marine", "Brackishwater"))
 
 
 ## Read in fao data and get a species list for salmon
-species_list <- read.csv(here("aquaculture/marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
+species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
   distinct(species, aq_group)
 
-taxon_list <- read.csv(here("aquaculture/marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
+taxon_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
   distinct(species, Taxon_code, aq_group)
 
 gastropod_list <- taxon_list %>%

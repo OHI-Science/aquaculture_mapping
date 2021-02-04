@@ -15,18 +15,21 @@ library(data.table)
 library(countrycode)
 library(here)
 library(stringr)
+library(sf)
+library(mapview)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data"
-source(here('aquaculture/marine/salmon/salmon_farm/R/fao_mar_clean.R')) # functions specific to mariculture dealing with compound countries
+source(here('marine/salmon/salmon_farm/R/fao_mar_clean.R')) # functions specific to mariculture dealing with compound countries
 source('https://raw.githubusercontent.com/OHI-Science/ohiprep_v2019/gh-pages/workflow/R/fao_fxn.R') # function for cleaning FAO files
+source(here('workflow/common.R'))
 ```
 
 
 ```{r}
-fao <- read.csv(here("aquaculture/data/fao_mariculture_clean.csv")) %>%
+fao <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   filter(environment %in% c("Marine", "Brackishwater"))
 
-species_list <- read.csv(here("aquaculture/marine/STEP1_species_groups/int/marine_groups.csv"))
+species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))
 
 fao_all <- species_list %>%
   # filter(species %in% shrimp_list) %>%  
@@ -42,7 +45,7 @@ fao_all <- species_list %>%
 ```
 
 ```{r}
-ASC_data <- read_csv(file.path(here::here("aquaculture/data/ASC_farms.csv")))
+ASC_data <- read_csv(file.path(here::here("data/ASC_farms.csv"))) ## downloaded from ASC website
 
 unique(fao_all$aq_group)
 # [1] "marine_fish_general" "bivalves"            "salmonids"           "shrimps_prawns"     
@@ -56,7 +59,7 @@ unique(ASC_data$farm_species)
 unique(ASC_data$cert_country)
 
 ASC_classified <- ASC_data %>%
-  dplyr::filter(!(species__c %in% c("Freshwater Trout", "Pangasius", "Seaweed (Algae)", "Tilapia"))) %>%
+  dplyr::filter(species__c %notin% c("Freshwater Trout", "Pangasius", "Seaweed (Algae)", "Tilapia")) %>%
   mutate(aq_group = case_when(
     species__c %in% c("Shrimp") ~ "shrimps_prawns",
     species__c %in% c("Abalone", "Bivalve") ~ "bivalves",
@@ -77,7 +80,9 @@ ASC_all_sf <- ASC_classified %>%
 mapview(ASC_all_sf$geometry)
 
 ## now we need to write as a shapefile 
-st_write(ASC_all_sf, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/ASC_all_sf.shp", overwrite = TRUE)
+# st_write(ASC_all_sf, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/ASC_all_sf.shp", overwrite = TRUE)
+
+st_write(ASC_all_sf, "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/ASC_data/ASC_all_sf.shp", overwrite = TRUE)
 ```
 
 See how many countries from FAO are represented in ASC for marine_fish_general category

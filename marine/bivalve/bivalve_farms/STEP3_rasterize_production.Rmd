@@ -40,7 +40,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-farms <- read.csv(here::here("aquaculture/marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon.csv"))
+farms <- read.csv(here::here("marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon.csv"))
 
 farms_sf <-  st_as_sf(farms, coords = c("lon", "lat"), 
                  crs = crs(gadm_latlon), agr = "constant")
@@ -64,13 +64,13 @@ table(farms_sf$check)
 
 
 ## read in those needed to check 
-ireland <- read_csv(here("aquaculture/marine/bivalve/bivalve_farms/data/bivalve_sites/farms_IRL_BGR_NOR_NLD_ITA_GRC.csv")) %>%
+ireland <- read_csv(here("marine/bivalve/bivalve_farms/data/bivalve_sites/farms_IRL_BGR_NOR_NLD_ITA_GRC.csv")) %>%
   dplyr::filter(iso3c == "IRL")
 
-britain <- read_csv(here("aquaculture/marine/bivalve/bivalve_farms/data/bivalve_sites/ASC_bivalve_farm_lat_lon.csv")) %>%
+britain <- read_csv(here("marine/bivalve/bivalve_farms/data/bivalve_sites/ASC_bivalve_farm_lat_lon.csv")) %>%
   dplyr::filter(iso3c == "GBR")
 
-taiwan <- read_csv(here("aquaculture/marine/bivalve/bivalve_farms/data/bivalve_sites/farms_twn.csv")) 
+taiwan <- read_csv(here("marine/bivalve/bivalve_farms/data/bivalve_sites/farms_twn.csv")) 
 
 ## Need to be changed to this 
 # GBR:JEY - GBR
@@ -117,7 +117,7 @@ table(farms_sf_correct$check)
 # FAO bivalve production data per country
 ```{r}
 
-fao <- read.csv(here::here("aquaculture/marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve.csv")) %>%
+fao <- read.csv(here::here("marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve.csv")) %>%
   dplyr::filter(year == 2017) %>%
   dplyr::select(iso3c, fao_tonnes_production)
 
@@ -166,7 +166,7 @@ test <- farms_prod %>%
 farms_sf_prod <- st_as_sf(farms_prod)
 
 ## write the production data so that we can use it for the nutrient layer. 
-st_write(farms_sf_prod, "aquaculture/marine/bivalve/bivalve_nutrient/prod_data_by_cell_iso3c.shp")
+st_write(farms_sf_prod, "marine/bivalve/bivalve_nutrient/prod_data_by_cell_iso3c.shp")
 
 ```
 

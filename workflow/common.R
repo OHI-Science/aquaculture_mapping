@@ -19,19 +19,14 @@ if (Sys.info()[['sysname']] != 'Linux' & !file.exists(dir_aurora)){
 raw   <- paste0(dir_aurora, "_raw_data/")
 prep  <- paste0(dir_aurora,"all_food_systems/dataprep/")
 layers <- paste0(dir_aurora,"all_food_systems/datalayers/")
-
-
-## Load .csv file of food regions and associated naming and numbering conventions
-food_rgns <- read_csv(here("_spatial/_output/food_rgns.csv"), col_types = "cdc")
   
   
 ## Common functions+packages
 select <- dplyr::select
 summarise <- dplyr::summarise
 
-
-
-
+# make not in function 
+`%notin%` <- Negate(`%in%`) 
 
 
 

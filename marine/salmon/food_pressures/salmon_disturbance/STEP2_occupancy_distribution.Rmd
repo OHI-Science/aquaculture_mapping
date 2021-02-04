@@ -43,7 +43,7 @@ In this markdown we are calculating:
 ##Conversion Table
 Read in and save the necessary values from the salmon conversion table
 ```{r parameters from conversion table}
-salmon_conversion <- read_csv(here("aquaculture/marine/salmon/salmon_disturbance/data/salmon_conversion_factors.csv"))
+salmon_conversion <- read_csv(here("marine/salmon/food_pressures/salmon_disturbance/data/salmon_conversion_factors.csv"))
 
 stocking_density <- as.numeric(salmon_conversion[salmon_conversion$name == "stocking_density", "value"])
 live_harvested_conversion <- as.numeric(salmon_conversion[salmon_conversion$name == "live_harvested", "value"])

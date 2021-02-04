@@ -33,9 +33,9 @@ library(spatialEco)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
 
-fao_crustacean_spp <- read_csv("aquaculture/marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans_taxa_production.csv") %>%
+fao_crustacean_spp <- read_csv("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans_taxa_production.csv") %>%
   dplyr::filter(year == 2017)
-fao_crustacean <- read_csv("aquaculture/marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv") %>%
+fao_crustacean <- read_csv("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv") %>%
   dplyr::filter(year == 2017)
 
 unique(fao_crustacean$country)
@@ -89,13 +89,16 @@ Now we will map crustacean farms. Workflow will be as follows:
 ## Indonesia
 Can't find any infomration on crab farm locations in Indonesia. I will place one farm, randomly on the coast of Indonesia. 
 
+Source: 
+NA 
+
 ```{r}
 
 farms_idn <- data.frame(lat = c(0.3359943014669836),
                         lon = c(117.55582991782983)) %>%
   mutate(iso3c = "IDN")
 
-write_csv(farms_idn, here("aquaculture/marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_idn.csv"))
+write_csv(farms_idn, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_idn.csv"))
 
 ## visualize it 
 farms_idn <-  st_as_sf(farms_idn, coords = c("lon", "lat"), 
@@ -108,13 +111,16 @@ mapview(farms_idn)
 
 Can't find any datasets of marine crustacean farm locations in China. I will place one farm randomly on the coast of China.
 
+Source: 
+NA
+
 ```{r}
 
 farms_chn <- data.frame(lat = c(29.378009267567716),
                         lon = c(121.95043909100868)) %>%
   mutate(iso3c = "CHN")
 
-write_csv(farms_chn, here("aquaculture/marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_chn.csv"))
+write_csv(farms_chn, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_chn.csv"))
 
 ## visualize it 
 farms_chn <-  st_as_sf(farms_chn, coords = c("lon", "lat"), 
@@ -135,13 +141,17 @@ https://www.researchgate.net/publication/318250461_Mud_crab_aquaculture_and_fish
  
  - Khulna: 21.876081791221054, 89.49499697244659
  - Chittagong: 22.325919306644522, 91.76441856678511
+ 
+Source: 
+Rahman, M., Islam, M.A., Haque, S.M., Wahab, A., 2017. Mud Crab Aquaculture and Fisheries in Coastal Bangladesh 7.
+ 
 ```{r}
 
 farms_bgd <- data.frame(lat = c(21.876081791221054, 22.325919306644522),
                         lon = c(89.49499697244659, 91.76441856678511)) %>%
   mutate(iso3c = "BGD")
 
-write_csv(farms_bgd, here("aquaculture/marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_bgd.csv"))
+write_csv(farms_bgd, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_bgd.csv"))
 
 ## visualize it 
 farms_bgd <-  st_as_sf(farms_bgd, coords = c("lon", "lat"), 
@@ -159,6 +169,8 @@ http://www.fao.org/3/ad497e/ad497e05.htm
  - Ayeyarwaddy: 15.930407995930784, 94.76647475697742
  - Rakhine: 18.615093163569437, 94.24290607527016
  
+Source:
+Myanmar aquaculture and inland fisheries, 2003. Food and Agriculture Organization of the United Nations Regional Office For Asia and the Pacific.
 
 ```{r}
 
@@ -166,7 +178,7 @@ farms_mmr <- data.frame(lat = c(15.930407995930784, 18.615093163569437),
                         lon = c(94.76647475697742, 94.24290607527016)) %>%
   mutate(iso3c = "MMR")
 
-write_csv(farms_mmr, here("aquaculture/marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_mmr.csv"))
+write_csv(farms_mmr, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_mmr.csv"))
 
 ## visualize it 
 farms_mmr <-  st_as_sf(farms_mmr, coords = c("lon", "lat"), 
@@ -229,7 +241,9 @@ Fisheries from reports of provincial fishery departments. "
   - Kien Giang: prod = 170: 10.087872204898957, 104.88743812284027
   - Can Tho: prod = 0: 10.055231, 105.789267
  
- 
+Viet Nam: 
+Lindner, B., 2005. IMPACTS OF MUD CRAB HATCHERY TECHNOLOGY IN VIETNAM 68.
+
 ```{r}
 
 farms_vnm <- data.frame(lat = c(21.186050529545593, 20.840947248646557, 20.454148639095266, 20.146554460540862, 19.955496263213185, 19.726817666482322, 18.982876968029743, 18.456817613512555, 17.56001328746647, 16.905826522213328, 16.495115996149718, 16.167986126005765, 15.699026568754403, 15.010595152983287, 14.17668770026659, 13.335760529041393, 12.299111935360338, 11.62183927318579, 10.830102342204183, 10.510731358280973, 10.30006571666483, 10.037866832581582, 9.592223563185232, 9.389580381208823, 9.147921315425062, 8.674166818318303, 10.087872204898957, 10.055231),
@@ -237,7 +251,7 @@ farms_vnm <- data.frame(lat = c(21.186050529545593, 20.840947248646557, 20.45414
                         prod = c(0, 1650, 0, 0, 1005, 970, 0, 200, 110, 20, 82, 0, 135, 0, 130, 0, 0, 5, 0, 250, 0, 637, 1196, 0, 3466, 0, 170, 0), sub_rgn = c("Quang Ninh", "Hai Phong", "Thai Binh", "Nam Dinh", "Ninh Binh", "Thanh Hoa", "Nghe An", "Ha Tinh", "Quang Binh", "Quang Tri", "TT Hue", "Da Nang", "Quang Nam", "Quang Ngai", "Binh Dinh", "Phu Yen", "Khanh Hoa", "Ninh Thuân", "Binh Thuân", "Long An", "Tien Giang", "Ben Tre", "Tra Vinh", "Soc Trang", "Bac Lieu", "Ca Mau", "Kien Giang", "Can Tho")) %>%
   mutate(iso3c = "VNM")
 
-write_csv(farms_vnm, here("aquaculture/marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_vnm.csv"))
+write_csv(farms_vnm, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_vnm.csv"))
 
 ## visualize it 
 farms_vnm_map <-  st_as_sf(farms_vnm, coords = c("lon", "lat"), 
@@ -265,6 +279,8 @@ Table 125: TABLE 125 Volume of Mud Crab Production in Aquaculture by Region and 
 Consider using this data for future iterations... 
 https://openstat.psa.gov.ph/PXWeb/pxweb/en/DB/search/?searchquery=aquaculture&rxid=bdf9d8da-96f1-4100-ae09-18cb3eaeb313
 
+Source: 
+Fisheries Statistics of the Philippines, 2017-2019, 2020. . Philippine Statistics Authority. [Accessed December 18, 2020]
 
 ```{r}
 phl_mudcrab_prod <- read_csv(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Philippines/phl_mudcrab_production.csv")) %>%
@@ -291,7 +307,7 @@ phl_lat_lon <- phl_mudcrab_prod %>%
   mutate(iso3c = "PHL")
 
 
-write_csv(phl_lat_lon, here("aquaculture/marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_phl.csv"))
+write_csv(phl_lat_lon, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_phl.csv"))
 
 ## visualize it 
 farms_phl_map <-  st_as_sf(phl_lat_lon, coords = c("lon", "lat"), 
@@ -304,7 +320,7 @@ mapview(farms_phl_map)
 # Join cell count dataframes
 
 ```{r}
-farm_files <- list.files(here::here("aquaculture/marine/crustaceans/crustacean_farms/data/crustacean_sites"), full=TRUE)
+farm_files <- list.files(here::here("marine/crustaceans/crustacean_farms/data/crustacean_sites"), full=TRUE)
 all_farms = plyr::ldply(farm_files, read_csv)
 
 all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
@@ -312,7 +328,7 @@ all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"),
 
 mapview(all_farms_sf)
 
-write.csv(all_farms, here::here("aquaculture/marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon.csv"), row.names = FALSE)
+write.csv(all_farms, here::here("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon.csv"), row.names = FALSE)
 
 
 ```

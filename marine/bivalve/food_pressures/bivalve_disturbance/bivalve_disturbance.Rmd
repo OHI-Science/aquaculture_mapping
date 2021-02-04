@@ -123,7 +123,7 @@ bivalve_w_l_final <- rbind(park_final, gaspar_final, koboyashi_final) %>%
   dplyr::summarise(alpha = mean(alpha), 
             beta = mean(beta))
 
-write.csv(bivalve_w_l_final, file.path("aquaculture/marine/bivalve/bivalve_disturbance/data/weight_length_relationships.csv"), row.names = FALSE)
+write.csv(bivalve_w_l_final, file.path("marine/bivalve/food_pressures/bivalve_disturbance/data/weight_length_relationships.csv"), row.names = FALSE)
 
 ```
 
@@ -143,11 +143,11 @@ Use FAO mariculture production data for bivalves
 
 ```{r}
 # read in spp specific country bivalve data: 
-bivalve_spp <- read_csv(file.path("aquaculture/marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve_taxa_production.csv"))
+bivalve_spp <- read_csv(file.path("marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve_taxa_production.csv"))
 
 
 ## read in family information
-spp_families <- read_csv(file.path("aquaculture/marine/STEP1_species_groups/int/marine_groups.csv")) %>%
+spp_families <- read_csv(file.path("marine/STEP1_species_groups/int/marine_groups.csv")) %>%
   dplyr::filter(year == 2017) %>%
   dplyr::select(species, family) %>%
   distinct()

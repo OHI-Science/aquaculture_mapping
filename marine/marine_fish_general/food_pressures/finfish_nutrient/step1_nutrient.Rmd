@@ -65,7 +65,7 @@ fao <- read.csv(here("aquaculture/data/fao_mariculture_clean.csv")) %>%
 
 
 ## Read in fao data and get a species list for salmon
-species_list <- read.csv(here("aquaculture/marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
+species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
   distinct(species, aq_group)
 
 # the list of species we are including

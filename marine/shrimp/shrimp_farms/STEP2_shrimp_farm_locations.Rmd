@@ -29,7 +29,7 @@ library(mapview)
 library(janitor)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
-fao_shrimp <- read_csv("aquaculture/marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv") %>%
+fao_shrimp <- read_csv("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv") %>%
   dplyr::filter(year == 2017) 
 
 
@@ -50,14 +50,14 @@ https://gis.asc-aqua.org/arcgis_app/
 Maps from ASC
 
 ```{r}
-ASC_data <- read_csv("aquaculture/data/ASC_farms.csv")
+ASC_data <- st_read(file.path(path, "ASC_data/ASC_all_sf.shp"))
 
-unique(ASC_data$species__c)
+unique(ASC_data$spcs__c)
 
 ASC_shrimp <- ASC_data %>%
-  dplyr::filter(species__c == "Shrimp")
+  dplyr::filter(spcs__c == "Shrimp")
 
-countries <- c(sort(unique(ASC_shrimp$cert_country)))
+countries <- c(sort(unique(ASC_shrimp$crt_cnt)))
 
 #  [1] "India" (FAO)                              "Viet Nam"    (FAO)                      
 #  [3] "Ecuador"    (FAO)                        "Venezuela (Bolivarian Republic of)" (FAO)
@@ -72,34 +72,18 @@ countries <- c(sort(unique(ASC_shrimp$cert_country)))
 # [21] "Peru"    (FAO)                           "Colombia"   (FAO)
 
 
-setdiff(ASC_shrimp$cert_country, fao_shrimp$country) # don't worry about venezuela... just a mispelling mismatch
+setdiff(ASC_shrimp$crt_cnt, fao_shrimp$country) # don't worry about venezuela... just a mispelling mismatch
 # In ASC and not in FAO:
 # [1] "Nigeria"                           
 # [3] "Tanzania, United Republic of"       "Mozambique"  
 
-setdiff(fao_shrimp$country, ASC_shrimp$cert_country)
+setdiff(fao_shrimp$country, ASC_shrimp$crt_cnt)
 ## Need to find the farm locations for these countries: 
 
 #  [1] "Brazil"                   "Brunei Darussalam"        "Cambodia"                 "Costa Rica"              
 #  [5] "Cuba"                     "El Salvador"              "Iran (Islamic Rep. of)"   "Japan"                   
 #  [9] "Korea, Republic of"       "Malaysia"                 "Myanmar"                  "Philippines"             
 # [13] "Saudi Arabia"             "Sri Lanka"                "Taiwan Province of China" "United States of America"
-
-
-## Now we need to make the ASC data into an sf
-ASC_shrimp_sf <- ASC_shrimp %>%
-  mutate(geometry = str_replace_all(geom, "POINT|[()]", "")) %>%
-  mutate(geometry = trimws(geometry)) %>%
-  mutate(x= as.numeric(gsub(" .*$", "", geometry))) %>%
-  dplyr::filter(!is.na(geom)) %>%
-  mutate(y = as.numeric(sub("^\\S+\\s+", '', geometry))) %>%
-  dplyr::select(-geometry, -geom, -X10, -X11, -X12, -X13, -X14)  %>%
-  st_as_sf(coords = c("x", "y"), crs = 4326)
-
-mapview(ASC_shrimp_sf$geometry)
-
-## now we need to write as a shapefile 
-st_write(ASC_shrimp_sf, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/shrimp/shrimp_sf.shp", overwrite = TRUE)
 
 ```
 
@@ -141,14 +125,19 @@ gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id")
 
 Data comes from https://gis.asc-aqua.org/arcgis_app/ 
 
+Source: 
+Aquaculture Stewardship Council Data Mapping Study, n.d. . Aquaculture Stewardship Council. [Accessed November 11, 2020] 
+https://gis.asc-aqua.org/arcgis_app/
+
+
 ```{r}
 
 # get iso3c codes
-iso <-   data.frame(iso3c = countrycode(ASC_shrimp_sf$cert_country, origin = 'country.name', destination = 'iso3c'))
+iso <-   data.frame(iso3c = countrycode(ASC_shrimp$crt_cnt, origin = 'country.name', destination = 'iso3c'))
 
 
 # read in shp and filter out countries not in FAO
-farms_all <- ASC_shrimp_sf %>%
+farms_all <- ASC_shrimp %>%
   cbind(iso) %>%
   dplyr::filter(iso3c != "NGA",
                 iso3c != "TZA",
@@ -169,7 +158,7 @@ farms_all_fin <- farms_all_fin %>%
   cbind(iso3c = all_pts_latlon$iso3c)
 
 ## save farm location
-write.csv(farms_all_fin, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/ASC_shrimp_farm_lat_lon.csv"), row.names = FALSE)
+write.csv(farms_all_fin, here("marine/shrimp/shrimp_farms/data/farm_sites/ASC_shrimp_farm_lat_lon.csv"), row.names = FALSE)
 
 ```
 
@@ -185,11 +174,9 @@ Now we will map the remaining countries with shrimp farms that are not included 
 
 
 # Brazil
- - Has a map of major shrimp farming locations (from 2001): http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.200.2425&rep=rep1&type=pdf
+ - Has a map of major shrimp farming locations (from 2002): http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.200.2425&rep=rep1&type=pdf
  - Also has a table of number of farms and area per state. I will just place one point at on each state, and add up the area listed in the table. 
  
-Also a good reference:
- http://www.akvarena.no/uploads/Ekstern%20informasjon/Aquaculture_%20Report%20Brazil15.pdf
  
  - Pará: -0.952238, -48.466718: 70 hectares
  - Maranhão: -2.365963, -44.263791: 64 hectares
@@ -204,6 +191,9 @@ Also a good reference:
  - São Paulo: inland, don't include
  - Paraná: -25.535885, -48.268714: 50 hectares
  - Sta. Catarina: -27.505551, -48.393581: 200 hectares
+ 
+Source:
+Mole, P., Bunge, J., 2002. Shrimp Farming in Brazil: An Industry Overview.
 
 
 ```{r}
@@ -212,7 +202,7 @@ farms_bra <- data.frame(lat=c(-0.952238, -2.365963, -2.859201, -3.646201, -5.100
                         area_ha = c(70, 64, 425, 982, 1752, 420, 670, 20, 47, 1510, 50, 200)) %>%
   mutate(iso3c = "BRA")
 
-write_csv(farms_bra, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_bra.csv"))
+write_csv(farms_bra, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_bra.csv"))
 
 ## visualize it 
 farms_bra <-  st_as_sf(farms_bra, coords = c("lon", "lat"), 
@@ -234,6 +224,11 @@ Note: These are all ponds on land, that use seawater.
  - Penyatang Shrimp Culture Industrial Site: 4.761099, 114.610558: 200 hectares (from the map): uses seawater
  - Semaun Marine hatchery: 4.781321, 114.607222: 0.4 hectares (measured on google maps)
  - TMM phase 1/2: 4.970718, 115.043816: 51.471511 hectares (measured on google maps)
+ 
+ 
+Source: 
+Golden Corporation Shrimp Farm and Processing Map, n.d. http://www.golden-corp.com/facilities.php?view=shrimp-farm-and-processing
+
 
 
 ```{r}
@@ -242,7 +237,7 @@ farms_brn <- data.frame(lat=c(4.716865, 4.722253, 4.742089, 4.761099, 4.781321, 
                         area_ha = c(14, 40, 92, 0.4, 200, 51.471511)) %>%
   mutate(iso3c = "BRN")
 
-write_csv(farms_brn, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_brn.csv"))
+write_csv(farms_brn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_brn.csv"))
 
 ## visualize it 
 farms_brn <-  st_as_sf(farms_brn, coords = c("lon", "lat"), 
@@ -264,6 +259,8 @@ mapview(farms_brn)
  - Svay Rieng: Inland, don't include
  - Takeo: Inland, don't include
 
+Source: 
+Eastman, J.R., Crema, S.C., Sangermano, F., Cunningham, S., Xiao, X., Hu, P., Johnson, C., Arakwiye, B., Crone, N., 2015. A Baseline Mapping of Aquaculture and Coastal Habitats in Thailand, Cambodia and Vietnam 14.
 
 ```{r}
 farms_khm <- data.frame(lat=c(10.559329, 10.449929, 11.740932, 10.743017),
@@ -271,7 +268,7 @@ farms_khm <- data.frame(lat=c(10.559329, 10.449929, 11.740932, 10.743017),
                         area_ha = c(1516, 459, 26762, 6388)) %>%
   mutate(iso3c = "KHM")
 
-write_csv(farms_khm, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_khm.csv"))
+write_csv(farms_khm, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_khm.csv"))
 
 ## visualize it 
 farms_khm <-  st_as_sf(farms_khm, coords = c("lon", "lat"), 
@@ -286,6 +283,8 @@ mapview(farms_khm)
  - This says there are 90 shrimp producers in Costa Rica. all located in Puntarenas and Guanacaste provinces: http://www.fao.org/fishery/countrysector/naso_costarica/en
  - I will equally allocate the farm points along the coast line of these two provinces (90 farms total).
 
+Source: 
+National Aquaculture Sector Overview. Costa Rica, 2005. , National Aquaculture Sector Overview Fact Sheets.
 
 ```{r}
 provinces <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/Costa_rica/gadm36_CRI_1.shp"))
@@ -341,7 +340,7 @@ farms_cri <-  st_as_sf(farms_cri, coords = c("lon", "lat"),
 mapview(farms_cri)
 
 ## write to farms folder 
-write_csv(farms_cri_final, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_cri.csv"))
+write_csv(farms_cri_final, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_cri.csv"))
 
 ```
 
@@ -358,6 +357,8 @@ Experimental Spawning Center at Cabo Cruz (some 100 km from Manzanillo).
 The on-growing area in Niquero (70 km from Manzanillo), where packing facilities on land are available." 
  - 20.047065, -77.593449
 
+Source: 
+National Aquaculture Sector Overview. Cuba, 2005. , National Aquaculture Sector Overview Fact Sheets.
 
 ```{r}
 farms_cub <- data.frame(lat=c(19.841789, 20.047065),
@@ -365,7 +366,7 @@ farms_cub <- data.frame(lat=c(19.841789, 20.047065),
                         area_ha = c(NA, NA)) %>%
   mutate(iso3c = "CUB")
 
-write_csv(farms_cub, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_cub.csv"))
+write_csv(farms_cub, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_cub.csv"))
 
 ## visualize it 
 farms_cub <-  st_as_sf(farms_cub, coords = c("lon", "lat"), 
@@ -385,13 +386,16 @@ mapview(farms_cub)
  - Usulután: seems inland
  - La Unión: 13.354459, -87.863771: 50 hectares
  
+ Source: 
+National Aquaculture Sector Overview. El Salvador, 2005. , National Aquaculture Sector Overview Fact Sheets. Food and Agriculture Organization of the United Nations.
+ 
 ```{r}
 farms_slv <- data.frame(lat=c(13.336985, 13.354459),
                         lon=c(-89.014470, -87.863771),
                         area_ha = c(8.2, 50)) %>%
   mutate(iso3c = "SLV")
 
-write_csv(farms_slv, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_slv.csv"))
+write_csv(farms_slv, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_slv.csv"))
 
 ## visualize it 
 farms_slv <-  st_as_sf(farms_slv, coords = c("lon", "lat"), 
@@ -404,12 +408,13 @@ mapview(farms_slv)
  
 # Iran 
  - Claims 205 farms in 2000: http://library.enaca.org/Shrimp/Case/Africa/FinalAfrica.pdf
- - Says they are all located on the bottom(?) coast... I will equally allocate along that coast. 
  
 NASO Maps 
  - This is better information, so I will use these points. 
 http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/iran/en/
 
+Source: 
+NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
 
 ```{r}
 ## read in thailand shp file
@@ -442,7 +447,7 @@ farms_irn <- farms_irn %>%
   mutate(iso3c="IRN")
 
 
-write_csv(farms_irn, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
+write_csv(farms_irn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
 
 
 farms_irn <-  st_as_sf(farms_irn, coords = c("lon", "lat"), 
@@ -508,7 +513,7 @@ old methods:
 # mapview(farms_irn)
 # 
 # ## write to farms folder 
-# write_csv(farms_irn_final, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
+# write_csv(farms_irn_final, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
 
 ```
  
@@ -531,7 +536,7 @@ old old methods:
 #                         area_ha = c(582, 1877, 1303, 312, 280, 156.5493, 31)) %>%
 #   mutate(iso3c = "IRN")
 # 
-# write_csv(farms_irn, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
+# write_csv(farms_irn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
 # 
 # ## visualize it 
 # farms_irn <-  st_as_sf(farms_irn, coords = c("lon", "lat"), 
@@ -545,13 +550,16 @@ old old methods:
  - One shrimp farm on this companies map: https://fis.com/fis/worldnews/worldnews.asp?l=e&id=100979&ndb=1
     - Near Minamikyūshū: 31.182129, 130.604815
     
+Source: 
+NA
+    
 ```{r}
 farms_jpn <- data.frame(lat=c(31.182129),
                         lon=c(130.604815),
                         area_ha = c(NA)) %>%
   mutate(iso3c = "JPN")
 
-write_csv(farms_jpn, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_jpn.csv"))
+write_csv(farms_jpn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_jpn.csv"))
 
 ## visualize it 
 farms_jpn <-  st_as_sf(farms_jpn, coords = c("lon", "lat"), 
@@ -568,6 +576,9 @@ https://www.fftc.org.tw/htmlarea_file/activities/20110719101541/13.pdf
  - "West coast: shrimp (Penaeus japonicus, P. chinensis) is mainly cultivated in Taean, ChungNam"
  - I will put a point there. 
  - Taean: 36.752683, 126.150252: 672 hectares (taken from "Korean Aquaculture at a glance")
+ 
+Source: 
+NA 
 
 ```{r}
 farms_kor <- data.frame(lat=c(36.752683),
@@ -587,6 +598,9 @@ mapview(farms_kor)
 # Malaysia
  - [Seafood watch](https://www.seafoodwatch.org/-/m/sfw/pdf/reports/s/mba_seafoodwatch_malaysian_farmed_marine_shrimp_report.pdf) claims you can find the names and locations of registered shrimp farms here, but I can only find the broad suitable areas: https://www.dof.gov.my/ 
  - Broad suitable areas https://www.dof.gov.my/index.php/pages/view/78. I'll use these and use the area as a production estimate. Saved onto aurora /home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Malaysia/malaysia_shrimp_farms.csv. 
+ 
+Source: 
+Aquaculture Industrial Zone Area for High Impact Projects (HIP), n.d. . Department of Fisheries Malaysia. [Accessed November 12, 2020] https://www.dof.gov.my/index.php/pages/view/78
  
 ```{r}
 malaysia_shrimp_loc <- read_csv("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Malaysia/malaysia_shrimp_farms.csv") %>%
@@ -615,7 +629,7 @@ farms_mys <- data.frame(lat=c(6.433288, 2.108604, 1.676758, 3.018320, 5.674088, 
                         area_ha =mys_area) %>%
   mutate(iso3c = "MYS")
 
-write_csv(farms_mys, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_mys.csv"))
+write_csv(farms_mys, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_mys.csv"))
 
 ## visualize it 
 farms_mys <-  st_as_sf(farms_mys, coords = c("lon", "lat"), 
@@ -638,6 +652,8 @@ mapview(farms_mys)
  - Mon: 16.100756, 97.581799
  - Thaninthary: 13.436424, 98.323120
 
+Source: 
+Myanmar aquaculture and inland fisheries, 2003. Food and Agriculture Organization of the United Nations Regional Office For Asia and the Pacific.
 
 ```{r}
 farms_mmr <- data.frame(lat=c(20.117197, 15.967665, 16.441903, 16.100756, 13.436424),
@@ -645,7 +661,7 @@ farms_mmr <- data.frame(lat=c(20.117197, 15.967665, 16.441903, 16.100756, 13.436
                         area_ha = c(62941.972, 13505.574, 2992.246, NA, NA )) %>%
   mutate(iso3c = "MMR")
 
-write_csv(farms_mmr, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_mmr.csv"))
+write_csv(farms_mmr, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_mmr.csv"))
 
 ## visualize it 
 farms_mmr <-  st_as_sf(farms_mmr, coords = c("lon", "lat"), 
@@ -662,6 +678,9 @@ https://juniperpublishers.com/ofoaj/pdf/OFOAJ.MS.ID.555668.pdf
 
  - I will equally place 271 farms along the coast of the philippines
  - We know that there are 3617.8 hectares of farms... we will allocate that area evenly... 3617.8/271 = 13.35
+ 
+Source: 
+Vergel, C., 2017. Current Trends in the Philippines’ Shrimp Aquaculture lndustry:A Booming Blue Economy in the Pacific. OFOAJ 5. https://doi.org/10.19080/OFOAJ.2017.05.555668
 
 ```{r}
 philly <- ne_countries(scale = 10, country = "Philippines", returnclass = "sf")
@@ -720,29 +739,8 @@ farms_phl <-  st_as_sf(farms_phl, coords = c("lon", "lat"),
 mapview(farms_phl)
 
 ## write to farms folder 
-write_csv(farms_phl_final, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_phl.csv"))
+write_csv(farms_phl_final, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_phl.csv"))
 
-```
-
-
-
-OLD WAY:
-Since there seem to be so many farms in the Philippines, and no clear indication of where they are on the satellite images from google maps, I will just place one randomnly on the map. 15.052865, 120.057781
-
-```{r}
-
-# farms_phl <- data.frame(lat=c(15.052865),
-#                         lon=c(120.057781),
-#                         area_ha = c(3617.8)) %>%
-#   mutate(iso3c = "PHL")
-# 
-# write_csv(farms_phl, here::here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_phl.csv"))
-# 
-# ## visualize it 
-# farms_phl <-  st_as_sf(farms_phl, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_phl)
 ```
 
 
@@ -754,6 +752,10 @@ http://www.naqua.com.sa/about-us.php
 https://www.alasmak.com.sa/en/about-us-en/index.html
  - Saudi Fisheries Company: *3000* tonnes per year: 17.806544, 41.897791: 206 hectares (taken from google maps)
 
+Sources: 
+National Aquaculture Group, n.d. [Accessed 11.12.20]. http://www.naqua.com.sa/about-us.php
+
+Saudi Fish Company, n.d. [Accessed November 12, 2020]. https://www.alasmak.com.sa/en/about-us-en/index.html
 
 ```{r}
 farms_sau <- data.frame(lat=c(20.287253, 17.806544),
@@ -762,7 +764,7 @@ farms_sau <- data.frame(lat=c(20.287253, 17.806544),
                         prod = c(35000, 3000)) %>%
   mutate(iso3c = "SAU")
 
-write_csv(farms_sau, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_sau.csv"))
+write_csv(farms_sau, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_sau.csv"))
 
 ## visualize it 
 farms_sau <-  st_as_sf(farms_sau, coords = c("lon", "lat"), 
@@ -779,6 +781,9 @@ http://www.fao.org/fishery/countrysector/naso_sri-lanka/en#:~:text=The%20current
 
  - Puttalam district : 1344 farms, 4500/1344 = 3.348214 hectares per farm
  - Batticalao district : 60 farms, 155/60 = 2.583333 hectares per farm
+
+Source: 
+National Aquaculture Sector Overview. Sri Lanka, 2005. , National Aquaculture Sector Overview Fact Sheets. Food and Agriculture Organization of the United Nations.
 
 
 ```{r}
@@ -885,35 +890,8 @@ farms_all_lka <- rbind(farms_bat_lka_final, farms_put_lka_final) %>%
   dplyr::mutate(iso3c = "LKA")
 
 ## write to farms folder 
-write_csv(farms_all_lka, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_lka.csv"))
+write_csv(farms_all_lka, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_lka.csv"))
 
-```
-
-
-
-OLD METHODS: 
- Taken from google map search results. The areas are measured using google maps: 
- - Taprobane Seafood Group Shrimp Farm: 9.036484, 79.897271: 7.610872 hectares
- - Goshen Shrimp Farm 1: 8.150476, 79.738106: 19.307263 hectares
- - Dimo Farm: 8.110610, 79.825533: 5.299785 hectares
- - Nilfan-Shrimp Farm: 8.093220, 79.838723: 1.343078 hectares
- - Samro Aqua Farm: 7.967821, 79.815649: 6.102855 hectares
- - Mahesh Aqua Research Farm: 7.773596, 79.790947: 3.467487 hectares
-
-
-```{r}
-# farms_lka <- data.frame(lat=c(9.036484, 8.150476, 8.110610,  8.093220, 7.967821, 7.773596),
-#                         lon=c(79.897271, 79.738106, 79.825533, 79.838723, 79.815649, 79.790947),
-#                         area_ha = c(7.610872, 19.307263, 5.299785, 1.343078, 6.102855, 3.467487)) %>%
-#   mutate(iso3c = "LKA")
-# 
-# write_csv(farms_lka, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_lka.csv"))
-# 
-# ## visualize it 
-# farms_lka <-  st_as_sf(farms_lka, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_lka)
 ```
 
 
@@ -922,6 +900,9 @@ https://www.taipeitimes.com/News/taiwan/archives/2020/06/19/2003738488
  - There are definitely a lot of farms
  
  - It is unclear how many farms are in Taiwan. I will randomly place the farms along the coast. 
+ 
+Source: 
+NA
  
 ```{r, evalute = F}
 
@@ -966,10 +947,10 @@ farms_twn <-  st_as_sf(twn_coast_df, coords = c("lon", "lat"),
 mapview(farms_twn)
 
 
-write_csv(twn_coast_df, here::here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_twn.csv"))
+write_csv(twn_coast_df, here::here("marine/shrimp/shrimp_farms/data/farm_sites/farms_twn.csv"))
 
 
-twn <- read_csv(here::here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_twn.csv"))
+twn <- read_csv(here::here("marine/shrimp/shrimp_farms/data/farm_sites/farms_twn.csv"))
 farms_twn <-  st_as_sf(twn, coords = c("lon", "lat"), 
                  crs = crs(gadm_latlon), agr = "constant")
 
@@ -992,23 +973,33 @@ http://www.texasaquaculture.org/TxShrimpFms.html
     - Southern Star Inc: 26.323330, -97.452599: 445 hectares
     - Harlinger Shrimp Farms: 26.149413, -97.322755: 182 hectares
 
- 
+Source:
+Texas Aquaculture Association, 2018. [Accessed November 18, 2020] http://www.texasaquaculture.org/TxShrimpFms.html
+
  
 Alabama: 
  - 3 locations according to SFW. From what I can tell, one of them is inland. And can only find 1 other.... 
  - Coordinates taken from google maps: 
     - Graham fisheries inc: 30.403144, -88.254304
+    
+Source: 
+NA
 
 Hawaii: 
  - 2 locations according to SFW.. I can only find one
      - [Kauai Shrimp](https://www.kauaishrimp.com/en/about-us/): 21.957597, -159.669555: 104 hectares
+     
+Source: 
+NA
      
 Florida: https://www.shrimpnews.com/FreeReportsFolder/NewsReportsFolder/USAflFiveShrimpFarmsAndHatchery.html
  - 3 marine locations according to SFW
     - [Gulf American Shrimp](https://www.gulfamericanshrimp.com/about-the-farm): 29.859915, -85.287438: 22 hectares
     - American Mariculture LLC: 26.602097, -82.113475: 3 hectares
     - Shrimp Improvement Systems: 24.972378, -80.555590: 0.88 hectares
-
+    
+Source: 
+NA 
 
 ```{r}
 farms_usa <- data.frame(lat=c(28.709786, 28.731171, 28.369096, 26.323330, 26.149413, 30.403144, 21.957597,  29.859915, 26.602097, 24.972378),
@@ -1016,7 +1007,7 @@ farms_usa <- data.frame(lat=c(28.709786, 28.731171, 28.369096, 26.323330, 26.149
                         area_ha = c(159.4461, 80, 40, 445, 182, NA, 104, 22, 3, 0.88)) %>%
   mutate(iso3c = "USA")
 
-write_csv(farms_usa, here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites/farms_usa.csv"))
+write_csv(farms_usa, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_usa.csv"))
 
 ## visualize it 
 farms_usa <-  st_as_sf(farms_usa, coords = c("lon", "lat"), 
@@ -1029,7 +1020,7 @@ mapview(farms_usa)
 # Join cell count dataframes
 
 ```{r}
-farm_files <- list.files(here::here("aquaculture/marine/shrimp/shrimp_farms/data/farm_sites"), full=TRUE)
+farm_files <- list.files(here::here("marine/shrimp/shrimp_farms/data/farm_sites"), full=TRUE)
 all_farms = plyr::ldply(farm_files, read_csv)
 
 all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
@@ -1037,7 +1028,7 @@ all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"),
 
 mapview(all_farms_sf)
 
-write.csv(all_farms, here::here("aquaculture/marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon.csv"), row.names = FALSE)
+write.csv(all_farms, here::here("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon.csv"), row.names = FALSE)
 
 ```
 
