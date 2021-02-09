@@ -935,7 +935,7 @@ write.csv(all_farms_1, here("marine/salmon/salmon_farm/data/global_salmon_farm_l
 
 write.csv(all_farms, here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv"), row.names = FALSE)
 
-# all_farms <- read_csv(here("aquaculture/marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon.csv"), col_types = "ddcc")
+# all_farms <- read_csv(here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv"), col_types = "ddccd")
 
 all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
                          crs = crs(gadm_latlon), agr = "constant")
