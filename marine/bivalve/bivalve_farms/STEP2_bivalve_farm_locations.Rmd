@@ -130,14 +130,10 @@ gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id")
 ```
 
 For each point, we will add a column for "data quality". It will be scored as very good (1.0), good (0.667), fair (0.333) or poor (0.0). 
-
-Very Good qualifications: Locations taken from leases, or from a map with specific locations (i.e. EMOD, ASC, HELCOM etc.).
-
-Good qualifications: Locations are projected or it is a only sample of total locations (NASO maps) 
-
-Fair qualifications: A specific number of farms are placed on the coast, without knowing exact locations. Or Per province/state locations (i.e. placing a point randomly in each province) or sub regional location. 
-
-Bad qualifications: No data at all (randomly placed point(s) along the coast, a non-specific number), google maps estimates. 
+ - Very Good qualifications: Locations taken from leases, or from a map with specific locations (i.e. EMOD, ASC, HELCOM etc.).
+ - Good qualifications: Locations are projected or it is a only sample of total locations (NASO maps). Google maps estimates. 
+ - Fair qualifications: A specific number of farms are placed on the coast, without knowing exact locations. Or Per province/state locations (i.e. placing a point randomly in each province) or sub regional location. 
+ - Bad qualifications: No data at all (randomly placed point(s) along the coast, a non-specific number). 
 
 # Map data from ASC 
 

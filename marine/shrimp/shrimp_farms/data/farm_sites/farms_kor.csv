@@ -1,2 +1,2 @@
-lat,lon,area_ha,iso3c
-36.752683,126.150252,672,KOR
+lat,lon,area_ha,iso3c,data_quality
+36.752683,126.150252,672,KOR,0

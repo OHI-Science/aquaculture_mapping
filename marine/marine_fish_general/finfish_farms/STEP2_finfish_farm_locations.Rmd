@@ -153,7 +153,8 @@ all_pts_latlon <- st_transform(all_pts, crs = "+init=epsg:4326") %>%
 farms_all_fin <- data.frame(do.call(rbind, st_geometry(all_pts_latlon))) 
 names(farms_all_fin) <- c("lon", "lat")
 farms_all_fin <- farms_all_fin %>%
-  cbind(iso3c = all_pts_latlon$iso3c)
+  cbind(iso3c = all_pts_latlon$iso3c) %>%
+  mutate(data_quality = 1.0)
 
 ## save farm location
 write.csv(farms_all_fin, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/ASC_finfish_farm_lat_lon.csv"), row.names = FALSE)
@@ -168,6 +169,12 @@ Now we will map the remaining countries with marine finfish farms that are not i
  - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan bivalve/shrimp). 
  - Lastly, if there is no evidence of marine finfish farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be, i.e. what we've done for Russia for bivalves).
 
+
+For each point, we will add a column for "data quality". It will be scored as very good (1.0), good (0.667), fair (0.333) or poor (0.0). 
+ - Very Good qualifications: Locations taken from leases, or from a map with specific locations (i.e. EMOD, ASC, HELCOM etc.).
+ - Good qualifications: Locations are projected or it is a only sample of total locations (NASO maps). Google maps estimates. 
+ - Fair qualifications: A specific number of farms are placed on the coast, without knowing exact locations. Or Per province/state locations (i.e. placing a point randomly in each province) or sub regional location. 
+ - Bad qualifications: No data at all (randomly placed point(s) along the coast, a non-specific number). 
 
 ##  Europe - EMODNET: Malta, Greece, Norway, Cyprus, Spain 
 https://www.emodnet-humanactivities.eu/search-results.php?dataname=Finfish+Production
@@ -250,7 +257,8 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
     COUNTRY == "Greece" ~ "GRC",
     COUNTRY == "Malta" ~ "MLT"
   )) %>%
-  dplyr::select(-COUNTRY)
+  dplyr::select(-COUNTRY) %>%
+  mutate(data_quality = 1.0)
 
  write_csv(farms_eu_final, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ESP_CYP_NOR_GRC_MLT.csv"))
 
@@ -291,7 +299,8 @@ mapview(ita_pts_latlon)
 farms_ita <- data.frame(do.call(rbind, st_geometry(ita_pts_latlon))) 
 names(farms_ita) <- c("lon", "lat")
 farms_ita <- farms_ita %>%
-  mutate(iso3c="ITA")
+  mutate(iso3c="ITA") %>%
+  mutate(data_quality = 0.667)
 
 
 write_csv(farms_ita, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ita.csv"))
@@ -349,7 +358,8 @@ names(farms_fra) <- c("lon", "lat")
 farms_fra <- farms_fra %>%
   cbind(countries) %>%
   mutate(iso3c = ifelse(country == "France", "FRA", "ISR")) %>%
-  dplyr::select(-country, -geometry)
+  dplyr::select(-country, -geometry) %>%
+  mutate(data_quality = 0.667)
 
 
 write_csv(farms_fra, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_fra_isr.csv"))
@@ -357,6 +367,7 @@ write_csv(farms_fra, here("marine/marine_fish_general/finfish_farms/data/finfish
 
 farms_fra <-  st_as_sf(farms_fra, coords = c("lon", "lat"), 
                  crs = crs(gadm_latlon), agr = "constant")
+
 
 mapview(farms_fra)
 ```
@@ -388,7 +399,8 @@ mapview(idn_pts_latlon)
 farms_idn <- data.frame(do.call(rbind, st_geometry(idn_pts_latlon))) 
 names(farms_idn) <- c("lon", "lat")
 farms_idn <- farms_idn %>%
-  mutate(iso3c = "IDN")
+  mutate(iso3c = "IDN") %>%
+  mutate(data_quality = 0.667)
 
 
 write_csv(farms_idn, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_idn.csv"))
@@ -457,7 +469,8 @@ farms_prt <- data.frame(do.call(rbind, st_geometry(prt_pts_latlon)))
 names(farms_prt) <- c("lon", "lat")
 
 farms_prt_final <- farms_prt %>%
-  mutate(iso3c = "PRT")
+  mutate(iso3c = "PRT") %>%
+  mutate(data_quality = 0.333)
 
 ## visualize it 
 farms_prt <-  st_as_sf(farms_prt, coords = c("lon", "lat"), 
@@ -481,7 +494,8 @@ NA
 
 farms_irn <- data.frame(lat = c(37.392419247868425),
                         lon = c(50.1602963496454)) %>%
-  mutate(iso3c = "IRN")
+  mutate(iso3c = "IRN") %>%
+  mutate(data_quality = 0.0)
 
 write_csv(farms_irn, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_irn.csv"))
 
@@ -503,7 +517,8 @@ NA
 
 farms_chn <- data.frame(lat = c(26.649767732301385),
                         lon = c(119.94149300994019)) %>%
-  mutate(iso3c = "CHN")
+  mutate(iso3c = "CHN") %>%
+  mutate(data_quality = 0.0)
 
 write_csv(farms_chn, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_chn.csv"))
 
@@ -524,9 +539,10 @@ National Aquaculture Group, n.d. [Accessed November 12, 2020]. http://www.naqua.
 
 ```{r}
 
-farms_sau <- data.frame(lat = c(20.287253),
-                        lon = c(40.030864)) %>%
-  mutate(iso3c = "SAU")
+farms_sau <- data.frame(lat = c(20.27293672234808),
+                        lon = c(40.03614937279944)) %>%
+  mutate(iso3c = "SAU") %>%
+  mutate(data_quality = 0.667)
 
 write_csv(farms_sau, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_sau.csv"))
 
@@ -549,7 +565,8 @@ NA
 
 farms_mus <- data.frame(lat = c(-20.005039247819017),
                         lon = c(57.67022708374523)) %>%
-  mutate(iso3c = "MUS")
+  mutate(iso3c = "MUS") %>%
+  mutate(data_quality = 0.0)
 
 write_csv(farms_mus, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_mus.csv"))
 
@@ -578,7 +595,8 @@ National Aquaculture Sector Overview. United Arab Emirates, 2016. , National Aqu
 
 farms_are <- data.frame(lat = c(25.604715925918068),
                         lon = c(56.340214330776234)) %>%
-  mutate(iso3c = "ARE")
+  mutate(iso3c = "ARE") %>%
+  mutate(data_quality = 0.333)
 
 write_csv(farms_are, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_are.csv"))
 
@@ -661,7 +679,8 @@ farms_tun <- data.frame(do.call(rbind, st_geometry(tun_pts_latlon)))
 names(farms_tun) <- c("lon", "lat")
 
 farms_tun_final <- farms_tun %>%
-  mutate(iso3c = "TUN")
+  mutate(iso3c = "TUN") %>%
+  mutate(data_quality = 0.333)
 
 ## visualize it 
 farms_tun <-  st_as_sf(farms_tun, coords = c("lon", "lat"), 
@@ -810,7 +829,8 @@ Combine milkfish and grouper points
 
 ```{r}
 all_points_twn <- rbind(milkfish_points, grouper_points) %>%
-  dplyr::mutate(iso3c = "TWN")
+  dplyr::mutate(iso3c = "TWN") %>%
+  mutate(data_quality = 0.333)
 
 
 farms_twn <-  st_as_sf(all_points_twn, coords = c("lon", "lat"), 
@@ -846,7 +866,8 @@ Martec Industries Aquaculture , n.d. . Martec.  https://www.martec.co.cr/#aquacu
 ```{r}
 farms_cri <- data.frame(lat = c(9.423478373794573),
                         lon = c(-84.20910189917947)) %>%
-  mutate(iso3c = "CRI")
+  mutate(iso3c = "CRI") %>%
+  mutate(data_quality = 0.667)
 
 write_csv(farms_cri, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_cri.csv"))
 
@@ -881,7 +902,8 @@ farms_egy <- data.frame(lat = c(31.360400495764903, 31.15023941171644, 31.319036
                         lon = c(27.236078999801336, 29.81109569981684, 30.225935332660324, 31.4278324391214, 31.849352783373792, 32.30190584291966, 32.54627145839493,  34.29387671355847),
                         rgn_production = c(5, 1521, 20376, 5460, 55551, 16233, 750, 30),
                         subrgn_name = c("Mersa Matruh", "Alexandria", "Behira", "Dakahlia", "Damietta", "Port Said", "Suez", "South Sinai")) %>%
-  mutate(iso3c = "EGY")
+  mutate(iso3c = "EGY") %>%
+  mutate(data_quality = 1.0)
 
 write_csv(farms_egy, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_egy.csv"))
 
@@ -907,7 +929,8 @@ Indian Council of Agriculture Research - Central Marine Fisheries Research Insti
 ```{r}
 farms_ind <- data.frame(lat = c(9.28696221512509),
                         lon = c(79.13007737814245)) %>%
-  mutate(iso3c = "IND")
+  mutate(iso3c = "IND") %>%
+  mutate(data_quality = 0.667)
 
 write_csv(farms_ind, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_ind.csv"))
 
@@ -975,7 +998,8 @@ farms_sgp <- data.frame(do.call(rbind, st_geometry(sgp_pts_latlon)))
 names(farms_sgp) <- c("lon", "lat")
 
 farms_sgp_final <- farms_sgp %>%
-  mutate(iso3c = "SGP")
+  mutate(iso3c = "SGP") %>%
+  mutate(data_quality = 0.333)
 
 ## visualize it 
 farms_sgp <-  st_as_sf(farms_sgp, coords = c("lon", "lat"), 
@@ -1017,7 +1041,8 @@ Now lets map the farms
 ```{r}
 farms_mys <- data.frame(lat=c(2.131733588116292, 2.8071936098459522, 5.384539285193906, 2.8056383383493353, 2.1305137929032876),
                         lon=c(102.40118069215845, 103.49758024234029, 100.35040003558889, 103.49881667894354, 102.40627304737939)) %>%
-  mutate(iso3c = "MYS")
+  mutate(iso3c = "MYS") %>%
+  mutate(data_quality = 0.333)
 
 write_csv(farms_mys, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_mys.csv"))
 
@@ -1038,7 +1063,8 @@ NA
 ```{r}
 farms_bgd <- data.frame(lat=c(21.802433819366538),
                         lon=c(90.40418040967)) %>%
-  mutate(iso3c = "BGD")
+  mutate(iso3c = "BGD") %>%
+  mutate(data_quality = 0.0)
 
 write_csv(farms_bgd, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_bgd.csv"))
 
@@ -1067,7 +1093,8 @@ Chankakada, M., Sros, K., Ramana, O., Phearum, H., Laining, A., Rimmer, M.A., So
 ```{r}
 farms_khm <- data.frame(lat=c(10.53427341558665, 10.748668380457524, 10.647924480438327),
                         lon=c(103.57357940185497, 103.6089106992865, 103.5006922685572)) %>%
-  mutate(iso3c = "KHM")
+  mutate(iso3c = "KHM") %>%
+  mutate(data_quality = 0.333)
 
 write_csv(farms_khm, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_khm.csv"))
 
@@ -1130,7 +1157,8 @@ farms_kor <- data.frame(do.call(rbind, st_geometry(kor_pts_latlon)))
 names(farms_kor) <- c("lon", "lat")
 
 farms_kor_final <- farms_kor %>%
-  mutate(iso3c = "KOR")
+  mutate(iso3c = "KOR") %>%
+  mutate(data_quality = 0.333)
 
 ## visualize it 
 farms_kor <-  st_as_sf(farms_kor, coords = c("lon", "lat"), 
@@ -1193,7 +1221,8 @@ farms_phl <- data.frame(do.call(rbind, st_geometry(phl_pts_latlon)))
 names(farms_phl) <- c("lon", "lat")
 
 farms_phl_final <- farms_phl %>%
-  mutate(iso3c = "PHL")
+  mutate(iso3c = "PHL") %>%
+  mutate(data_quality = 0.333)
 
 ## visualize it 
 farms_phl <-  st_as_sf(farms_phl, coords = c("lon", "lat"), 
@@ -1247,7 +1276,8 @@ Marine fish culture, pond fish culture and oyster culture, n.d. . Agriculture, F
 ```{r}
 farms_hkg <- data.frame(lat_lon = c("22.537974350807968, 114.22465750899093", "22.549021238266082, 114.27266261841545", "22.549243173819686, 114.29054140885648", "22.545901930448537, 114.29912254835972", "22.524524976629923, 114.28385013462695", "22.507936457313377, 114.30641749235996", "22.47796934657302, 114.35412559932351", "22.459641511472412, 114.360272945696", "22.4435502213444, 114.35400029960742", "22.46853714662761, 114.2720207303674", "22.42337637093222, 114.27819733339493", "22.349528341786087, 114.35178911904846", "22.367924650829952, 114.31997002657292", "22.368469602475702, 114.3230438982345", "22.3691151827537, 114.30143307907038", "22.341819373881275, 114.31744391160476", "22.35464650188533, 114.26990023341041", "22.274992746117093, 114.29389242171153", "22.164051938726015, 114.25252757025574", "22.20591578796148, 114.12923505969019", "22.221779736133797, 114.12958553008323", "22.352165476146805, 114.05569941361628", "22.45358281100093, 114.2079128367368", "22.235400816169882, 114.00599898096631", "22.454708931476908, 114.22148845386273", "22.25579039550771, 114.28554310187128")) %>%
   separate(lat_lon, into = c("lat", "lon"), sep = ",") %>%
-  mutate(iso3c = "HKG")
+  mutate(iso3c = "HKG") %>%
+  mutate(data_quality = 1.0)
 
 write_csv(farms_hkg, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_hkg.csv"))
 
@@ -1269,7 +1299,12 @@ all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"),
 
 mapview(all_farms_sf)
 
-write.csv(all_farms, here::here("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon.csv"), row.names = FALSE)
+all_farms_1 <- all_farms %>%
+  dplyr::select(-data_quality)
+
+write.csv(all_farms_1, here::here("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon.csv"), row.names = FALSE)
+
+write.csv(all_farms, here::here("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon_data_quality.csv"), row.names = FALSE)
 
 
 ```

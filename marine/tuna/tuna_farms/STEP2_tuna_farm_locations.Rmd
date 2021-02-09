@@ -163,7 +163,8 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
     COUNTRY == "Spain" ~ "ESP",
     COUNTRY == "Malta" ~ "MLT"
   )) %>%
-  dplyr::select(-COUNTRY)
+  dplyr::select(-COUNTRY) %>%
+  mutate(data_quality = 1.0)
 
  write_csv(farms_eu_final, here("marine/tuna/tuna_farms/data/tuna_sites/farms_ESP_MLT.csv"))
 
@@ -184,13 +185,13 @@ med_file <- file.path(path, "FAO_NASO/NASO/Point/Mediterranean.kml")
 
 med_aqua <- read_sf(med_file)
 
-med_countries <- france_aqua %>%
+med_countries <- med_aqua %>%
   dplyr::mutate(country = sub("_.*", "", Name)) %>%
   dplyr::mutate(country = sub(" fishpen A", "", country))
 
 unique(med_countries$country)
 
-## We need to filter for just the appropriate species of finfish aquaculture, France, Israel
+## We need to filter for just the appropriate countries (that we don't already have): Croatia, Turkey
 
 med_tuna <- med_countries %>%
   dplyr::filter(country %in% c("Croatia", "Turkey"))
@@ -198,6 +199,7 @@ med_tuna <- med_countries %>%
 
 
 mapview(med_tuna)
+mapview(med_aqua)
 
 med_tuna_mol <- st_transform(med_tuna, crs = "+init=epsg:3035") # convert to equal area projection to find centroids.
 med_pts <- st_centroid(med_tuna_mol)
@@ -216,7 +218,8 @@ names(farms_med) <- c("lon", "lat")
 farms_med <- farms_med %>%
   cbind(countries) %>%
   mutate(iso3c = ifelse(country == "Croatia", "HRV", "TUR")) %>%
-  dplyr::select(-country, -geometry)
+  dplyr::select(-country, -geometry) %>%
+  mutate(data_quality = 0.667)
 
 
 write_csv(farms_med, here("marine/tuna/tuna_farms/data/tuna_sites/farms_hrv_tur.csv"))
@@ -246,7 +249,7 @@ Source:
 Aquaculture public register - Government of South Australia, 2017. [Accessed November 14, 2020] https://www.pir.sa.gov.au/aquaculture/aquaculture_public_register
 
 ```{r}
-south_au <- read_csv(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Australia/south_au_leases.csv")) 
+south_au <- read_csv(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Australia/tuna/south_au_leases.csv")) 
 
 tuna_leases <- south_au %>%
   dplyr::filter(str_detect(`Registration Category`, "Tuna|Miscellaneous"))
@@ -323,7 +326,8 @@ coords_list[[i]] <- lat_lon_df_clean
 lat_lon_final <- coords_list %>%
     bind_rows() %>%
   mutate(lat = -lat) %>% ## change lat to have a negative in front of it (because it S)
-  mutate(iso3c = "AUS")
+  mutate(iso3c = "AUS") %>%
+  mutate(data_quality = 1.0)
 ## now that we have coordinates, place them on a map and save
 
 
@@ -390,7 +394,8 @@ farms_jpn <- data.frame(do.call(rbind, st_geometry(jpn_pts_latlon)))
 names(farms_jpn) <- c("lon", "lat")
 
 farms_jpn_final <- farms_jpn %>%
-  mutate(iso3c = "JPN")
+  mutate(iso3c = "JPN") %>%
+  mutate(data_quality = 0.333)
 
 ## visualize it 
 farms_jpn <-  st_as_sf(farms_jpn, coords = c("lon", "lat"), 
@@ -431,7 +436,8 @@ Monterey Bay Aquarium Seafood Watch Report on Pacific Bluefin Tuna Farming in Me
 
 farms_mex <- data.frame(lat = c(31.972882899404116, 31.96836856413186, 31.963417102445995, 31.95861101663323, 31.955698114940013, 31.952930772763118, 31.95030900327055, 31.945939221180044, 31.932974311561416, 31.929769220541903, 31.95016334721594, 31.959630510399904, 31.96764042474878),
                           lon = c(-116.81987407899483, -116.8094027351974, -116.80339458711688, -116.7956698252991, -116.79343822744065, -116.79000499996607, -116.78777340210759, -116.78193691540082, -116.77575710594658, -116.77180889435084, -116.77060726473474, -116.78262356089573, -116.79395321156183), 
-                          iso3c = "MEX")
+                          iso3c = "MEX") %>%
+  mutate(data_quality = 0.667)
 
 
 farms_mex_map <-  st_as_sf(farms_mex, coords = c("lon", "lat"),
@@ -452,12 +458,17 @@ write_csv(farms_mex, here("marine/tuna/tuna_farms/data/tuna_sites/farms_MEX.csv"
 farm_files <- list.files(here::here("marine/tuna/tuna_farms/data/tuna_sites"), full=TRUE)
 all_farms = plyr::ldply(farm_files, read_csv)
 
+all_farms_1 <- all_farms %>%
+  dplyr::select(-data_quality)
+
 all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
                          crs = crs(gadm_latlon), agr = "constant")
 
 mapview(all_farms_sf)
 
-write.csv(all_farms, here::here("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon.csv"), row.names = FALSE)
+write.csv(all_farms_1, here::here("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon.csv"), row.names = FALSE)
+
+write.csv(all_farms, here::here("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon_data_quality.csv"), row.names = FALSE)
 
 ```
 
