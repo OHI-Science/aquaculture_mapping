@@ -52,7 +52,7 @@ unique(fao_bivalve$country)
 # [41] "United States of America" "Viet Nam"       
 
 coast_raw <- st_read("/home/shares/food-systems/Aquaculture_mapping/Data/Jared/Marine_Brackish/raw_data/Coastline/lines.shp")
-mapview(coast_raw)
+# mapview(coast_raw)
 ```
 
 ## explore
@@ -623,34 +623,69 @@ Source:
 Fishing and Aquaculture, 2020. . Government of the States of Guernsey. [Accessed December 3, 2020] https://www.gov.gg/fishing#:~:text=Sea%20Fisheries%20is%20responsible%20for,one%20licensed%20site%20on%20Herm
 
 ```{r}
-world <- rnaturalearth::ne_coastline(scale = 10) # world map with 10m resolution
-plot(world)
-
+## read in country shapefile
 Guernsey <- ne_countries(scale = 10, country = "Guernsey", returnclass = "sf")
 
 #info of our spatial vector object
-Guernsey
 mapview(Guernsey)
 plot(Guernsey)
 
-world <- st_as_sf(world)
+## transform to same crs at the coast file so we can crop
+Guernsey_world_crs <- st_transform(Guernsey, crs(coast_raw))
 
-Guernsey_world_crs <- st_transform(Guernsey, crs(world))
+# crop the to the coast file, and select the main island 
+Guernsey_world_crop <- st_crop(coast_raw, Guernsey_world_crs) %>%
+  dplyr::filter(FID %in% c(220920, 220921, 220922)) %>% ## filter for the appropriate island
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>% ## merge all the geometries into one
+  ungroup()
 
-Guernsey_world_crop <- st_crop(world, Guernsey_world_crs) %>%
-  dplyr::filter(scalerank == 5) ## filter for the appropriate island
 plot(Guernsey_world_crop)
 mapview(Guernsey_world_crop)
+class(Guernsey_world_crop)
+crs(Guernsey_world_crop)
 
-Guernsey_crop <- as(Guernsey_world_crop, "Spatial")
+g_meters <- st_transform(Guernsey_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(g_meters)
 
+buff <- st_buffer(g_meters, dist = 1000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+plot(buff)
+
+linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+buffer_outline <- linestring[1,]  ## grab the outline row 
+mapview(buffer_outline)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(buffer_outline, crs = crs(Guernsey_world_crop))
+
+## make a spatiallinesdataframe so we can use sample.line
+Guernsey_crop <- as(buffer_outline_fixed, "Spatial")
+class(Guernsey_crop)
+mapview(Guernsey_crop)
 
 Guernsey_points_lines <- sample.line(Guernsey_crop, n = 7) ## equally place the number of farms along the coastline 
 class(Guernsey_points_lines)
 plot(Guernsey_points_lines)
 
 Guernsey_points <- st_as_sf(Guernsey_points_lines)
-mapview(Guernsey_points)
+mapview(Guernsey_points, color = "red") + mapview(Guernsey_world_crop)
+
+st_distance(Guernsey_points, Guernsey_world_crop)
+# Units: [m]
+#          [,1]
+# [1,] 992.6726
+# [2,] 992.6273
+# [3,] 992.6395
+# [4,] 992.3816
+# [5,] 992.3755
+# [6,] 992.7368
+# [7,] 992.6771
+## close enough to 1 km
+
 
 ## now prep dataframe for lat lon points
 ggy_pts <- st_centroid(Guernsey_points)
@@ -676,7 +711,6 @@ write_csv(farms_ggy_final, here("marine/bivalve/bivalve_farms/data/bivalve_sites
 ```
 
 
-
 ## Slovenia
  - http://www.fao.org/fishery/countrysector/naso_slovenia/en#:~:text=From%20the%20345%20aquaculture%20facilities,facilities%20are%20for%20shellfish%20farming.
  - From the 345 aquaculture facilities in Slovenia, there are 26 marine aquaculture facilities, 1 of which is for fish farming, while the remaining **20 facilities are for shellfish farming**. 
@@ -685,38 +719,68 @@ Source:
 National Aquaculture Sector Overview. Slovenia, 2005. , National Aquaculture Sector Overview Fact Sheets. Food and Agriculture Organization of the United Nations.
 
 ```{r}
-world <- rnaturalearth::ne_coastline(scale = 10) #world map with 10m resolution
-plot(world)
+# world <- rnaturalearth::ne_coastline(scale = 10) #world map with 10m resolution
+# plot(world)
 
 slovenia <- ne_countries(scale = 10, country = "Slovenia", returnclass = "sf")
 
 #info of our spatial vector object
-slovenia
 mapview(slovenia)
 plot(slovenia)
 
 world <- st_as_sf(world)
 
-slovenia_world_crs <- st_transform(slovenia, crs(world))
+slovenia_world_crs <- st_transform(slovenia, crs(coast_raw))
 
-slovenia_world_crop <- st_crop(world, slovenia_world_crs) ## crop to slovenia extent
+slovenia_world_crop <- st_crop(coast_raw, slovenia_world_crs) %>% ## crop to slovenia extent
+  filter(FID %in% c(46261, 46262)) %>%
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>% ## merge all the geometries into one
+  ungroup()
+
+  
 plot(slovenia_world_crop)
 mapview(slovenia_world_crop)
 
-slovenia_crop <- as(slovenia_world_crop, "Spatial")
-plot(slovenia_crop)
+
+s_meters <- st_transform(slovenia_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(s_meters)
+
+buff <- st_buffer(s_meters, dist = 1000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+plot(buff)
+
+linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(slovenia_world_crop))
+
+linestring_fix <- st_difference(buffer_outline_fixed, slovenia) ## now grab only the outline 
+mapview(linestring_fix)
+
+## make a spatiallinesdataframe so we can use sample.line
+slovenia_crop <- as(linestring_fix, "Spatial")
+class(slovenia_crop)
 mapview(slovenia_crop)
 
-slovenia_points_lines <- sample.line(slovenia_crop, n = 86) ## equally place the number of farms along the coastline 
+
+slovenia_points_lines <- sample.line(slovenia_crop, n = 41) ## equally place the number of farms along the coastline 
 class(slovenia_points_lines)
 plot(slovenia_points_lines)
 
-slovenia_points <- st_as_sf(slovenia_points_lines)
+slovenia_points <- st_as_sf(slovenia_points_lines) %>%
+  mutate(new_id = 1:41)
 mapview(slovenia_points)
 
 ## Now filter out the points that fall outside of Slovenia
-slovenia_points_final <- slovenia_points[12:31,]
+slovenia_points_final <- slovenia_points[2:21,]
 mapview(slovenia_points_final)
+
+mean(st_distance(slovenia_points_final, slovenia_world_crop))
+# 998.6394 [m]
+## close enough to 1 km
 
 
 ## prep to get lat lon 
@@ -754,10 +818,9 @@ Lukin, A., 2014. Spatial Planning For Marine Aquaculture, Croatia, Zadar County 
 world <- ne_coastline(scale = 110) #world map with 110m resolution
 plot(world)
 
-croatia <- ne_countries(scale = 110, country = "Croatia", returnclass = "sf")
+croatia <- ne_countries(scale = 10, country = "Croatia", returnclass = "sf")
 
 #info of our spatial vector object
-croatia
 mapview(croatia)
 plot(croatia)
 
@@ -765,24 +828,56 @@ world <- st_as_sf(world)
 
 croatia_world_crs <- st_transform(croatia, crs(world))
 
-croatia_world_crop <- st_crop(world, croatia_world_crs) ## crop to croatia extent
-plot(croatia_world_crop)
-mapview(croatia_world_crop)
+croatia_world_crop <- st_crop(world, croatia_world_crs) 
 
-croatia_crop <- as(croatia_world_crop, "Spatial")
+croatia_world_crop <- st_intersection(croatia_world_crop, croatia)
+mapview(croatia_world_crop)
+# %>% ## crop to croatia extent
+#   filter(!(FID %in% c(46278:46281, 643461:643463, 156618, 46260:46269, 46178:46182, 46177, 206670:206671))) %>%
+#   mutate(new_id = 1) %>%
+#   group_by(new_id) %>%
+#   summarise(geometry = st_union(geometry)) %>% ## merge all the geometries into one
+#   ungroup()
+# mapview(croatia_world_crop)
+
+
+c_meters <- st_transform(croatia_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(c_meters)
+
+buff <- st_buffer(c_meters, dist = 40000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+plot(buff)
+
+linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(croatia_world_crop))
+
+linestring_fix <- st_difference(buffer_outline_fixed, croatia) ## now grab only the outline 
+mapview(linestring_fix)
+
+
+croatia_crop <- as(linestring_fix, "Spatial")
 plot(croatia_crop)
 mapview(croatia_crop)
 
-croatia_points_lines <- sample.line(croatia_crop, n = 340) ## equally place the number of farms along the coastline 
+croatia_points_lines <- sample.line(croatia_crop, n = 640) ## equally place the number of farms along the coastline 
 class(croatia_points_lines)
 plot(croatia_points_lines)
 
-croatia_points <- st_as_sf(croatia_points_lines)
+croatia_points <- st_as_sf(croatia_points_lines) %>%
+  mutate(new_id = 1:640)
 mapview(croatia_points)
 
 ## Now filter out the points that fall outside of croatia: rows 57-70
-croatia_points_final <- croatia_points[2:267,]
+croatia_points_final <- croatia_points %>%
+  dplyr::filter(new_id %in% c(2:24, 395:640)) %>%
+  dplyr::filter(!(new_id %in% c(419, 533, 561)))
 mapview(croatia_points_final)
+
+mean(st_distance(croatia_points_final, croatia_world_crop))
+
 
 ## get lat lon
 hrv_pts <- st_centroid(croatia_points_final)
@@ -965,42 +1060,70 @@ Source:
 FAO Fisheries & Aquaculture - National Aquaculture Sector Overview - India, 2014. National Aquaculture Sector Overview Fact Sheets.
 
 ```{r}
-world <- ne_coastline(scale = 10) #world map with 10m resolution
-plot(world)
+# world <- ne_coastline(scale = 10) #world map with 10m resolution
+# plot(world)
 
 ## read in state shapefile
 kerala_state <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/India/Kerala/state.shp"))
 
 #info of our spatial vector object
-kerala_state
 mapview(kerala_state)
 plot(kerala_state)
 
-world <- st_as_sf(world)
+# world <- st_as_sf(world)
 
-kerala_state_world_crs <- st_transform(kerala_state, crs(world))
+kerala_state_world_crs <- st_transform(kerala_state, crs(coast_raw))
 
-kerala_state_world_crop <- st_crop(world, kerala_state_world_crs) ## crop to kerala extent
-plot(kerala_state_world_crop)
+kerala_state_world_crop <- st_crop(coast_raw, kerala_state_world_crs) %>% ## crop to kerala extent
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>% ## merge all the geometries into one
+  ungroup()
 mapview(kerala_state_world_crop)
 
-kerala_state_crop <- as(kerala_state_world_crop, "Spatial")
+
+k_meters <- st_transform(kerala_state_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(k_meters)
+
+buff <- st_buffer(k_meters, dist = 7000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+plot(buff)
+
+linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(kerala_state_world_crop))
+
+india <- ne_countries(scale = 10, country = "India", returnclass = "sf")
+mapview(india)
+
+linestring_fix <- st_difference(buffer_outline_fixed, india) ## now grab only the outline 
+mapview(linestring_fix)
+mapview(kerala_state_world_crop)
+mapview(kerala_state)
+
+kerala_state_crop <- as(linestring_fix, "Spatial")
 plot(kerala_state_crop)
 mapview(kerala_state_crop)
 
-kerala_state_points_lines <- sample.line(kerala_state_crop, n = 250) ## equally place the number of farms along the coastline 
+kerala_state_points_lines <- sample.line(kerala_state_crop, n = 280) ## equally place the number of farms along the coastline 
 class(kerala_state_points_lines)
 plot(kerala_state_points_lines)
 
-kerala_state_points <- st_as_sf(kerala_state_points_lines)
+kerala_state_points <- st_as_sf(kerala_state_points_lines) %>%
+  mutate(new_id = 1:280) 
 mapview(kerala_state_points)
 
-## Now filter out the points that fall outside of kerala_state: rows 57-70
-# kerala_state_points_final <- kerala_state_points[c(1:34,42:67), ]
-# mapview(kerala_state_points_final)
+# Now filter out the points that fall outside of kerala_state: rows 57-70
+kerala_state_points_final <- kerala_state_points %>%
+  filter(new_id %in% c(31:280))
+mapview(kerala_state_points_final)
+
+mean(st_distance(kerala_state_points_final, kerala_state_world_crop))
 
 ## get lat lon
-ind_pts <- st_centroid(kerala_state_points)
+ind_pts <- st_centroid(kerala_state_points_final)
 
 ind_pts_latlon <- st_transform(ind_pts, crs = "+init=epsg:4326") %>%
   dplyr::select(geometry)
@@ -1147,37 +1270,60 @@ Source:
 Park, S., Hong, S., 2012. Revisiting Changing Patterns of North Koreaʹs Fisheries Production: 1990s‐2000s 19.
 
 ```{r}
-world <- ne_coastline(scale = 110) #world map with 110m resolution
-plot(world)
+# world <- ne_coastline(scale = 110) #world map with 110m resolution
+# plot(world)
 
 north_korea <- ne_countries(scale = 110, country = "North Korea", returnclass = "sf")
 
 #info of our spatial vector object
-north_korea
 mapview(north_korea)
 plot(north_korea)
 
-world <- st_as_sf(world)
+# world <- st_as_sf(world)
 
-north_korea_world_crs <- st_transform(north_korea, crs(world))
+north_korea_world_crs <- st_transform(north_korea, crs(coast_raw))
 
-north_korea_world_crop <- st_crop(world, north_korea_world_crs) ## crop to north korea extent
-plot(north_korea_world_crop)
+north_korea_world_crop <- st_crop(coast_raw, north_korea_world_crs) %>% ## crop to north korea extent
+  dplyr::filter(!(FID %in% c(44790, 135067, 44788:44789, 135092, 135103, 87219, 44955))) %>%
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
+
 mapview(north_korea_world_crop)
 
-north_korea_crop <- as(north_korea_world_crop, "Spatial")
+
+nk_meters <- st_transform(north_korea_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(nk_meters)
+
+buff <- st_buffer(nk_meters, dist = 7000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+plot(buff)
+
+linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(north_korea_world_crop))
+
+linestring_fix <- st_difference(buffer_outline_fixed, north_korea) ## now grab only the outline 
+mapview(linestring_fix)
+
+north_korea_crop <- as(linestring_fix, "Spatial")
 plot(north_korea_crop)
 mapview(north_korea_crop)
 
-north_korea_points_lines <- sample.line(north_korea_crop, n = 67) ## equally place the number of farms along the coastline 
+north_korea_points_lines <- sample.line(north_korea_crop, n = 85) ## equally place the number of farms along the coastline 
 class(north_korea_points_lines)
 plot(north_korea_points_lines)
 
-north_korea_points <- st_as_sf(north_korea_points_lines)
+north_korea_points <- st_as_sf(north_korea_points_lines) %>%
+  mutate(new_id = 1:85)
 mapview(north_korea_points)
 
 ## Now filter out the points that fall outside of north_korea: rows 57-70
-north_korea_points_final <- north_korea_points[c(1:34,42:67), ]
+north_korea_points_final <- north_korea_points %>%
+  filter(new_id %in% c(1:32, 46:47, 55:80 ))
 mapview(north_korea_points_final)
 
 # extract lat lon
@@ -1226,31 +1372,59 @@ Suplicy, F.M., Vianna, L.F. de N., Rupp, G.S., Novaes, A.L.T., Garbossa, L.H.P.,
 sta_catarina <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/Brazil/Santa_Catarina/dc172qt8462.shp"))
 mapview(sta_catarina)
 
-world <- ne_coastline(scale = 110) #world map with 110m resolution
-plot(world)
+# world <- ne_coastline(scale = 110) #world map with 110m resolution
+# plot(world)
 
-#info of our spatial vector object
-sta_catarina
-mapview(sta_catarina)
-plot(sta_catarina)
+# world <- st_as_sf(world)
 
-world <- st_as_sf(world)
+sta_catarina_world_crs <- st_transform(sta_catarina, crs(coast_raw))
 
-sta_catarina_world_crs <- st_transform(sta_catarina, crs(world))
+sta_catarina_world_crop <- st_crop(coast_raw, sta_catarina_world_crs) %>% ## crop to santa catarina extent
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
 
-sta_catarina_world_crop <- st_crop(world, sta_catarina_world_crs) ## crop to santa catarina extent
+mapview(sta_catarina_world_crop)
+
+
+sc_meters <- st_transform(sta_catarina_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(sc_meters)
+
+buff <- st_buffer(sc_meters, dist = 7000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+plot(buff)
+
+linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+linestring <- st_cast(linestring, "LINESTRING")
+
+brazil <- ne_countries(scale = 10, country = "Brazil", returnclass = "sf")
+mapview(brazil)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(brazil))
+
+linestring_fix <- st_difference(buffer_outline_fixed, brazil) ## now grab only the outline 
+mapview(linestring_fix)
 plot(sta_catarina_world_crop)
 mapview(sta_catarina_world_crop)
 
-sta_catarina_crop <- as(sta_catarina_world_crop, "Spatial")
+
+
+
+sta_catarina_crop <- as(linestring_fix, "Spatial")
 plot(sta_catarina_crop)
 mapview(sta_catarina_crop)
 
-sta_catarina_points_lines <- sample.line(sta_catarina_crop, n = 27) ## equally place the number of farms along the coastline 
+sta_catarina_points_lines <- sample.line(sta_catarina_crop, n = 4) ## equally place the number of farms along the coastline 
 class(sta_catarina_points_lines)
 plot(sta_catarina_points_lines)
 
-sta_catarina_points <- st_as_sf(sta_catarina_points_lines)
+sta_catarina_points <- st_as_sf(sta_catarina_points_lines) %>%
+  mutate(new_id = 1:28) %>%
+  filter(new_id != 12)
 mapview(sta_catarina_points)
 
 
@@ -1315,8 +1489,8 @@ provinces_farms <- provinces %>%
 mapview(provinces_farms)
 
 
-world <- ne_coastline(scale = 50) #world map with 50m resolution
-plot(world)
+# world <- ne_coastline(scale = 50) #world map with 50m resolution
+# plot(world)
 
 # start with Capiz
 capiz <- provinces_farms %>%
@@ -1324,47 +1498,94 @@ capiz <- provinces_farms %>%
 mapview(capiz)
 plot(capiz)
 
-world <- st_as_sf(world)
+# world <- st_as_sf(world)
 
-capiz_world_crs <- st_transform(capiz, crs(world))
+capiz_world_crs <- st_transform(capiz, crs(coast_raw))
 
-capiz_world_crop <- st_crop(world, capiz_world_crs) ## crop to extent
-plot(capiz_world_crop)
+capiz_world_crop <- st_crop(coast_raw, capiz_world_crs) %>% ## crop to extent
+  dplyr::filter(!(FID %in% c(443449, 439815, 443448, 439801))) %>%
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
+
 mapview(capiz_world_crop)
 
-capiz_crop <- as(capiz_world_crop, "Spatial")
+
+cp_meters <- st_transform(capiz_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(cp_meters)
+
+buff <- st_buffer(cp_meters, dist = 7000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+
+linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+linestring <- st_cast(linestring, "LINESTRING")
+
+philippines <- ne_countries(scale = 10, country = "Philippines", returnclass = "sf")
+mapview(philippines)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(philippines))
+
+linestring_fix <- st_difference(buffer_outline_fixed, philippines) ## now grab only the outline 
+mapview(linestring_fix)
+
+capiz_crop <- as(linestring_fix, "Spatial")
 plot(capiz_crop)
 mapview(capiz_crop)
 
-capiz_points_lines <- sample.line(capiz_crop, n = 300) ## equally place the number of farms along the coastline 
+capiz_points_lines <- sample.line(capiz_crop, n = 151) ## equally place the number of farms along the coastline 
 class(capiz_points_lines)
 plot(capiz_points_lines)
 
-capiz_points <- st_as_sf(capiz_points_lines)
+capiz_points <- st_as_sf(capiz_points_lines) %>%
+  mutate(new_id = 1:302) %>%
+  filter(!(new_id %in% c(150, 146))) %>%
+  dplyr::select(-new_id)
 mapview(capiz_points)
 
-
-
-world <- ne_coastline(scale = 110) #world map with 110m resolution
-plot(world)
 
 # now do negros
 negros <- provinces_farms %>%
   dplyr::filter(NAME_1 == "Negros Occidental")
 mapview(negros)
-plot(negros)
 
-world <- st_as_sf(world)
 
-negros_world_crs <- st_transform(negros, crs(world))
+negros_world_crs <- st_transform(negros, crs(coast_raw))
 
-negros_world_crop <- st_crop(world, negros_world_crs)
+negros_world_crop <- st_crop(coast_raw, negros_world_crs) %>%
+  filter(FID %in% c(224916:224917, 224908:224912)) %>%
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
 
-negros_world_crop <- head(negros_world_crop, 1)
-plot(negros_world_crop)
 mapview(negros_world_crop)
 
-negros_crop <- as(negros_world_crop, "Spatial")
+
+n_meters <- st_transform(negros_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(n_meters)
+
+buff <- st_buffer(n_meters, dist = 5000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+
+linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+linestring <- st_cast(linestring, "LINESTRING")
+
+philippines <- ne_countries(scale = 10, country = "Philippines", returnclass = "sf")
+mapview(philippines)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(philippines))
+
+linestring_fix <- st_difference(buffer_outline_fixed, philippines) ## now grab only the outline 
+mapview(linestring_fix)
+
+negros_crop <- as(linestring_fix, "Spatial")
 plot(negros_crop)
 mapview(negros_crop)
 
@@ -1376,34 +1597,57 @@ negros_points <- st_as_sf(negros_points_lines)
 mapview(negros_points)
 
 
-world <- ne_coastline(scale = 110) #world map with 50m resolution
-plot(world)
-
 # now do samar 
 samar <- provinces_farms %>%
   dplyr::filter(NAME_1 == "Samar")
 mapview(samar)
-plot(samar)
 
-world <- st_as_sf(world)
+samar_world_crs <- st_transform(samar, crs(coast_raw))
 
-samar_world_crs <- st_transform(samar, crs(world))
+# marabut to veriato
 
-samar_world_crop <- st_crop(world, samar_world_crs)
+samar_world_crop <- st_crop(coast_raw, samar_world_crs) %>%
+  filter(FID %in% c(222688:222691, 222671:222673)) %>%
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
+  
 
-samar_world_crop <- head(samar_world_crop, 1)
-plot(samar_world_crop)
 mapview(samar_world_crop)
 
-samar_crop <- as(samar_world_crop, "Spatial")
+sm_meters <- st_transform(samar_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(sm_meters)
+
+buff <- st_buffer(sm_meters, dist = 3000) # buffer out to 1 km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+
+linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+linestring <- st_cast(linestring, "LINESTRING")
+
+philippines <- ne_countries(scale = 10, country = "Philippines", returnclass = "sf")
+mapview(philippines)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(philippines))
+
+linestring_fix <- st_difference(buffer_outline_fixed, philippines) ## now grab only the outline 
+mapview(linestring_fix)
+
+samar_crop <- as(linestring_fix, "Spatial")
 plot(samar_crop)
 mapview(samar_crop)
 
-samar_points_lines <- sample.line(samar_crop, n = 250) ## equally place the number of farms along the coastline 
+samar_points_lines <- sample.line(samar_crop, n = 283) ## equally place the number of farms along the coastline 
 class(samar_points_lines)
 plot(samar_points_lines)
 
-samar_points <- st_as_sf(samar_points_lines)
+samar_points <- st_as_sf(samar_points_lines) %>%
+  mutate(new_id = 1:283) %>%
+  filter(!(new_id %in% c(2:13, 108:109, 98:100, 79, 74:76, 62:66, 52:53, 14:16, 95:96))) %>%
+  dplyr::select(-new_id)
 mapview(samar_points)
 
 
