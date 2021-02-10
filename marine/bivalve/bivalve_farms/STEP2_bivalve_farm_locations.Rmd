@@ -50,6 +50,9 @@ unique(fao_bivalve$country)
 # [33] "Russian Federation"       "Slovenia"                 "South Africa"             "Spain"                   
 # [37] "Sweden"                   "Taiwan Province of China" "Thailand"                 "United Kingdom"          
 # [41] "United States of America" "Viet Nam"       
+
+coast_raw <- st_read("/home/shares/food-systems/Aquaculture_mapping/Data/Jared/Marine_Brackish/raw_data/Coastline/lines.shp")
+mapview(coast_raw)
 ```
 
 ## explore
@@ -862,6 +865,7 @@ OLD WAY:
 ```{r}
 
 # gadm <- st_read("/home/shares/food-systems/Aquaculture_mapping/Data/Jared/Marine_Brackish/manipulated_data/GADM36/gadm36molcountries_simp.shp")
+# plot(gadm)
 # 
 #  TWN_shp <- gadm %>%
 #   filter(GID_0 == "TWN") %>%

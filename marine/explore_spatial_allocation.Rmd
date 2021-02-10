@@ -1,0 +1,109 @@
+---
+title: "Explore spatial allocation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(raster)
+library(tidyverse)
+library(stringr)
+library(rgdal)
+library(PBSmapping)
+library(maptools)
+library(sf)
+library(lwgeom)
+library(data.table)
+library(here)
+library(mapview)
+library(janitor)
+library(rnaturalearth)
+library(spatialEco)
+
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+
+```
+
+Read in and summarise all data quality farm data 
+```{r}
+bivalves <- read_csv(here::here("marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "bivalve") %>%
+  dplyr::select(-X1, -subregion)
+  
+shrimp <- read_csv(here::here("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "shrimp") %>%
+  dplyr::select(-area_ha, -prod)
+  
+marine_fish <- read_csv(here::here("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "marine_fish_general") %>%
+  dplyr::select(-rgn_production, -subrgn_name)
+  
+salmon <- read_csv(here::here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv")) %>%
+  mutate(group = "salmon") %>%
+  dplyr::select(-subregion)
+  
+crustaceans <- read_csv(here::here("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "crustaceans") %>%
+  dplyr::select(-prod, -sub_rgn)
+  
+tuna <- read_csv(here::here("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "tuna") 
+
+all_farms <- rbind(shrimp, bivalves, marine_fish, salmon, crustaceans, tuna)
+
+all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
+                         crs = crs(gadm_latlon), agr = "constant")
+
+mapview(all_farms_sf)
+
+n_farms <- all_farms %>%
+  group_by(iso3c, data_quality, group) %>%
+  summarise(n_farms = n()) %>%
+  ungroup() %>%
+  group_by(iso3c) %>%
+  mutate(avg_quality = mean(data_quality)) %>%
+  ungroup()
+
+## n_farms shows us the number of points that will need spatial allocation within each country according to our new rules (any of the rows that score 0.333 in the data quality column)
+
+n_countries <- n_farms %>%
+  group_by(data_quality, group) %>%
+  summarise(n_countries = n()) %>%
+  ungroup() %>%
+  group_by(group) %>%
+  mutate(total_countries = sum(n_countries)) %>%
+  ungroup() %>%
+  mutate(percent = n_countries/total_countries)
+
+## n_countries shows us the number of countries that will need spatial allocation within each species group according to our new rules (any of the rows that score 0.333 in the data quality column)
+
+n_countries_allocated <- n_countries %>%
+  dplyr::filter(data_quality == 0.333)
+sum(n_countries_allocated$n_countries)
+## 31 countries/species group combos that will need spatial allocation according to our rules (7-10km to port, depth requirements)
+
+
+n_countries_no_data <- n_countries %>%
+  dplyr::filter(data_quality == 0.0)
+sum(n_countries_no_data$n_countries) # 14
+## 14 countries/species group combos that will need spatial allocation according to our rules (7-10km to port, depth requirements)
+
+sum(n_countries_allocated$n_countries)
+
+
+## these were the rules for the data quality column: 
+# For each point, we will add a column for "data quality". It will be scored as very good (1.0), good (0.667), fair (0.333) or poor (0.0). 
+#  - Very Good qualifications: Locations taken from leases, or from a map with specific locations (i.e. EMOD, ASC, HELCOM etc.).
+#  - Good qualifications: Locations are projected or it is a only sample of total locations (NASO maps). Google maps estimates. 
+#  - Fair qualifications: A specific number of farms are placed on the coast, without knowing exact locations. Or Per province/state locations (i.e. placing a point randomly in each province or sub regional location). 
+#  - Bad qualifications: No data at all (randomly placed point(s) along the coast, a non-specific number). 
+```
+
+
+
+
