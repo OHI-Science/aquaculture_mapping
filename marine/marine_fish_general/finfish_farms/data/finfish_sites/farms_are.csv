@@ -1,2 +1,2 @@
-lat,lon,iso3c,data_quality
-25.604715925918068,56.340214330776234,ARE,0.333
+lat,lon,iso3c,data_quality,action_needed
+25.604715925918068,56.340214330776234,ARE,2,state/province based suitability

@@ -1,2 +1,2 @@
-lat,lon,iso3c,data_quality
-11.069927194335508,103.64594001534627,KHM,0
+lat,lon,iso3c,data_quality,action_needed
+11.069927194335508,103.64594001534627,KHM,1,country based suitability

@@ -29,6 +29,7 @@ library(mapview)
 library(janitor)
 library(rnaturalearth)
 library(spatialEco)
+library(countrycode)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
 fao_shrimp <- read_csv("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv") %>%
@@ -45,6 +46,8 @@ unique(fao_shrimp$country)
 # [25] "Nicaragua"                "Panama"                   "Peru"                     "Philippines"             
 # [29] "Saudi Arabia"             "Sri Lanka"                "Taiwan Province of China" "Thailand"                
 # [33] "United States of America" "Venezuela, Boliv Rep of"  "Viet Nam" 
+
+coast_raw <- st_read("/home/shares/food-systems/Aquaculture_mapping/Data/Jared/Marine_Brackish/raw_data/Coastline/lines.shp")
 ```
 
 ## explore
@@ -122,6 +125,36 @@ gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id")
 
 ```
 
+Now we will map the remaining countries with shrimp farms that are not included in the ASC dataset. Workflow will be as follows: 
+ - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
+ - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
+ -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
+ - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan). 
+ - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
+
+For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
+ 5: Very Good qualifications - Locations taken from leases, or from a map with specific locations
+   - Must not intersect with land mask
+   - "Land mask"
+
+4: Good qualifications - Locations are projected or it is a only sample of total locations
+   - Must not intersect with land mask
+   - "Land mask"
+
+3: Fair qualifications - A specific number of farms are placed on the coast, without knowing exact locations. 
+   - Must be allocated spatially
+   - Must not intersect with land mask
+   - Flagged as "Allocate spatially"
+
+2: Bad qualifications -  We know that aquaculture is limited to a specific subregion/state, but do not know how many or where the farms are. 
+   - Must be allocated using suitability analysis.
+   - Flagged as 2 and "state/province suitability"
+
+1: Very Bad qualifications - No data at all.
+   - Must be allocated using suitability analysis.
+   - Flagged as 1 and "country suitability" 
+
+
 
 # Map data from ASC (contains 19/35 countries)
 
@@ -133,7 +166,7 @@ https://gis.asc-aqua.org/arcgis_app/
 
 
 ```{r}
-library(countrycode)
+
 # get iso3c codes
 iso <-   data.frame(iso3c = countrycode(ASC_shrimp$crt_cnt, origin = 'country.name', destination = 'iso3c'))
 
@@ -158,27 +191,13 @@ farms_all_fin <- data.frame(do.call(rbind, st_geometry(all_pts_latlon)))
 names(farms_all_fin) <- c("lon", "lat")
 farms_all_fin <- farms_all_fin %>%
   cbind(iso3c = all_pts_latlon$iso3c) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 ## save farm location
 write.csv(farms_all_fin, here("marine/shrimp/shrimp_farms/data/farm_sites/ASC_shrimp_farm_lat_lon.csv"), row.names = FALSE)
 
 ```
-
-
-Now we will map the remaining countries with shrimp farms that are not included in the ASC dataset. Workflow will be as follows: 
- - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
- - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
- -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
- - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan). 
- - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
-
-For each point, we will add a column for "data quality". It will be scored as very good (1.0), good (0.667), fair (0.333) or poor (0.0). 
- - Very Good qualifications: Locations taken from leases, or from a map with specific locations (i.e. EMOD, ASC, HELCOM etc.).
- - Good qualifications: Locations are projected or it is a only sample of total locations (NASO maps). Google maps estimates.
- - Fair qualifications: A specific number of farms are placed on the coast, without knowing exact locations. Or Per province/state locations (i.e. placing a point randomly in each province) or sub regional location. 
- - Bad qualifications: No data at all (randomly placed point(s) along the coast, a non-specific number).
-
 
 
 # Brazil
@@ -209,7 +228,8 @@ farms_bra <- data.frame(lat=c(-0.952238, -2.365963, -2.859201, -3.646201, -5.100
                         lon=c(-48.466718, -44.263791, -41.551117, -38.627546, -35.667111, -34.818058, -34.840892, -35.739681, -37.030238, -38.515139, -48.268714, -48.393581),
                         area_ha = c(70, 64, 425, 982, 1752, 420, 670, 20, 47, 1510, 50, 200)) %>%
   mutate(iso3c = "BRA") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_bra, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_bra.csv"))
 
@@ -245,7 +265,8 @@ farms_brn <- data.frame(lat=c(4.716865, 4.722253, 4.742089, 4.761099, 4.781321, 
                         lon=c(114.535353, 114.541318, 114.574539, 114.610558, 114.607222, 115.043816),
                         area_ha = c(14, 40, 92, 0.4, 200, 51.471511)) %>%
   mutate(iso3c = "BRN") %>%
-  mutate(data_quality = 0.667)
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_brn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_brn.csv"))
 
@@ -278,7 +299,8 @@ farms_khm <- data.frame(lat=c(10.554565566560438, 10.4453604331596, 11.739429871
                         lon=c(104.21523743679825, 104.404236625661, 102.8937349735425, 103.65371151346486),
                         area_ha = c(1516, 459, 26762, 6388)) %>%
   mutate(iso3c = "KHM") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_khm, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_khm.csv"))
 
@@ -307,34 +329,53 @@ guana_punta <- provinces  %>%
 
 mapview(guana_punta)
 
-world <- ne_coastline(scale = 50) #world map with 50m resolution
-plot(world)
+# world <- ne_coastline(scale = 50) #world map with 50m resolution
+# plot(world)
 
-world <- st_as_sf(world)
+# world <- st_as_sf(world)
 
-costa_world_crs <- st_transform(guana_punta, crs(world))
+costa_world_crs <- st_transform(guana_punta, crs(coast_raw))
 
-costa_world_crop <- st_crop(world, costa_world_crs) ## crop to costa rica extent 
-plot(costa_world_crop)
+costa_world_crop <- st_crop(coast_raw, costa_world_crs) %>% ## crop to costa rica extent 
+  filter(FID %in% c(245909:245926)) %>% ## filter for the correct coastline 
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
 mapview(costa_world_crop)
 
-costa_crop <- as(costa_world_crop, "Spatial")
-plot(costa_crop)
+c_meters <- st_transform(costa_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(c_meters)
+
+buff <- st_buffer(c_meters, dist = 7000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+
+linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(costa_world_crop))
+mapview(buffer_outline_fixed)
+
+costa_rica <- ne_countries(scale = 10, country = "Costa Rica", returnclass = "sf")
+mapview(costa_rica)
+
+linestring_fix <- st_difference(buffer_outline_fixed, costa_rica) ## now grab only the outline 
+mapview(linestring_fix)
+
+
+costa_crop <- as(linestring_fix, "Spatial")
 mapview(costa_crop)
 
-costa_points_lines <- sample.line(costa_crop, n = 121) ## equally place the number of farms along the coastline 
-class(costa_points_lines)
-plot(costa_points_lines)
+costa_points_lines <- sample.line(costa_crop, n = 106) ## equally place the number of farms along the coastline 
 
-costa_points <- st_as_sf(costa_points_lines)
+costa_points <- st_as_sf(costa_points_lines) %>%
+  mutate(new_id = 1:318) %>%
+  filter(new_id %in% c(1:88, 105:106))
 mapview(costa_points)
 
-## Now filter out the points that fall outside of costa rica 
-costa_points_final <- costa_points[4:93,]
-mapview(costa_points_final)
 
-
-cri_pts <- st_centroid(costa_points_final)
+cri_pts <- st_centroid(costa_points)
 
 cri_pts_latlon <- st_transform(cri_pts, crs = "+init=epsg:4326") %>%
   dplyr::select(geometry)
@@ -344,7 +385,8 @@ names(farms_cri) <- c("lon", "lat")
 
 farms_cri_final <- farms_cri %>%
   mutate(iso3c = "CRI") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 3) %>%
+  mutate(action_needed = "Allocate spatially")
 
 ## visualize it 
 farms_cri <-  st_as_sf(farms_cri, coords = c("lon", "lat"), 
@@ -378,7 +420,8 @@ farms_cub <- data.frame(lat=c(19.841789, 20.047065),
                         lon=c(-77.737212, -77.593449),
                         area_ha = c(NA, NA)) %>%
   mutate(iso3c = "CUB") %>%
-  mutate(data_quality = 0.667)
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_cub, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_cub.csv"))
 
@@ -407,7 +450,8 @@ farms_slv <- data.frame(lat=c(13.336985, 13.354459),
                         lon=c(-89.014470, -87.863771),
                         area_ha = c(8.2, 50)) %>%
   mutate(iso3c = "SLV") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_slv, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_slv.csv"))
 
@@ -428,7 +472,7 @@ NASO Maps
 http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/iran/en/
 
 Source: 
-NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
+NASO aquaculture maps collection , 2010. Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
 
 ```{r}
 ## read in thailand shp file
@@ -459,7 +503,8 @@ farms_irn <- data.frame(do.call(rbind, st_geometry(irn_pts_latlon)))
 names(farms_irn) <- c("lon", "lat")
 farms_irn <- farms_irn %>%
   mutate(iso3c="IRN") %>%
-  mutate(data_quality = 0.667)
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask")
 
 
 write_csv(farms_irn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
@@ -471,94 +516,6 @@ farms_irn <-  st_as_sf(farms_irn, coords = c("lon", "lat"),
 mapview(farms_irn)
 ```
 
-old methods: 
-```{r}
-# iran <- ne_countries(scale = 10, country = "Iran", returnclass = "sf")
-# mapview(iran)
-# 
-# world <- ne_coastline(scale = 10) #world map with 10m resolution
-# plot(world)
-# 
-# world <- st_as_sf(world)
-# 
-# iran_world_crs <- st_transform(iran, crs(world))
-# 
-# iran_world_crop <- st_crop(world, iran_world_crs) ## crop to iran extent
-# plot(iran_world_crop)
-# mapview(iran_world_crop)
-# 
-# iran_world_crop <- head(iran_world_crop, 2) ## filter out lines not in iran
-# mapview(iran_world_crop)
-# 
-# iran_world_crop <- tail(iran_world_crop, 1)
-# 
-# iran_crop <- as(iran_world_crop, "Spatial")
-# plot(iran_crop)
-# mapview(iran_crop)
-# 
-# 
-# 
-# iran_points_lines <- sample.line(iran_crop, n = 221) ## equally place the number of farms along the coastline 
-# class(iran_points_lines)
-# plot(iran_points_lines)
-# 
-# iran_points <- st_as_sf(iran_points_lines)
-# mapview(iran_points)
-# 
-# ## Now filter out the points that fall outside of iran
-# iran_points_final <- iran_points[17:221,]
-# mapview(iran_points_final)
-# 
-# 
-# irn_pts <- st_centroid(iran_points_final)
-# 
-# irn_pts_latlon <- st_transform(irn_pts, crs = "+init=epsg:4326") %>%
-#   dplyr::select(geometry)
-# 
-# farms_irn <- data.frame(do.call(rbind, st_geometry(irn_pts_latlon)))
-# names(farms_irn) <- c("lon", "lat")
-# 
-# farms_irn_final <- farms_irn %>%
-#   mutate(iso3c = "IRN")
-# 
-# ## visualize it 
-# farms_irn <-  st_as_sf(farms_irn, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_irn)
-# 
-# ## write to farms folder 
-# write_csv(farms_irn_final, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
-
-```
- 
- 
-old old methods:
- - From google maps: 
-    - Sea waves TRD: 26.790754, 55.396608: 582 hectares 
-    - Iran Aquatic: 27.135585, 56.887211: 1877 hectares 
-    - Technoshrimp: 29.227964, 50.709040: 1303 hectares 
-    - Shrimp Breeders Delvar site: 28.770827, 51.046329: 312 hectares
-    - Pars Abzistan Shrimp & Fish Hatchery: 28.781671, 51.048787: 280 hectares
-    - Shrimp Marjan: 27.851429, 51.984108: 156.5493 hectares
-    - Shrimp Aquaculture: 26.671137, 55.902159: 31 hectares 
-    - Pardis: looks like indoor, don't include
-    - Sontderaf: looks like indoor, don't include
-    
-```{r}
-# farms_irn <- data.frame(lat=c(26.790754, 27.135585, 29.227964, 28.770827, 28.781671, 27.851429, 26.671137),
-#                         lon=c(55.396608, 56.887211, 50.709040, 51.046329, 51.048787, 51.984108, 55.902159),
-#                         area_ha = c(582, 1877, 1303, 312, 280, 156.5493, 31)) %>%
-#   mutate(iso3c = "IRN")
-# 
-# write_csv(farms_irn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_irn.csv"))
-# 
-# ## visualize it 
-# farms_irn <-  st_as_sf(farms_irn, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_irn)
-```
 
  
 # Japan
@@ -573,7 +530,8 @@ farms_jpn <- data.frame(lat=c(31.182129),
                         lon=c(130.604815),
                         area_ha = c(NA)) %>%
   mutate(iso3c = "JPN") %>%
-  mutate(data_quality = 0.0)
+  mutate(data_quality = 1) %>%
+  mutate(action_needed = "country based suitability")
 
 write_csv(farms_jpn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_jpn.csv"))
 
@@ -601,7 +559,8 @@ farms_kor <- data.frame(lat=c(36.752683),
                         lon=c(126.150252),
                         area_ha = c(672)) %>%
   mutate(iso3c = "KOR") %>% 
-  mutate(data_quality = 0.0)
+  mutate(data_quality = 1) %>%
+  mutate(action_needed = "country based suitability")
 
 write_csv(farms_kor, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_kor.csv"))
 
@@ -630,10 +589,10 @@ Farms:
  - AIR HANGAT, LANGKAWI, KEDAH: 6.433288, 99.826952
  - TAMAN AKUAKULTUR SEBATU MELAKA: 2.108604, 102.463536
  - TAMAN AKUAKULTUR LKIM TELAGA AIR, SARAWAK: 1.676758, 110.210032
- - KG. MERCHONG, PEKAN, PAHANG: 3.018320, 103.430156
+ - KG. MERCHONG, PEKAN, PAHANG: 3.018046544221823, 103.43838831493285
  - KG. PENGKALAN GELAP, SETIU, TERENGGANU: 5.674088, 102.721589
  - KG. PASIR PUTEH, MARANG, TERENGGANU: 4.984545, 103.328932
- - PENARIK, SETIU, TERENGGANU: 5.596019, 102.826214
+ - PENARIK, SETIU, TERENGGANU: 5.597252273526056, 102.82739417198427
  - TANJUNG MANIS, SARAWAK: 2.197050, 111.183470
  - RUNGKUP HILIR, PERAK: 3.888025, 100.704595
  - SG. NIPAH, SABAK BERNAM, SELANGOR: 3.663462, 100.975557
@@ -641,11 +600,12 @@ Farms:
  
 Now lets map the farms 
 ```{r}
-farms_mys <- data.frame(lat=c(6.433288, 2.108604, 1.676758, 3.018320, 5.674088, 4.984545, 5.596019, 2.197050, 3.888025, 3.663462, 3.203638),
-                        lon=c(99.826952, 102.463536, 110.210032, 103.430156, 102.721589, 103.328932, 102.826214, 111.183470, 100.704595, 100.975557, 103.446051),
+farms_mys <- data.frame(lat=c(6.433288, 2.108604, 1.676758, 3.018046544221823, 5.674088, 4.984545, 5.597252273526056, 2.197050, 3.888025, 3.663462, 3.203638),
+                        lon=c(99.826952, 102.463536, 110.210032, 103.43838831493285, 102.721589, 103.328932, 102.82739417198427, 111.183470, 100.704595, 100.975557, 103.446051),
                         area_ha =mys_area) %>%
   mutate(iso3c = "MYS") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_mys, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_mys.csv"))
 
@@ -678,7 +638,8 @@ farms_mmr <- data.frame(lat=c(20.117197, 15.967665, 16.441903, 16.100756, 13.436
                         lon=c(92.884433, 94.337465, 96.371311, 97.581799, 98.323120),
                         area_ha = c(62941.972, 13505.574, 2992.246, NA, NA )) %>%
   mutate(iso3c = "MMR") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_mmr, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_mmr.csv"))
 
@@ -750,7 +711,8 @@ names(farms_phl) <- c("lon", "lat")
 farms_phl_final <- farms_phl %>%
   mutate(iso3c = "PHL") %>%
   mutate(area_ha = 13.35) %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 3) %>%
+  mutate(action_needed = "Allocate spatially")
 
 ## visualize it 
 farms_phl <-  st_as_sf(farms_phl, coords = c("lon", "lat"), 
@@ -783,7 +745,8 @@ farms_sau <- data.frame(lat=c(20.287253, 17.806544),
                         area_ha = c(7189, 206), 
                         prod = c(35000, 3000)) %>%
   mutate(iso3c = "SAU") %>%
-  mutate(data_quality = 0.667)
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_sau, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_sau.csv"))
 
@@ -909,7 +872,8 @@ mapview(farms_put_lka)
 
 farms_all_lka <- rbind(farms_bat_lka_final, farms_put_lka_final) %>%
   dplyr::mutate(iso3c = "LKA") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 3) %>%
+  mutate(action_needed = "Allocate spatially")
 
 ## write to farms folder 
 write_csv(farms_all_lka, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_lka.csv"))
@@ -932,7 +896,8 @@ NA
 farms_twn <- data.frame(lat = c(22.33895226304863),
                         lon = c(120.60403687783123)) %>%
   mutate(iso3c = "TWN") %>%
-  mutate(data_quality = 0.0)
+  mutate(data_quality = 1) %>%
+  mutate(action_needed = "country based suitability")
 
 write_csv(farms_twn, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_twn.csv"))
 
@@ -1047,7 +1012,8 @@ farms_usa <- data.frame(lat=c(28.709786, 28.731171, 28.369096, 26.323330, 26.149
                         lon=c(-96.209726, -96.203732, -96.813910, -97.452599, -97.322755, -88.254304, -159.669555, -85.287438, -82.113475, -80.555590),
                         area_ha = c(159.4461, 80, 40, 445, 182, NA, 104, 22, 3, 0.88)) %>%
   mutate(iso3c = "USA") %>%
-  mutate(data_quality = 0.667)
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_usa, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_usa.csv"))
 
@@ -1071,7 +1037,7 @@ all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"),
 mapview(all_farms_sf)
 
 all_farms_1 <- all_farms %>%
-  dplyr::select(-data_quality)
+  dplyr::select(-data_quality, -action_needed)
 
 write.csv(all_farms_1, here::here("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon.csv"), row.names = FALSE)
 write.csv(all_farms, here::here("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon_data_quality.csv"), row.names = FALSE)

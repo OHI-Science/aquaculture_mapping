@@ -1,2 +1,2 @@
-lat,lon,iso3c,data_quality
--20.005039247819017,57.67022708374523,MUS,0
+lat,lon,iso3c,data_quality,action_needed
+-20.005039247819017,57.67022708374523,MUS,1,country based suitability

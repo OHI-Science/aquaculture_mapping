@@ -76,18 +76,34 @@ gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id")
 ```
 
 
-Now we will map crustacean farms. Workflow will be as follows: 
-
+Now we will map the remaining countries with shrimp farms that are not included in the ASC dataset. Workflow will be as follows: 
  - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
  - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
- -  If there is enough information to know there are a specific number of crustacean farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise.
- - Lastly, if there is no evidence of marine crustacean farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be, i.e. what we've done for Russia for bivalves).
+ -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
+ - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan). 
+ - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
 
-For each point, we will add a column for "data quality". It will be scored as very good (1.0), good (0.667), fair (0.333) or poor (0.0). 
- - Very Good qualifications: Locations taken from leases, or from a map with specific locations (i.e. EMOD, ASC, HELCOM etc.).
- - Good qualifications: Locations are projected or it is a only sample of total locations (NASO maps) 
- - Fair qualifications: A specific number of farms are placed on the coast, without knowing exact locations. Or Per province/state locations (i.e. placing a point randomly in each province) or sub regional location. 
- - Bad qualifications: No data at all (randomly placed point(s) along the coast, a non-specific number), google maps estimates. 
+For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
+ 5: Very Good qualifications - Locations taken from leases, or from a map with specific locations
+   - Must not intersect with land mask
+   - "Land mask"
+
+4: Good qualifications - Locations are projected or it is a only sample of total locations
+   - Must not intersect with land mask
+   - "Land mask"
+
+3: Fair qualifications - A specific number of farms are placed on the coast, without knowing exact locations. 
+   - Must be allocated spatially
+   - Must not intersect with land mask
+   - Flagged as "Allocate spatially"
+
+2: Bad qualifications -  We know that aquaculture is limited to a specific subregion/state, but do not know how many or where the farms are. 
+   - Must be allocated using suitability analysis.
+   - Flagged as 2 and "state/province suitability"
+
+1: Very Bad qualifications - No data at all.
+   - Must be allocated using suitability analysis.
+   - Flagged as 1 and "country suitability" 
  
 ## Indonesia
 Can't find any infomration on crab farm locations in Indonesia. I will place one farm, randomly on the coast of Indonesia. 
@@ -100,7 +116,8 @@ NA
 farms_idn <- data.frame(lat = c(0.3359943014669836),
                         lon = c(117.55582991782983)) %>%
   mutate(iso3c = "IDN") %>%
-  mutate(data_quality = 0.0)
+  mutate(data_quality = 1) %>%
+  mutate(action_needed = "country based suitability")
 
 write_csv(farms_idn, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_idn.csv"))
 
@@ -123,7 +140,8 @@ NA
 farms_chn <- data.frame(lat = c(29.378009267567716),
                         lon = c(121.95043909100868)) %>%
   mutate(iso3c = "CHN") %>%
-  mutate(data_quality = 0.0)
+  mutate(data_quality = 1) %>%
+  mutate(action_needed = "country based suitability")
 
 write_csv(farms_chn, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_chn.csv"))
 
@@ -155,7 +173,8 @@ Rahman, M., Islam, M.A., Haque, S.M., Wahab, A., 2017. Mud Crab Aquaculture and 
 farms_bgd <- data.frame(lat = c(21.876081791221054, 22.325670145257305),
                         lon = c(89.49499697244659, 91.76091935028879)) %>%
   mutate(iso3c = "BGD") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_bgd, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_bgd.csv"))
 
@@ -183,7 +202,8 @@ Myanmar aquaculture and inland fisheries, 2003. Food and Agriculture Organizatio
 farms_mmr <- data.frame(lat = c(15.930407995930784, 18.615093163569437),
                         lon = c(94.76647475697742, 94.24290607527016)) %>%
   mutate(iso3c = "MMR") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_mmr, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_mmr.csv"))
 
@@ -257,7 +277,8 @@ farms_vnm <- data.frame(lat = c(21.186050529545593, 20.840947248646557, 20.45414
                         lon = c(107.60858937642442, 106.77685003845498, 106.59728856581118, 106.3298019452741, 106.03097468374126, 105.87661730467457, 105.6165097440173, 105.92726656633255, 106.58039999954293, 107.19194145855845, 107.74891583338649, 108.15075180169012, 108.48016289264334, 108.92174225624275, 109.19617116389627, 109.29183511586322, 109.23699322130719, 109.1546891359726, 108.03702110643216, 106.7310999868549, 106.78122716883196, 106.69637036338817, 106.54126727713718, 106.1857446280396, 105.59613926925006, 105.12379673906345,  104.88743812284027, 105.79073953273914),
                         prod = c(0, 1650, 0, 0, 1005, 970, 0, 200, 110, 20, 82, 0, 135, 0, 130, 0, 0, 5, 0, 250, 0, 637, 1196, 0, 3466, 0, 170, 0), sub_rgn = c("Quang Ninh", "Hai Phong", "Thai Binh", "Nam Dinh", "Ninh Binh", "Thanh Hoa", "Nghe An", "Ha Tinh", "Quang Binh", "Quang Tri", "TT Hue", "Da Nang", "Quang Nam", "Quang Ngai", "Binh Dinh", "Phu Yen", "Khanh Hoa", "Ninh Thuân", "Binh Thuân", "Long An", "Tien Giang", "Ben Tre", "Tra Vinh", "Soc Trang", "Bac Lieu", "Ca Mau", "Kien Giang", "Can Tho")) %>%
   mutate(iso3c = "VNM") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_vnm, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_vnm.csv"))
 
@@ -313,7 +334,8 @@ phl_lat_lon <- phl_mudcrab_prod %>%
   left_join(provinces, by = "Province") %>%
   dplyr::select(lat, lon, prod, "sub_rgn" = "Province") %>%
   mutate(iso3c = "PHL") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 
 write_csv(phl_lat_lon, here("marine/crustaceans/crustacean_farms/data/crustacean_sites/farms_phl.csv"))
@@ -340,7 +362,7 @@ mapview(all_farms_sf)
 write.csv(all_farms, here::here("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon_data_quality.csv"), row.names = FALSE)
 
 all_farms_1 <- all_farms %>%
-  dplyr::select(-data_quality)
+  dplyr::select(-data_quality, -action_needed)
 
 write.csv(all_farms_1, here::here("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon.csv"), row.names = FALSE)
 ```

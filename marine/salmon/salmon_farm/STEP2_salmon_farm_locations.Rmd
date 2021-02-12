@@ -79,16 +79,35 @@ gadm_df <- tabularaster::as_tibble(gadm_latlon, value = TRUE, cells = TRUE) %>%
 gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id"))
 
 ```
+Now we will map the remaining countries with shrimp farms that are not included in the ASC dataset. Workflow will be as follows: 
+ - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
+ - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
+ -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
+ - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan). 
+ - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
+ 
+ 
+For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
+ 5: Very Good qualifications - Locations taken from leases, or from a map with specific locations
+   - Must not intersect with land mask
+   - "Land mask"
 
-For each point, we will add a column for "data quality". It will be scored as very good (1.0), good (0.667), fair (0.333) or poor (0.0). 
+4: Good qualifications - Locations are projected or it is a only sample of total locations
+   - Must not intersect with land mask
+   - "Land mask"
 
-Very Good qualifications: Locations taken from leases, or from a map with specific locations (i.e. EMOD, ASC, HELCOM etc.).
+3: Fair qualifications - A specific number of farms are placed on the coast, without knowing exact locations. 
+   - Must be allocated spatially
+   - Must not intersect with land mask
+   - Flagged as "Allocate spatially"
 
-Good qualifications: Locations are projected or it is a only sample of total locations (NASO maps) 
+2: Bad qualifications -  We know that aquaculture is limited to a specific subregion/state, but do not know how many or where the farms are. 
+   - Must be allocated using suitability analysis.
+   - Flagged as 2 and "state/province suitability"
 
-Fair qualifications: A specific number of farms are placed on the coast, without knowing exact locations. 
-
-Bad qualifications: Per province/state locations (i.e. placing a point randomly in each provice), no data at all (randomly placed point(s) along the coast, a non-specific number), google maps estimates. 
+1: Very Bad qualifications - No data at all.
+   - Must be allocated using suitability analysis.
+   - Flagged as 1 and "country suitability" 
 
 # Chile
 
@@ -148,7 +167,8 @@ farms_chile <- data.frame(do.call(rbind, st_geometry(chile_pts)))
 names(farms_chile) <- c("lon", "lat")
 farms_chile <- farms_chile %>%
   mutate(iso3c="CHL") %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_chile, here("marine/salmon/salmon_farm/data/farm_sites/farms_chile.csv"))
 
@@ -279,7 +299,8 @@ arrange(N_GEOWGS84, Ø_GEOWGS84)
 
 farms_nor <- sub_norway %>% 
   distinct(lon=Ø_GEOWGS84, lat=N_GEOWGS84, iso3c="NOR") %>% # Counting duplicate liscense locations once
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_nor, here("marine/salmon/salmon_farm/data/farm_sites/farms_nor.csv"))
 
@@ -344,7 +365,8 @@ names(farms_scotland) <- c("lon", "lat")
 farms_scotland$subregion <- sub_scotland$subregion
 farms_scotland <- farms_scotland %>%
   mutate(iso3c = "GBR") %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_scotland, here("marine/salmon/salmon_farm/data/farm_sites/farms_scotland.csv"))
 
@@ -378,7 +400,8 @@ farms_fro <- data.frame(do.call(rbind, st_geometry(fro_pts_latlon)))
 names(farms_fro) <- c("lon", "lat")
 farms_all_fro <- farms_fro %>%
   cbind(iso3c = fro_pts_latlon$iso3c) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_all_fro, here("marine/salmon/salmon_farm/data/farm_sites/farms_fro.csv"))
 
@@ -414,7 +437,8 @@ farms_tas <- tas_csv %>%
   filter(species_farmed1 == "salmon" | species_farmed2 == "salmon" | species_farmed3 == "salmon") %>%
   dplyr::select(lon, lat) %>%
   mutate(iso3c="AUS") %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 
 write_csv(farms_tas, here("marine/salmon/salmon_farm/data/farm_sites/farms_tas.csv"))
@@ -458,7 +482,8 @@ farms_bc <- data.frame(do.call(rbind, st_geometry(bc_pts_latlon)))
 names(farms_bc) <- c("lon", "lat")
 farms_bc <- farms_bc %>%
   mutate(iso3c="CAN") %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_bc, here("marine/salmon/salmon_farm/data/farm_sites/farms_bc_can.csv"))
 
@@ -483,7 +508,8 @@ farms_nb <- data.frame(do.call(rbind, st_geometry(nb_pts_latlon)))
 names(farms_nb) <- c("lon", "lat")
 farms_nb <- farms_nb %>%
   mutate(iso3c="CAN") %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_nb, here("marine/salmon/salmon_farm/data/farm_sites/farms_nb_can.csv"))
 
@@ -521,7 +547,8 @@ farms_ns <- data.frame(do.call(rbind, st_geometry(ns_pts_latlon)))
 names(farms_ns) <- c("lon", "lat")
 farms_ns <- farms_ns %>%
   mutate(iso3c="CAN") %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_ns, here("marine/salmon/salmon_farm/data/farm_sites/farms_ns_can.csv"))
 
@@ -541,7 +568,8 @@ new_lab <- read.csv(file.path(path,"Canada/NewFoundland_Labrador/NewFoundland_La
 farms_new_lab <- new_lab %>%
   mutate(iso3c = "CAN") %>%
   dplyr::select(lon, lat, iso3c) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
  
 write_csv(farms_new_lab, here("marine/salmon/salmon_farm/data/farm_sites/farms_new_lab_can.csv"))
 
@@ -568,7 +596,8 @@ Our Sound, Our Salmon, 2017. [Accessed January 31, 2020] http://www.moldychum.co
 farms_ps <- read.csv(file.path(path, "USA/PugetSound/USA_PugetSound_AtSalmon.csv")) %>%
   mutate(iso3c = "USA") %>%
   dplyr::select(lon, lat, iso3c) %>%
-  mutate(data_quality = 0.667)
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_ps, here("marine/salmon/salmon_farm/data/farm_sites/farms_ps_usa.csv"))
 
@@ -602,7 +631,8 @@ farms_us_ne <- data.frame(do.call(rbind, st_geometry(us_ne_salmon_pts_latlon)))
 names(farms_us_ne) <- c("lon", "lat")
 farms_us_ne <- farms_us_ne %>%
   mutate(iso3c = "USA") %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_us_ne, here("marine/salmon/salmon_farm/data/farm_sites/farms_ne_usa.csv"))
 
@@ -635,7 +665,8 @@ farms_nzl <- data.frame(do.call(rbind, st_geometry(nzl_pts_latlon)))
 names(farms_nzl) <- c("lon", "lat")
 farms_all_nzl <- farms_nzl %>%
   cbind(iso3c = nzl_pts_latlon$iso3c) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_all_nzl, here("marine/salmon/salmon_farm/data/farm_sites/farms_nz.csv"))
 
@@ -663,7 +694,8 @@ farms_ire <- data.frame(do.call(rbind, st_geometry(ire_pts_latlon)))
 names(farms_ire) <- c("lon", "lat")
 farms_ire <- farms_ire %>%
   mutate(iso3c="IRL") %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_ire, here("marine/salmon/salmon_farm/data/farm_sites/farms_ire.csv"))
 
@@ -687,7 +719,8 @@ Appears that most of Russia's salmon aquaculture occurs in the Barents Sea in th
 farms_russia <- data.frame(lon=c(33.7149),
                     lat=c(69.4953)) %>%
   mutate(iso3c = "RUS") %>%
-  mutate(data_quality = 0.0)
+  mutate(data_quality = 1) %>%
+  mutate(action_needed = "country based suitability")
 
 write_csv(farms_russia, here("marine/salmon/salmon_farm/data/farm_sites/farms_russia.csv"))
 
@@ -698,7 +731,7 @@ write_csv(farms_russia, here("marine/salmon/salmon_farm/data/farm_sites/farms_ru
 We are using the ASC map data for Japan farms. 
 
 Source: 
-Aquaculture Stewardship Council Data Mapping Study, n.d. . Aquaculture Stewardship Council. [Accessed November 11, 2020] 
+Aquaculture Stewardship Council Data Mapping Study, n.d. Aquaculture Stewardship Council. [Accessed November 11, 2020] 
 https://gis.asc-aqua.org/arcgis_app/
 
 ```{r}
@@ -720,7 +753,8 @@ farms_JPN <- data.frame(do.call(rbind, st_geometry(JPN_pts_latlon)))
 names(farms_JPN) <- c("lon", "lat")
 farms_all_JPN <- farms_JPN %>%
   cbind(iso3c = JPN_pts_latlon$iso3c) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_all_JPN, here("marine/salmon/salmon_farm/data/farm_sites/farms_japan.csv"))
 
@@ -762,7 +796,8 @@ farms_dk <- farms_dk %>%
 
 farms_dk <- cbind(farms_dk, dk_subregions ) %>%
   dplyr::select(lon, lat, iso3c, subregion = NAME) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write.csv(farms_dk, here("marine/salmon/salmon_farm/data/farm_sites/farms_denmark.csv"), row.names = FALSE)
 
@@ -805,7 +840,8 @@ Candan, A., Karatas, S., Kücüktas, H., Okumus, I. (Eds.), 2007. Marine aquacul
 farms_turkey <- data.frame(lon=c(35.193, 35.168, 37.776,  37.776, 37.788, 37.789, 37.789, 37.789, 39.812, 39.803, 40.562, 40.558),
                     lat=c(42.012, 42.015, 41.073, 41.071, 41.103, 41.106, 41.111, 41.114, 40.991, 40.994, 41.038, 41.036)) %>%
   mutate(iso3c = "TUR") %>%
-  mutate(data_quality = 0.333)
+  mutate(data_quality = 2) %>%
+  mutate(action_needed = "state/province based suitability")
 
 write_csv(farms_turkey, here("marine/salmon/salmon_farm/data/farm_sites/farms_tur.csv"))
 
@@ -815,7 +851,7 @@ write_csv(farms_turkey, here("marine/salmon/salmon_farm/data/farm_sites/farms_tu
 # Finland
 
 Source: 
-HELCOM Map and Data Service, n.d. . The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
+HELCOM Map and Data Service, n.d. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
 
 ```{r}
 
@@ -842,7 +878,8 @@ farms_fi <- farms_fi %>%
 
 farms_fi <- cbind(farms_fi, fi_subregions ) %>%
   dplyr::select(lon, lat, iso3c, subregion = NAME) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write.csv(farms_fi, here("marine/salmon/salmon_farm/data/farm_sites/farms_finland.csv"), row.names = FALSE)
 
@@ -851,7 +888,7 @@ farms_fi <- read_csv(here("marine/salmon/salmon_farm/data/farm_sites/farms_finla
 
 # Sweden 
 Source:
-HELCOM Map and Data Service, n.d. . The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
+HELCOM Map and Data Service, n.d. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
 
 ```{r}
 
@@ -882,7 +919,8 @@ farms_sw <- farms_sw %>%
 farms_sw <- cbind(farms_sw, sw_subregions ) %>%
   dplyr::select(lon, lat, iso3c, subregion = NAME) %>%
   filter(!is.na(lat)) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write.csv(farms_sw, here("marine/salmon/salmon_farm/data/farm_sites/farms_sweden.csv"), row.names = FALSE)
 
@@ -915,7 +953,8 @@ farms_ISL <- data.frame(do.call(rbind, st_geometry(ISL_pts_latlon)))
 names(farms_ISL) <- c("lon", "lat")
 farms_all_ISL <- farms_ISL %>%
   cbind(iso3c = ISL_pts_latlon$iso3c) %>%
-  mutate(data_quality = 1.0)
+  mutate(data_quality = 5) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_all_ISL, here("marine/salmon/salmon_farm/data/farm_sites/farms_isl.csv"))
 
@@ -929,7 +968,7 @@ farm_files <- list.files(here("marine/salmon/salmon_farm/data/farm_sites"), full
 all_farms = plyr::ldply(farm_files, read_csv)
 
 all_farms_1 <- all_farms %>%
-  dplyr::select(-data_quality)
+  dplyr::select(-data_quality, -action_needed)
 
 write.csv(all_farms_1, here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon.csv"), row.names = FALSE)
 
