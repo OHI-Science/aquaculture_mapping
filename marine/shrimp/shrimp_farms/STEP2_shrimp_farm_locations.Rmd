@@ -667,28 +667,51 @@ philly <- ne_countries(scale = 10, country = "Philippines", returnclass = "sf")
 mapview(philly)
 
 world <- ne_coastline(scale = 110) #world map with 110m resolution
-plot(world)
 
 world <- st_as_sf(world)
 
 philly_world_crs <- st_transform(philly, crs(world))
 
 philly_world_crop <- st_crop(world, philly_world_crs) ## crop to philippines extent
-plot(philly_world_crop)
+
 mapview(philly_world_crop)
 
 philly_world_crop <- philly_world_crop[-c(1), ] ## delete lines that are not in philippines
-
 mapview(philly_world_crop)
+
+# philly_world_crop <- philly_world_crop %>%
+#   mutate(new_id = 1) %>%
+#   group_by(new_id) %>%
+#   summarise(geometry = st_union(geometry)) %>%
+#   ungroup()
+# 
+# mapview(philly_world_crop)
+# 
+# p_meters <- st_transform(philly_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+# mapview(p_meters)
+# 
+# buff <- st_buffer(p_meters, dist = 10000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
+# mapview(buff)
+# 
+# linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
+# mapview(linestring)
+# 
+# ## now reproject back to original 
+# buffer_outline_fixed <- st_transform(linestring, crs = crs(philly_world_crop))
+# mapview(buffer_outline_fixed)
+# 
+# 
+# philly2 <- ne_countries(scale = 50, country = "Philippines", returnclass = "sf")
+# mapview(philly2)
+#   
+# linestring_fix <- st_difference(buffer_outline_fixed, philly) ## now grab only the outline 
+# mapview(linestring_fix)
 
 
 philly_crop <- as(philly_world_crop, "Spatial")
-plot(philly_crop)
 mapview(philly_crop)
 
-
-
-philly_points_lines <- sample.line(philly_crop, n = 39) ## equally place the number of farms along the coastline 
+philly_points_lines <- sample.line(philly_crop, n = 2) ## equally place the number of farms along the coastline 
 class(philly_points_lines)
 plot(philly_points_lines)
 
@@ -785,26 +808,50 @@ mapview(puttalam_shp)
 
 
 ## Start with Batticaloa
-world <- ne_coastline(scale = 50) #world map with 50m resolution
-plot(world)
+# world <- ne_coastline(scale = 50) #world map with 50m resolution
+# plot(world)
 
-world <- st_as_sf(world)
+# world <- st_as_sf(world)
 
-batticaloa_world_crs <- st_transform(batticaloa_shp, crs(world))
+batticaloa_world_crs <- st_transform(batticaloa_shp, crs(coast_raw))
 
-batticaloa_world_crop <- st_crop(world, batticaloa_world_crs) ## crop to batticaloa extent
-plot(batticaloa_world_crop)
+batticaloa_world_crop <- st_crop(coast_raw, batticaloa_world_crs) %>% ## crop to batticaloa extent
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
 mapview(batticaloa_world_crop)
 
-batticaloa_crop <- as(batticaloa_world_crop, "Spatial")
-plot(batticaloa_crop)
+b_meters <- st_transform(batticaloa_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(b_meters)
+
+buff <- st_buffer(b_meters, dist = 4000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+
+linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(batticaloa_world_crop))
+mapview(buffer_outline_fixed)
+
+sri_lanka <- ne_countries(scale = 10, country = "Sri Lanka", returnclass = "sf")
+mapview(sri_lanka)
+
+linestring_fix <- st_difference(buffer_outline_fixed, sri_lanka) ## now grab only the outline 
+mapview(linestring_fix)
+
+
+batticaloa_crop <- as(linestring_fix, "Spatial")
 mapview(batticaloa_crop)
 
-batticaloa_points_lines <- sample.line(batticaloa_crop, n = 60) ## equally place the number of farms along the coastline 
+batticaloa_points_lines <- sample.line(batticaloa_crop, n = 80) ## equally place the number of farms along the coastline 
 class(batticaloa_points_lines)
 plot(batticaloa_points_lines)
 
-batticaloa_points <- st_as_sf(batticaloa_points_lines)
+batticaloa_points <- st_as_sf(batticaloa_points_lines) %>%
+  mutate(new_id = 1:80) %>%
+  dplyr::filter(new_id %in% c(1:60))
 mapview(batticaloa_points)
 
 
@@ -827,26 +874,50 @@ mapview(farms_bat_lka)
 
 
 ## Now do puttalam
-world <- ne_coastline(scale = 50) #world map with 50m resolution
-plot(world)
+# world <- ne_coastline(scale = 50) #world map with 50m resolution
+# plot(world)
+# 
+# world <- st_as_sf(world)
 
-world <- st_as_sf(world)
+puttalam_world_crs <- st_transform(puttalam_shp, crs(coast_raw))
 
-puttalam_world_crs <- st_transform(puttalam_shp, crs(world))
-
-puttalam_world_crop <- st_crop(world, puttalam_world_crs) ## crop to puttalam extent
-plot(puttalam_world_crop)
+puttalam_world_crop <- st_crop(coast_raw, puttalam_world_crs) %>% ## crop to puttalam extent
+  filter(FID %in% c(153735)) %>% 
+    mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
 mapview(puttalam_world_crop)
 
-puttalam_crop <- as(puttalam_world_crop, "Spatial")
-plot(puttalam_crop)
+p_meters <- st_transform(puttalam_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(p_meters)
+
+buff <- st_buffer(p_meters, dist = 1000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+
+linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(puttalam_world_crop))
+mapview(buffer_outline_fixed)
+
+sri_lanka <- ne_countries(scale = 10, country = "Sri Lanka", returnclass = "sf")
+mapview(sri_lanka)
+
+linestring_fix <- st_difference(buffer_outline_fixed, sri_lanka) ## now grab only the outline 
+mapview(linestring_fix)
+
+puttalam_crop <- as(linestring_fix, "Spatial")
 mapview(puttalam_crop)
 
-puttalam_points_lines <- sample.line(puttalam_crop, n = 1344) ## equally place the number of farms along the coastline 
+puttalam_points_lines <- sample.line(puttalam_crop, n = 1361) ## equally place the number of farms along the coastline 
 class(puttalam_points_lines)
 plot(puttalam_points_lines)
 
-puttalam_points <- st_as_sf(puttalam_points_lines)
+puttalam_points <- st_as_sf(puttalam_points_lines) %>%
+  mutate(new_id = 1:1361) %>%
+  filter(new_id %in% c(230:1360, 1:194, 199:217))
 mapview(puttalam_points)
 
 
@@ -907,60 +978,6 @@ farms_twn <-  st_as_sf(farms_twn, coords = c("lon", "lat"),
 
 mapview(farms_twn)
 
-```
- 
- 
-```{r, evalute = F}
-
-# gadm <- st_read("/home/shares/food-systems/Aquaculture_mapping/Data/Jared/Marine_Brackish/manipulated_data/GADM36/gadm36molcountries_simp.shp")
-# 
-#  TWN_shp <- gadm %>%
-#   filter(GID_0 == "TWN") %>%
-#   st_transform(., food_crs) %>%
-#   mutate(Region = 1)
-#  mapview(TWN_shp)
-# 
-# st_write(TWN_shp, "/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/taiwan/taiwan.shp")
-# 
-# twn_reg_ras <- fasterize::fasterize(TWN_shp, fake_raster, fun = "sum")
-# 
-# 
-# plot(fake_raster)
-# plot(twn_reg_ras)
-# 
-# writeRaster(twn_reg_ras, "/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/taiwan/taiwan.tif")
-# 
-# 
-# twn_reg_ras <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/taiwan/taiwan.tif")
-# 
-# twn_spatial <- as(TWN_shp, "Spatial")
-# 
-# twn_coast <- rasterize(twn_spatial, twn_reg_ras, getCover = TRUE)
-# 
-# plot(twn_coast)
-# cellStats(twn_coast, "sum") #464.63
-# 
-# # filter to include >0 <1, o.w. NA
-# 
-# twn_coast_df <- as.data.frame(twn_coast, xy=TRUE) %>%
-#   dplyr::filter(layer <1 & layer >0) %>% ## filter out anything not on taiwan coast
-#   mutate(iso3c = "TWN") %>%
-#   dplyr::select(lon=x, lat=y, iso3c)
-# 
-# farms_twn <-  st_as_sf(twn_coast_df, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_twn)
-# 
-# 
-# write_csv(twn_coast_df, here::here("marine/shrimp/shrimp_farms/data/farm_sites/farms_twn.csv"))
-# 
-# 
-# twn <- read_csv(here::here("marine/shrimp/shrimp_farms/data/farm_sites/farms_twn.csv"))
-# farms_twn <-  st_as_sf(twn, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_twn)
 ```
 
 

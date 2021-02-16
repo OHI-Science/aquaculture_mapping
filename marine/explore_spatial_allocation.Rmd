@@ -108,13 +108,13 @@ n_countries <- n_farms %>%
 n_countries_allocated <- n_countries %>%
   dplyr::filter(data_quality == 3)
 sum(n_countries_allocated$n_countries)
-## 16 countries/species group combos that will need spatial allocation according to our rules (7-10km to port, depth requirements)
+## 15 countries/species group combos that will need spatial allocation according to our rules (7-10km to port, depth requirements)
 
 
 n_countries_no_data <- n_countries %>%
   dplyr::filter(data_quality == 1)
-sum(n_countries_no_data$n_countries) # 14
-## 14 countries/species group combos that will need country level spatial allocation according to our rules (7-10km to port, depth requirements)
+sum(n_countries_no_data$n_countries) # 15
+## 15 countries/species group combos that will need country level spatial allocation according to our rules (7-10km to port, depth requirements)
 
 n_states_no_data <- n_countries %>%
   dplyr::filter(data_quality == 2)
