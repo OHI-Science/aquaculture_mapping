@@ -7,6 +7,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+This script explores the distribution/data quality of aquaculture within each country. 
+
 ```{r}
 library(raster)
 library(tidyverse)
@@ -26,6 +28,27 @@ library(spatialEco)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
 
+source(here::here("_spatial/template_raster.R"))
+```
+
+
+```{r}
+
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- projectRaster(gadm, food_raster)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+```{r}
+
+gadm_df <- tabularaster::as_tibble(gadm_latlon, value = TRUE, cells = TRUE) %>% 
+  mutate(cellvalue = round(cellvalue, 0))
+
+gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id"))
 
 ```
 
@@ -69,7 +92,7 @@ n_farms <- all_farms %>%
   mutate(avg_quality = mean(data_quality)) %>%
   ungroup()
 
-## n_farms shows us the number of points that will need spatial allocation within each country according to our new rules (any of the rows that score 0.333 in the data quality column)
+## n_farms shows us the number of points that will need spatial allocation within each country according to our new rules (any of the rows that score 3. Those that score 1 or 2, will need some sort of suitability analysis.)
 
 n_countries <- n_farms %>%
   group_by(data_quality, group) %>%
@@ -80,28 +103,46 @@ n_countries <- n_farms %>%
   ungroup() %>%
   mutate(percent = n_countries/total_countries)
 
-## n_countries shows us the number of countries that will need spatial allocation within each species group according to our new rules (any of the rows that score 0.333 in the data quality column)
+## n_countries shows us the number of countries that will need spatial allocation within each species group according to our new rules (any of the rows that score 3 in the data quality column. Those that score 1 or 2, will need some sort of suitability analysis, based on country or provice/state.)
 
 n_countries_allocated <- n_countries %>%
-  dplyr::filter(data_quality == 0.333)
+  dplyr::filter(data_quality == 3)
 sum(n_countries_allocated$n_countries)
-## 31 countries/species group combos that will need spatial allocation according to our rules (7-10km to port, depth requirements)
+## 16 countries/species group combos that will need spatial allocation according to our rules (7-10km to port, depth requirements)
 
 
 n_countries_no_data <- n_countries %>%
-  dplyr::filter(data_quality == 0.0)
+  dplyr::filter(data_quality == 1)
 sum(n_countries_no_data$n_countries) # 14
-## 14 countries/species group combos that will need spatial allocation according to our rules (7-10km to port, depth requirements)
+## 14 countries/species group combos that will need country level spatial allocation according to our rules (7-10km to port, depth requirements)
 
-sum(n_countries_allocated$n_countries)
-
+n_states_no_data <- n_countries %>%
+  dplyr::filter(data_quality == 2)
+sum(n_states_no_data$n_countries) # 14
+## 14 countries/species group combos that will need subregional spatial allocation according to our rules (7-10km to port, depth requirements)
 
 ## these were the rules for the data quality column: 
-# For each point, we will add a column for "data quality". It will be scored as very good (1.0), good (0.667), fair (0.333) or poor (0.0). 
-#  - Very Good qualifications: Locations taken from leases, or from a map with specific locations (i.e. EMOD, ASC, HELCOM etc.).
-#  - Good qualifications: Locations are projected or it is a only sample of total locations (NASO maps). Google maps estimates. 
-#  - Fair qualifications: A specific number of farms are placed on the coast, without knowing exact locations. Or Per province/state locations (i.e. placing a point randomly in each province or sub regional location). 
-#  - Bad qualifications: No data at all (randomly placed point(s) along the coast, a non-specific number). 
+# For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
+#  5: Very Good qualifications - Locations taken from leases, or from a map with specific locations
+#    - Must not intersect with land mask
+#    - "Land mask"
+# 
+# 4: Good qualifications - Locations are projected or it is a only sample of total locations
+#    - Must not intersect with land mask
+#    - "Land mask"
+# 
+# 3: Fair qualifications - A specific number of farms are placed on the coast, without knowing exact locations. 
+#    - Must be allocated spatially
+#    - Must not intersect with land mask
+#    - Flagged as "allocate spatially"
+# 
+# 2: Bad qualifications -  We know that aquaculture is limited to a specific subregion/state, but do not know how many or where the farms are. 
+#    - Must be allocated using suitability analysis.
+#    - Flagged as 2 and "state/province suitability"
+# 
+# 1: Very Bad qualifications - No data at all.
+#    - Must be allocated using suitability analysis.
+#    - Flagged as 1 and "country suitability"  
 ```
 
 
