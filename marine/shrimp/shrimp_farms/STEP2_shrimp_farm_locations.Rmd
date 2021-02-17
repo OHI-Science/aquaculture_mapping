@@ -687,43 +687,68 @@ mapview(philly_world_crop)
 # 
 # mapview(philly_world_crop)
 # 
-# p_meters <- st_transform(philly_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+# p_meters <- st_transform(philly_world_crop, crs = 7801) ## transform to a crs that can buffer in meters
 # mapview(p_meters)
 # 
 # buff <- st_buffer(p_meters, dist = 10000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
 # mapview(buff)
 # 
-# linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
+# linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline
 # mapview(linestring)
 # 
-# ## now reproject back to original 
+# ## now reproject back to original
 # buffer_outline_fixed <- st_transform(linestring, crs = crs(philly_world_crop))
 # mapview(buffer_outline_fixed)
 # 
 # 
 # philly2 <- ne_countries(scale = 50, country = "Philippines", returnclass = "sf")
 # mapview(philly2)
-#   
-# linestring_fix <- st_difference(buffer_outline_fixed, philly) ## now grab only the outline 
+# 
+# p_meters2 <- st_transform(philly2, crs = 7801) ## transform to a crs that can buffer in meters
+# mapview(p_meters2)
+# 
+# buff2 <- st_buffer(p_meters2, dist = 9000)
+# mapview(buff2)
+# intersection_fixed <- st_transform(buff2, crs = crs(philly_world_crop))
+# mapview(intersection_fixed)
+# 
+# linestring_fix <- st_difference(buffer_outline_fixed, intersection_fixed) ## now grab only the outline
 # mapview(linestring_fix)
 
+p_meters <- st_transform(philly_world_crop, crs = 7801) ## transform to a crs that can buffer in meters
+mapview(p_meters)
 
-philly_crop <- as(philly_world_crop, "Spatial")
+buff <- st_buffer(p_meters, dist = 10000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+
+philly_crop <- as(buff, "Spatial")
 mapview(philly_crop)
 
-philly_points_lines <- sample.line(philly_crop, n = 2) ## equally place the number of farms along the coastline 
+fix <- as(philly_crop, "SpatialLinesDataFrame")
+class(fix)
+mapview(fix)
+
+
+philly_points_lines <- sample.line(fix, n = 80) ## equally place the number of farms along the coastline 
 class(philly_points_lines)
 plot(philly_points_lines)
 
-philly_points <- st_as_sf(philly_points_lines)
+philly_points <- st_as_sf(philly_points_lines) %>%
+  mutate(new_id = 1:560)
 mapview(philly_points)
 
-## Now filter out the points that fall outside of 271
-philly_points_final <- philly_points[1:271,]
-mapview(philly_points_final)
+philly_points_fix <- philly_points %>%
+  filter(new_id %in% c(241:285, 1:47, 161:201, 321:361, 481:523, 401:446, 81:123)) %>%
+  filter(!(new_id %in% c(23:27, 32, 184, 298, 300, 303, 273, 280, 63, 57, 242:244, 88, 79, 123, 112, 125, 127, 153, 424:427, 90, 496:497, 198, 193, 191, 182, 170, 515:516, 328, 276, 9, 168:170, 82)))
+
+mapview(philly_points_fix)
+
+# ## Now filter out the points that fall outside of 271
+# philly_points_final <- philly_points[1:271,]
+# mapview(philly_points_final)
 
 
-phl_pts <- st_centroid(philly_points_final)
+phl_pts <- st_centroid(philly_points_fix)
 
 phl_pts_latlon <- st_transform(phl_pts, crs = "+init=epsg:4326") %>%
   dplyr::select(geometry)
