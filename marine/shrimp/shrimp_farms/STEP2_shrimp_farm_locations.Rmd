@@ -226,7 +226,8 @@ Mole, P., Bunge, J., 2002. Shrimp Farming in Brazil: An Industry Overview.
 ```{r}
 farms_bra <- data.frame(lat=c(-0.952238, -2.365963, -2.859201, -3.646201, -5.100375,  -7.089602, -8.115310, -9.700209, -10.991527, -13.046432, -25.535885, -27.505551),
                         lon=c(-48.466718, -44.263791, -41.551117, -38.627546, -35.667111, -34.818058, -34.840892, -35.739681, -37.030238, -38.515139, -48.268714, -48.393581),
-                        area_ha = c(70, 64, 425, 982, 1752, 420, 670, 20, 47, 1510, 50, 200)) %>%
+                        area_ha = c(70, 64, 425, 982, 1752, 420, 670, 20, 47, 1510, 50, 200),
+                        subregion = c("Pará", "Maranhão", "Piauí", "Ceará", "Rio Grande do Norte", "Paraíba", "Pernambuco", "Alagoas", "Sergipe", "Bahia", "Paraná", "Santa Catarina")) %>%
   mutate(iso3c = "BRA") %>%
   mutate(data_quality = 2) %>%
   mutate(action_needed = "state/province based suitability")
@@ -297,7 +298,7 @@ Eastman, J.R., Crema, S.C., Sangermano, F., Cunningham, S., Xiao, X., Hu, P., Jo
 
 farms_khm <- data.frame(lat=c(10.554565566560438, 10.4453604331596, 11.7394298718815, 10.744571388081424),
                         lon=c(104.21523743679825, 104.404236625661, 102.8937349735425, 103.65371151346486),
-                        area_ha = c(1516, 459, 26762, 6388)) %>%
+                        area_ha = c(1516, 459, 26762, 6388), subregion = c("Kampot", "Kep", "Koh Kong", "Preah Sihanouk")) %>%
   mutate(iso3c = "KHM") %>%
   mutate(data_quality = 2) %>%
   mutate(action_needed = "state/province based suitability")
@@ -324,37 +325,37 @@ National Aquaculture Sector Overview. Costa Rica, 2005. , National Aquaculture S
 provinces <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/Costa_rica/gadm36_CRI_1.shp"))
 mapview(provinces)
 
-guana_punta <- provinces  %>%
-  dplyr::filter(NAME_1 %in% c("Guanacaste", "Puntarenas"))
+guana <- provinces  %>%
+  dplyr::filter(NAME_1 %in% c("Guanacaste"))
 
-mapview(guana_punta)
+punta <- provinces  %>%
+  dplyr::filter(NAME_1 %in% c("Puntarenas"))
 
-# world <- ne_coastline(scale = 50) #world map with 50m resolution
-# plot(world)
+mapview(guana)
+mapview(punta)
 
-# world <- st_as_sf(world)
+## First do Guanacaste
+guana_world_crs <- st_transform(guana, crs(coast_raw))
 
-costa_world_crs <- st_transform(guana_punta, crs(coast_raw))
-
-costa_world_crop <- st_crop(coast_raw, costa_world_crs) %>% ## crop to costa rica extent 
-  filter(FID %in% c(245909:245926)) %>% ## filter for the correct coastline 
+guana_world_crop <- st_crop(coast_raw, guana_world_crs) %>% ## crop to costa rica extent 
+  filter(FID %in% c(245921:245926)) %>% ## filter for the correct coastline 
   mutate(new_id = 1) %>%
   group_by(new_id) %>%
   summarise(geometry = st_union(geometry)) %>%
   ungroup()
-mapview(costa_world_crop)
+mapview(guana_world_crop)
 
-c_meters <- st_transform(costa_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
-mapview(c_meters)
+g_meters <- st_transform(guana_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(g_meters)
 
-buff <- st_buffer(c_meters, dist = 7000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
+buff <- st_buffer(g_meters, dist = 7000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
 mapview(buff)
 
 linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
 mapview(linestring)
 
 ## now reproject back to original 
-buffer_outline_fixed <- st_transform(linestring, crs = crs(costa_world_crop))
+buffer_outline_fixed <- st_transform(linestring, crs = crs(guana_world_crop))
 mapview(buffer_outline_fixed)
 
 costa_rica <- ne_countries(scale = 10, country = "Costa Rica", returnclass = "sf")
@@ -364,32 +365,95 @@ linestring_fix <- st_difference(buffer_outline_fixed, costa_rica) ## now grab on
 mapview(linestring_fix)
 
 
-costa_crop <- as(linestring_fix, "Spatial")
-mapview(costa_crop)
+guana_crop <- as(linestring_fix, "Spatial")
+mapview(guana_crop)
 
-costa_points_lines <- sample.line(costa_crop, n = 106) ## equally place the number of farms along the coastline 
+guana_points_lines <- sample.line(guana_crop, n = 55) ## equally place the number of farms along the coastline 
 
-costa_points <- st_as_sf(costa_points_lines) %>%
-  mutate(new_id = 1:318) %>%
-  filter(new_id %in% c(1:88, 105:106))
-mapview(costa_points)
+guana_points <- st_as_sf(guana_points_lines) %>%
+  mutate(new_id = 1:55) %>%
+  filter(new_id %in% c(5:49))
+mapview(guana_points)
 
 
-cri_pts <- st_centroid(costa_points)
+guana_pts <- st_centroid(guana_points)
 
-cri_pts_latlon <- st_transform(cri_pts, crs = "+init=epsg:4326") %>%
+guana_pts_latlon <- st_transform(guana_pts, crs = "+init=epsg:4326") %>%
   dplyr::select(geometry)
 
-farms_cri <- data.frame(do.call(rbind, st_geometry(cri_pts_latlon)))
-names(farms_cri) <- c("lon", "lat")
+farms_guana <- data.frame(do.call(rbind, st_geometry(guana_pts_latlon)))
+names(farms_guana) <- c("lon", "lat")
 
-farms_cri_final <- farms_cri %>%
+farms_guana_final <- farms_guana %>%
   mutate(iso3c = "CRI") %>%
   mutate(data_quality = 3) %>%
-  mutate(action_needed = "Allocate spatially")
+  mutate(action_needed = "Allocate spatially") %>%
+  mutate(subregion = "Guanacaste")
+
+
+## Now do puntarenas
+punta_world_crs <- st_transform(punta, crs(coast_raw))
+
+punta_world_crop <- st_crop(coast_raw, punta_world_crs) %>% ## crop to costa rica extent 
+  filter(FID %in% c(245909:245917, 245919:245920)) %>% ## filter for the correct coastline 
+  mutate(new_id = 1) %>%
+  group_by(new_id) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  ungroup()
+mapview(punta_world_crop)
+
+p_meters <- st_transform(punta_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
+mapview(p_meters)
+
+buff <- st_buffer(p_meters, dist = 7000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
+mapview(buff)
+
+linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
+mapview(linestring)
+
+## now reproject back to original 
+buffer_outline_fixed <- st_transform(linestring, crs = crs(punta_world_crop))
+mapview(buffer_outline_fixed)
+
+buffer_outlined_fixed2 <- buffer_outline_fixed[1, ]
+mapview(buffer_outlined_fixed2)
+
+costa_rica <- ne_countries(scale = 10, country = "Costa Rica", returnclass = "sf")
+mapview(costa_rica)
+
+linestring_fix <- st_difference(buffer_outlined_fixed2, costa_rica) ## now grab only the outline 
+mapview(linestring_fix)
+
+
+punta_crop <- as(linestring_fix, "Spatial")
+mapview(punta_crop)
+
+punta_points_lines <- sample.line(punta_crop, n = 60) ## equally place the number of farms along the coastline 
+
+punta_points <- st_as_sf(punta_points_lines) %>%
+  mutate(new_id = 1:60) %>%
+  filter(new_id %in% c(2:46))
+mapview(punta_points)
+
+
+punta_pts <- st_centroid(punta_points)
+
+punta_pts_latlon <- st_transform(punta_pts, crs = "+init=epsg:4326") %>%
+  dplyr::select(geometry)
+
+farms_punta <- data.frame(do.call(rbind, st_geometry(punta_pts_latlon)))
+names(farms_punta) <- c("lon", "lat")
+
+farms_punta_final <- farms_punta %>%
+  mutate(iso3c = "CRI") %>%
+  mutate(data_quality = 3) %>%
+  mutate(action_needed = "Allocate spatially") %>%
+  mutate(subregion = "Puntarenas")
+
+farms_cri_final <- rbind(farms_punta_final, farms_guana_final)
 
 ## visualize it 
-farms_cri <-  st_as_sf(farms_cri, coords = c("lon", "lat"), 
+farms_cri <-  st_as_sf(farms_cri_final, coords = c("lon", "lat"), 
                  crs = crs(gadm_latlon), agr = "constant")
 
 mapview(farms_cri)
@@ -448,7 +512,8 @@ National Aquaculture Sector Overview. El Salvador, 2005. , National Aquaculture 
 ```{r}
 farms_slv <- data.frame(lat=c(13.336985, 13.354459),
                         lon=c(-89.014470, -87.863771),
-                        area_ha = c(8.2, 50)) %>%
+                        area_ha = c(8.2, 50),
+                        subregion = c("La Paz", "La Unión")) %>%
   mutate(iso3c = "SLV") %>%
   mutate(data_quality = 2) %>%
   mutate(action_needed = "state/province based suitability")
@@ -602,10 +667,11 @@ Now lets map the farms
 ```{r}
 farms_mys <- data.frame(lat=c(6.433288, 2.108604, 1.676758, 3.018046544221823, 5.674088, 4.984545, 5.597252273526056, 2.197050, 3.888025, 3.663462, 3.203638),
                         lon=c(99.826952, 102.463536, 110.210032, 103.43838831493285, 102.721589, 103.328932, 102.82739417198427, 111.183470, 100.704595, 100.975557, 103.446051),
-                        area_ha =mys_area) %>%
+                        area_ha =mys_area,
+                        subregion = c("Ayer Hangat, Kedah", "Sebatu, Malacca", "Kuching, Sarawak", "Pekan, Pahang", "Setiu, Terengganu", "Marang, Terengganu", "Setiu, Terengganu", "Tanjung Manis, Sarawak", "Rungkup, Perak", "Sabak, Selangor", "Pekan, Pahang")) %>%
   mutate(iso3c = "MYS") %>%
-  mutate(data_quality = 2) %>%
-  mutate(action_needed = "state/province based suitability")
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_mys, here("marine/shrimp/shrimp_farms/data/farm_sites/farms_mys.csv"))
 
@@ -636,7 +702,8 @@ Myanmar aquaculture and inland fisheries, 2003. Food and Agriculture Organizatio
 ```{r}
 farms_mmr <- data.frame(lat=c(20.117197, 15.967665, 16.441903, 16.100756, 13.436424),
                         lon=c(92.884433, 94.337465, 96.371311, 97.581799, 98.323120),
-                        area_ha = c(62941.972, 13505.574, 2992.246, NA, NA )) %>%
+                        area_ha = c(62941.972, 13505.574, 2992.246, NA, NA ), 
+                        subregion = c("Rahkine", "Ayeyarwaddy", "Yangon", "Mon", "Thaninthary")) %>%
   mutate(iso3c = "MMR") %>%
   mutate(data_quality = 2) %>%
   mutate(action_needed = "state/province based suitability")
@@ -678,42 +745,6 @@ mapview(philly_world_crop)
 
 philly_world_crop <- philly_world_crop[-c(1), ] ## delete lines that are not in philippines
 mapview(philly_world_crop)
-
-# philly_world_crop <- philly_world_crop %>%
-#   mutate(new_id = 1) %>%
-#   group_by(new_id) %>%
-#   summarise(geometry = st_union(geometry)) %>%
-#   ungroup()
-# 
-# mapview(philly_world_crop)
-# 
-# p_meters <- st_transform(philly_world_crop, crs = 7801) ## transform to a crs that can buffer in meters
-# mapview(p_meters)
-# 
-# buff <- st_buffer(p_meters, dist = 10000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
-# mapview(buff)
-# 
-# linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline
-# mapview(linestring)
-# 
-# ## now reproject back to original
-# buffer_outline_fixed <- st_transform(linestring, crs = crs(philly_world_crop))
-# mapview(buffer_outline_fixed)
-# 
-# 
-# philly2 <- ne_countries(scale = 50, country = "Philippines", returnclass = "sf")
-# mapview(philly2)
-# 
-# p_meters2 <- st_transform(philly2, crs = 7801) ## transform to a crs that can buffer in meters
-# mapview(p_meters2)
-# 
-# buff2 <- st_buffer(p_meters2, dist = 9000)
-# mapview(buff2)
-# intersection_fixed <- st_transform(buff2, crs = crs(philly_world_crop))
-# mapview(intersection_fixed)
-# 
-# linestring_fix <- st_difference(buffer_outline_fixed, intersection_fixed) ## now grab only the outline
-# mapview(linestring_fix)
 
 p_meters <- st_transform(philly_world_crop, crs = 7801) ## transform to a crs that can buffer in meters
 mapview(p_meters)
@@ -833,10 +864,6 @@ mapview(puttalam_shp)
 
 
 ## Start with Batticaloa
-# world <- ne_coastline(scale = 50) #world map with 50m resolution
-# plot(world)
-
-# world <- st_as_sf(world)
 
 batticaloa_world_crs <- st_transform(batticaloa_shp, crs(coast_raw))
 
@@ -889,7 +916,8 @@ farms_bat_lka <- data.frame(do.call(rbind, st_geometry(bat_lka_pts_latlon)))
 names(farms_bat_lka) <- c("lon", "lat")
 
 farms_bat_lka_final <- farms_bat_lka %>%
-  mutate(area_ha = 2.583333)
+  mutate(area_ha = 2.583333) %>%
+  mutate(subregion = "Batticaloa")
 
 ## visualize it 
 farms_bat_lka <-  st_as_sf(farms_bat_lka, coords = c("lon", "lat"), 
@@ -899,11 +927,6 @@ mapview(farms_bat_lka)
 
 
 ## Now do puttalam
-# world <- ne_coastline(scale = 50) #world map with 50m resolution
-# plot(world)
-# 
-# world <- st_as_sf(world)
-
 puttalam_world_crs <- st_transform(puttalam_shp, crs(coast_raw))
 
 puttalam_world_crop <- st_crop(coast_raw, puttalam_world_crs) %>% ## crop to puttalam extent
@@ -936,13 +959,11 @@ mapview(linestring_fix)
 puttalam_crop <- as(linestring_fix, "Spatial")
 mapview(puttalam_crop)
 
-puttalam_points_lines <- sample.line(puttalam_crop, n = 1361) ## equally place the number of farms along the coastline 
-class(puttalam_points_lines)
-plot(puttalam_points_lines)
+puttalam_points_lines <- sample.line(puttalam_crop, n = 1800) ## equally place the number of farms along the coastline 
 
 puttalam_points <- st_as_sf(puttalam_points_lines) %>%
-  mutate(new_id = 1:1361) %>%
-  filter(new_id %in% c(230:1360, 1:194, 199:217))
+  mutate(new_id = 1:1800) %>%
+  filter(new_id %in% c(457:1800))
 mapview(puttalam_points)
 
 
@@ -955,7 +976,8 @@ farms_put_lka <- data.frame(do.call(rbind, st_geometry(put_lka_pts_latlon)))
 names(farms_put_lka) <- c("lon", "lat")
 
 farms_put_lka_final <- farms_put_lka %>%
-  mutate(area_ha = 3.348214) 
+  mutate(area_ha = 3.348214)  %>%
+  mutate(subregion = "Puttalam")
 
 ## visualize it 
 farms_put_lka <-  st_as_sf(farms_put_lka, coords = c("lon", "lat"), 

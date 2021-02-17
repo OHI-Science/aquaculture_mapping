@@ -3737,15 +3737,15 @@
 145.39169,-42.33215,"AUS",5,"Land mask",NA
 145.40817,-42.34484,"AUS",5,"Land mask",NA
 146.91364,-41.1647,"AUS",5,"Land mask",NA
-35.193,42.012,"TUR",2,"state/province based suitability",NA
-35.168,42.015,"TUR",2,"state/province based suitability",NA
-37.776,41.073,"TUR",2,"state/province based suitability",NA
-37.776,41.071,"TUR",2,"state/province based suitability",NA
-37.788,41.103,"TUR",2,"state/province based suitability",NA
-37.789,41.106,"TUR",2,"state/province based suitability",NA
-37.789,41.111,"TUR",2,"state/province based suitability",NA
-37.789,41.114,"TUR",2,"state/province based suitability",NA
-39.812,40.991,"TUR",2,"state/province based suitability",NA
-39.803,40.994,"TUR",2,"state/province based suitability",NA
-40.562,41.038,"TUR",2,"state/province based suitability",NA
-40.558,41.036,"TUR",2,"state/province based suitability",NA
+35.193,42.012,"TUR",3,"Allocate spatially","Sinop"
+35.168,42.015,"TUR",3,"Allocate spatially","Sinop"
+37.776,41.073,"TUR",3,"Allocate spatially","Persembe"
+37.776,41.071,"TUR",3,"Allocate spatially","Persembe"
+37.788,41.103,"TUR",3,"Allocate spatially","Persembe"
+37.789,41.106,"TUR",3,"Allocate spatially","Persembe"
+37.789,41.111,"TUR",3,"Allocate spatially","Persembe"
+37.789,41.114,"TUR",3,"Allocate spatially","Persembe"
+39.812,40.991,"TUR",3,"Allocate spatially","Sana"
+39.803,40.994,"TUR",3,"Allocate spatially","Sana"
+40.562,41.038,"TUR",3,"Allocate spatially","Rize"
+40.558,41.036,"TUR",3,"Allocate spatially","Rize"

@@ -1,85 +1,85 @@
-"lat","lon","iso3c","data_quality","action_needed","prod","sub_rgn"
-21.8760817912211,89.4949969724466,"BGD",2,"state/province based suitability",NA,NA
-22.3256701452573,91.7609193502888,"BGD",2,"state/province based suitability",NA,NA
+"lat","lon","iso3c","data_quality","action_needed","subregion","prod"
+21.8760817912211,89.4949969724466,"BGD",2,"state/province based suitability","Khulna",NA
+22.3256701452573,91.7609193502888,"BGD",2,"state/province based suitability","Chittagong",NA
 29.3780092675677,121.950439091009,"CHN",1,"country based suitability",NA,NA
 0.335994301466984,117.55582991783,"IDN",1,"country based suitability",NA,NA
-15.9304079959308,94.7664747569774,"MMR",2,"state/province based suitability",NA,NA
-18.6150931635694,94.2429060752702,"MMR",2,"state/province based suitability",NA,NA
-14.5105363780708,121.087482854358,"PHL",2,"state/province based suitability",1.81,"Metro Manila"
-17.0877338290531,120.436386062204,"PHL",2,"state/province based suitability",0.06,"llocos Norte"
-17.2050312842212,120.413922727951,"PHL",2,"state/province based suitability",0.1,"llocos Sur"
-16.5330902343553,120.315113519991,"PHL",2,"state/province based suitability",0.06,"La Union"
-16.124387999329,120.093367243599,"PHL",2,"state/province based suitability",11.26,"Pangasinan"
-18.359201366719,121.624576474411,"PHL",2,"state/province based suitability",44.93,"Gagayan"
-14.5882805007207,120.39232212075,"PHL",2,"state/province based suitability",130.93,"Bataan"
-14.7593457962614,120.791951783656,"PHL",2,"state/province based suitability",36.21,"Bulacan"
-14.8559714403183,120.587663250173,"PHL",2,"state/province based suitability",4185.62,"Pampanga"
-15.2720797326393,120.009877882804,"PHL",2,"state/province based suitability",1.9,"Zarrbales"
-14.2946817178597,120.716619341723,"PHL",2,"state/province based suitability",0.01,"Gavite"
-14.6649088855429,121.615495433415,"PHL",2,"state/province based suitability",616.36,"Quezon"
-13.3442068709175,121.821336658407,"PHL",2,"state/province based suitability",1.19,"Marinduque"
-13.4154370144912,121.092297370521,"PHL",2,"state/province based suitability",0.18,"Oriental Mindoro"
-10.038412865364,118.720689239485,"PHL",2,"state/province based suitability",9.74,"Palaw an"
-12.5857170591102,122.27016916838,"PHL",2,"state/province based suitability",0.1,"Romblom"
-13.2183625292018,123.770116419315,"PHL",2,"state/province based suitability",0.49,"Albay"
-14.2783791902769,122.806951576631,"PHL",2,"state/province based suitability",198.87,"Camarines Norte"
-13.7280182252233,123.216020518082,"PHL",2,"state/province based suitability",121.82,"Camarines Sur"
-13.6003738502771,124.088562144353,"PHL",2,"state/province based suitability",16.8,"Catanduanes"
-12.5769519331597,123.282869408877,"PHL",2,"state/province based suitability",68.59,"Masbate"
-12.8186615726819,123.83950186846,"PHL",2,"state/province based suitability",705.97,"Sorsogon"
-11.7377311480202,122.363412637882,"PHL",2,"state/province based suitability",37.7,"Aklan"
-11.0966125091898,122.04466274448,"PHL",2,"state/province based suitability",4.29,"Antique"
-11.5444416027694,122.872514897933,"PHL",2,"state/province based suitability",2048.37,"Capiz"
-10.5651596857971,122.512796837209,"PHL",2,"state/province based suitability",6.74,"Guimaras"
-10.8913257265939,122.783116426606,"PHL",2,"state/province based suitability",1.25,"lloilo"
-9.94382030958894,122.446304408747,"PHL",2,"state/province based suitability",0.19,"Negros Occidental"
-10.0623988916179,124.088573339221,"PHL",2,"state/province based suitability",5.41,"Bohol"
-11.4570195601967,125.501248092925,"PHL",2,"state/province based suitability",0.02,"Eastern Samar"
-10.8650667201133,124.720286843175,"PHL",2,"state/province based suitability",0.85,"Leyte"
-12.5098375230187,124.6501065673,"PHL",2,"state/province based suitability",141.47,"Northern Samar"
-12.0076253576981,124.69126813618,"PHL",2,"state/province based suitability",249.13,"Samar"
-8.18224915422801,122.954915546237,"PHL",2,"state/province based suitability",4.86,"Zamboanga del Norte"
-7.81172076996685,123.423549928297,"PHL",2,"state/province based suitability",200.46,"Zamboanga del Sur"
-7.70388031987489,122.526150493214,"PHL",2,"state/province based suitability",183.04,"Zamboanga Sibugay"
-6.90539885607443,122.069174514418,"PHL",2,"state/province based suitability",93.54,"Zamboanga City"
-8.18757526534604,124.124403462134,"PHL",2,"state/province based suitability",7513.52,"Lanao del Norte"
-8.48393196359757,123.80942490173,"PHL",2,"state/province based suitability",1155.37,"Misamis Occidental"
-8.84696558747047,125.163337945672,"PHL",2,"state/province based suitability",0.02,"Misamis Oriental"
-7.22627345377376,125.861554269136,"PHL",2,"state/province based suitability",0.9,"Compostela Valley"
-7.29064081849023,125.708382974904,"PHL",2,"state/province based suitability",3.31,"Davao del Norte"
-6.80672692575464,125.380449591142,"PHL",2,"state/province based suitability",0,"Davao del Sur"
-7.02185082563965,126.446686686186,"PHL",2,"state/province based suitability",0.02,"Davao Oriental"
-6.37308183497781,124.082159940735,"PHL",2,"state/province based suitability",0.41,"Sultan Kudarat"
-9.19061150020824,125.529942291221,"PHL",2,"state/province based suitability",48,"Agusan del Norte"
-10.2497819954099,125.64231490812,"PHL",2,"state/province based suitability",0.04,"Dinagat Islands"
-9.55572153035124,125.786308606279,"PHL",2,"state/province based suitability",13.07,"Surigao del Norte"
-9.013346905513,126.237422985089,"PHL",2,"state/province based suitability",140.43,"Surigao del Sur"
-6.99460396215764,123.990595383884,"PHL",2,"state/province based suitability",162.21,"Maguindanao"
-21.1860505295456,107.608589376424,"VNM",2,"state/province based suitability",0,"Quang Ninh"
-20.8409472486466,106.776850038455,"VNM",2,"state/province based suitability",1650,"Hai Phong"
-20.4541486390953,106.597288565811,"VNM",2,"state/province based suitability",0,"Thai Binh"
-20.1465544605409,106.329801945274,"VNM",2,"state/province based suitability",0,"Nam Dinh"
-19.9554962632132,106.030974683741,"VNM",2,"state/province based suitability",1005,"Ninh Binh"
-19.7268176664823,105.876617304675,"VNM",2,"state/province based suitability",970,"Thanh Hoa"
-18.9828769680297,105.616509744017,"VNM",2,"state/province based suitability",0,"Nghe An"
-18.4568176135126,105.927266566333,"VNM",2,"state/province based suitability",200,"Ha Tinh"
-17.5600132874665,106.580399999543,"VNM",2,"state/province based suitability",110,"Quang Binh"
-16.9058265222133,107.191941458558,"VNM",2,"state/province based suitability",20,"Quang Tri"
-16.4951159961497,107.748915833386,"VNM",2,"state/province based suitability",82,"TT Hue"
-16.1679861260058,108.15075180169,"VNM",2,"state/province based suitability",0,"Da Nang"
-15.6990265687544,108.480162892643,"VNM",2,"state/province based suitability",135,"Quang Nam"
-15.0105951529833,108.921742256243,"VNM",2,"state/province based suitability",0,"Quang Ngai"
-14.1766877002666,109.196171163896,"VNM",2,"state/province based suitability",130,"Binh Dinh"
-13.3357605290414,109.291835115863,"VNM",2,"state/province based suitability",0,"Phu Yen"
-12.2991119353603,109.236993221307,"VNM",2,"state/province based suitability",0,"Khanh Hoa"
-11.6218392731858,109.154689135973,"VNM",2,"state/province based suitability",5,"Ninh Thuân"
-10.8301023422042,108.037021106432,"VNM",2,"state/province based suitability",0,"Binh Thuân"
-10.510731358281,106.731099986855,"VNM",2,"state/province based suitability",250,"Long An"
-10.3000657166648,106.781227168832,"VNM",2,"state/province based suitability",0,"Tien Giang"
-10.0378668325816,106.696370363388,"VNM",2,"state/province based suitability",637,"Ben Tre"
-9.59222356318523,106.541267277137,"VNM",2,"state/province based suitability",1196,"Tra Vinh"
-9.38958038120882,106.18574462804,"VNM",2,"state/province based suitability",0,"Soc Trang"
-9.14792131542506,105.59613926925,"VNM",2,"state/province based suitability",3466,"Bac Lieu"
-8.6741668183183,105.123796739063,"VNM",2,"state/province based suitability",0,"Ca Mau"
-10.087872204899,104.88743812284,"VNM",2,"state/province based suitability",170,"Kien Giang"
-10.0558199446902,105.790739532739,"VNM",2,"state/province based suitability",0,"Can Tho"
+15.9304079959308,94.7664747569774,"MMR",2,"state/province based suitability","Ayeyarwaddy",NA
+18.6150931635694,94.2429060752702,"MMR",2,"state/province based suitability","Rakhine",NA
+14.5105363780708,121.087482854358,"PHL",2,"state/province based suitability","Metro Manila",1.81
+17.0877338290531,120.436386062204,"PHL",2,"state/province based suitability","llocos Norte",0.06
+17.2050312842212,120.413922727951,"PHL",2,"state/province based suitability","llocos Sur",0.1
+16.5330902343553,120.315113519991,"PHL",2,"state/province based suitability","La Union",0.06
+16.124387999329,120.093367243599,"PHL",2,"state/province based suitability","Pangasinan",11.26
+18.359201366719,121.624576474411,"PHL",2,"state/province based suitability","Gagayan",44.93
+14.5882805007207,120.39232212075,"PHL",2,"state/province based suitability","Bataan",130.93
+14.7593457962614,120.791951783656,"PHL",2,"state/province based suitability","Bulacan",36.21
+14.8559714403183,120.587663250173,"PHL",2,"state/province based suitability","Pampanga",4185.62
+15.2720797326393,120.009877882804,"PHL",2,"state/province based suitability","Zarrbales",1.9
+14.2946817178597,120.716619341723,"PHL",2,"state/province based suitability","Gavite",0.01
+14.6649088855429,121.615495433415,"PHL",2,"state/province based suitability","Quezon",616.36
+13.3442068709175,121.821336658407,"PHL",2,"state/province based suitability","Marinduque",1.19
+13.4154370144912,121.092297370521,"PHL",2,"state/province based suitability","Oriental Mindoro",0.18
+10.038412865364,118.720689239485,"PHL",2,"state/province based suitability","Palaw an",9.74
+12.5857170591102,122.27016916838,"PHL",2,"state/province based suitability","Romblom",0.1
+13.2183625292018,123.770116419315,"PHL",2,"state/province based suitability","Albay",0.49
+14.2783791902769,122.806951576631,"PHL",2,"state/province based suitability","Camarines Norte",198.87
+13.7280182252233,123.216020518082,"PHL",2,"state/province based suitability","Camarines Sur",121.82
+13.6003738502771,124.088562144353,"PHL",2,"state/province based suitability","Catanduanes",16.8
+12.5769519331597,123.282869408877,"PHL",2,"state/province based suitability","Masbate",68.59
+12.8186615726819,123.83950186846,"PHL",2,"state/province based suitability","Sorsogon",705.97
+11.7377311480202,122.363412637882,"PHL",2,"state/province based suitability","Aklan",37.7
+11.0966125091898,122.04466274448,"PHL",2,"state/province based suitability","Antique",4.29
+11.5444416027694,122.872514897933,"PHL",2,"state/province based suitability","Capiz",2048.37
+10.5651596857971,122.512796837209,"PHL",2,"state/province based suitability","Guimaras",6.74
+10.8913257265939,122.783116426606,"PHL",2,"state/province based suitability","lloilo",1.25
+9.94382030958894,122.446304408747,"PHL",2,"state/province based suitability","Negros Occidental",0.19
+10.0623988916179,124.088573339221,"PHL",2,"state/province based suitability","Bohol",5.41
+11.4570195601967,125.501248092925,"PHL",2,"state/province based suitability","Eastern Samar",0.02
+10.8650667201133,124.720286843175,"PHL",2,"state/province based suitability","Leyte",0.85
+12.5098375230187,124.6501065673,"PHL",2,"state/province based suitability","Northern Samar",141.47
+12.0076253576981,124.69126813618,"PHL",2,"state/province based suitability","Samar",249.13
+8.18224915422801,122.954915546237,"PHL",2,"state/province based suitability","Zamboanga del Norte",4.86
+7.81172076996685,123.423549928297,"PHL",2,"state/province based suitability","Zamboanga del Sur",200.46
+7.70388031987489,122.526150493214,"PHL",2,"state/province based suitability","Zamboanga Sibugay",183.04
+6.90539885607443,122.069174514418,"PHL",2,"state/province based suitability","Zamboanga City",93.54
+8.18757526534604,124.124403462134,"PHL",2,"state/province based suitability","Lanao del Norte",7513.52
+8.48393196359757,123.80942490173,"PHL",2,"state/province based suitability","Misamis Occidental",1155.37
+8.84696558747047,125.163337945672,"PHL",2,"state/province based suitability","Misamis Oriental",0.02
+7.22627345377376,125.861554269136,"PHL",2,"state/province based suitability","Compostela Valley",0.9
+7.29064081849023,125.708382974904,"PHL",2,"state/province based suitability","Davao del Norte",3.31
+6.80672692575464,125.380449591142,"PHL",2,"state/province based suitability","Davao del Sur",0
+7.02185082563965,126.446686686186,"PHL",2,"state/province based suitability","Davao Oriental",0.02
+6.37308183497781,124.082159940735,"PHL",2,"state/province based suitability","Sultan Kudarat",0.41
+9.19061150020824,125.529942291221,"PHL",2,"state/province based suitability","Agusan del Norte",48
+10.2497819954099,125.64231490812,"PHL",2,"state/province based suitability","Dinagat Islands",0.04
+9.55572153035124,125.786308606279,"PHL",2,"state/province based suitability","Surigao del Norte",13.07
+9.013346905513,126.237422985089,"PHL",2,"state/province based suitability","Surigao del Sur",140.43
+6.99460396215764,123.990595383884,"PHL",2,"state/province based suitability","Maguindanao",162.21
+21.1860505295456,107.608589376424,"VNM",2,"state/province based suitability","Quang Ninh",0
+20.8409472486466,106.776850038455,"VNM",2,"state/province based suitability","Hai Phong",1650
+20.4541486390953,106.597288565811,"VNM",2,"state/province based suitability","Thai Binh",0
+20.1465544605409,106.329801945274,"VNM",2,"state/province based suitability","Nam Dinh",0
+19.9554962632132,106.030974683741,"VNM",2,"state/province based suitability","Ninh Binh",1005
+19.7268176664823,105.876617304675,"VNM",2,"state/province based suitability","Thanh Hoa",970
+18.9828769680297,105.616509744017,"VNM",2,"state/province based suitability","Nghe An",0
+18.4568176135126,105.927266566333,"VNM",2,"state/province based suitability","Ha Tinh",200
+17.5600132874665,106.580399999543,"VNM",2,"state/province based suitability","Quang Binh",110
+16.9058265222133,107.191941458558,"VNM",2,"state/province based suitability","Quang Tri",20
+16.4951159961497,107.748915833386,"VNM",2,"state/province based suitability","TT Hue",82
+16.1679861260058,108.15075180169,"VNM",2,"state/province based suitability","Da Nang",0
+15.6990265687544,108.480162892643,"VNM",2,"state/province based suitability","Quang Nam",135
+15.0105951529833,108.921742256243,"VNM",2,"state/province based suitability","Quang Ngai",0
+14.1766877002666,109.196171163896,"VNM",2,"state/province based suitability","Binh Dinh",130
+13.3357605290414,109.291835115863,"VNM",2,"state/province based suitability","Phu Yen",0
+12.2991119353603,109.236993221307,"VNM",2,"state/province based suitability","Khanh Hoa",0
+11.6218392731858,109.154689135973,"VNM",2,"state/province based suitability","Ninh Thuân",5
+10.8301023422042,108.037021106432,"VNM",2,"state/province based suitability","Binh Thuân",0
+10.510731358281,106.731099986855,"VNM",2,"state/province based suitability","Long An",250
+10.3000657166648,106.781227168832,"VNM",2,"state/province based suitability","Tien Giang",0
+10.0378668325816,106.696370363388,"VNM",2,"state/province based suitability","Ben Tre",637
+9.59222356318523,106.541267277137,"VNM",2,"state/province based suitability","Tra Vinh",1196
+9.38958038120882,106.18574462804,"VNM",2,"state/province based suitability","Soc Trang",0
+9.14792131542506,105.59613926925,"VNM",2,"state/province based suitability","Bac Lieu",3466
+8.6741668183183,105.123796739063,"VNM",2,"state/province based suitability","Ca Mau",0
+10.087872204899,104.88743812284,"VNM",2,"state/province based suitability","Kien Giang",170
+10.0558199446902,105.790739532739,"VNM",2,"state/province based suitability","Can Tho",0

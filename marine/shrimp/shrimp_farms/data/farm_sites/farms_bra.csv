@@ -1,13 +1,13 @@
-lat,lon,area_ha,iso3c,data_quality,action_needed
--0.952238,-48.466718,70,BRA,2,state/province based suitability
--2.365963,-44.263791,64,BRA,2,state/province based suitability
--2.859201,-41.551117,425,BRA,2,state/province based suitability
--3.646201,-38.627546,982,BRA,2,state/province based suitability
--5.100375,-35.667111,1752,BRA,2,state/province based suitability
--7.089602,-34.818058,420,BRA,2,state/province based suitability
--8.11531,-34.840892,670,BRA,2,state/province based suitability
--9.700209,-35.739681,20,BRA,2,state/province based suitability
--10.991527,-37.030238,47,BRA,2,state/province based suitability
--13.046432,-38.515139,1510,BRA,2,state/province based suitability
--25.535885,-48.268714,50,BRA,2,state/province based suitability
--27.505551,-48.393581,200,BRA,2,state/province based suitability
+lat,lon,area_ha,subregion,iso3c,data_quality,action_needed
+-0.952238,-48.466718,70,Pará,BRA,2,state/province based suitability
+-2.365963,-44.263791,64,Maranhão,BRA,2,state/province based suitability
+-2.859201,-41.551117,425,Piauí,BRA,2,state/province based suitability
+-3.646201,-38.627546,982,Ceará,BRA,2,state/province based suitability
+-5.100375,-35.667111,1752,Rio Grande do Norte,BRA,2,state/province based suitability
+-7.089602,-34.818058,420,Paraíba,BRA,2,state/province based suitability
+-8.11531,-34.840892,670,Pernambuco,BRA,2,state/province based suitability
+-9.700209,-35.739681,20,Alagoas,BRA,2,state/province based suitability
+-10.991527,-37.030238,47,Sergipe,BRA,2,state/province based suitability
+-13.046432,-38.515139,1510,Bahia,BRA,2,state/province based suitability
+-25.535885,-48.268714,50,Paraná,BRA,2,state/province based suitability
+-27.505551,-48.393581,200,Santa Catarina,BRA,2,state/province based suitability

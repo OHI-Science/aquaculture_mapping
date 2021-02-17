@@ -1,4 +1,4 @@
-lat,lon,prod,sub_rgn,iso3c,data_quality,action_needed
+lat,lon,prod,subregion,iso3c,data_quality,action_needed
 21.186050529545593,107.60858937642442,0,Quang Ninh,VNM,2,state/province based suitability
 20.840947248646557,106.77685003845498,1650,Hai Phong,VNM,2,state/province based suitability
 20.454148639095266,106.59728856581118,0,Thai Binh,VNM,2,state/province based suitability

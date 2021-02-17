@@ -1,6 +1,6 @@
-lat,lon,area_ha,iso3c,data_quality,action_needed
-20.117197,92.884433,62941.972,MMR,2,state/province based suitability
-15.967665,94.337465,13505.574,MMR,2,state/province based suitability
-16.441903,96.371311,2992.246,MMR,2,state/province based suitability
-16.100756,97.581799,NA,MMR,2,state/province based suitability
-13.436424,98.32312,NA,MMR,2,state/province based suitability
+lat,lon,area_ha,subregion,iso3c,data_quality,action_needed
+20.117197,92.884433,62941.972,Rahkine,MMR,2,state/province based suitability
+15.967665,94.337465,13505.574,Ayeyarwaddy,MMR,2,state/province based suitability
+16.441903,96.371311,2992.246,Yangon,MMR,2,state/province based suitability
+16.100756,97.581799,NA,Mon,MMR,2,state/province based suitability
+13.436424,98.32312,NA,Thaninthary,MMR,2,state/province based suitability

@@ -838,10 +838,11 @@ Candan, A., Karatas, S., Kücüktas, H., Okumus, I. (Eds.), 2007. Marine aquacul
 # 41.036462, 40.558582
 
 farms_turkey <- data.frame(lon=c(35.193, 35.168, 37.776,  37.776, 37.788, 37.789, 37.789, 37.789, 39.812, 39.803, 40.562, 40.558),
-                    lat=c(42.012, 42.015, 41.073, 41.071, 41.103, 41.106, 41.111, 41.114, 40.991, 40.994, 41.038, 41.036)) %>%
+                    lat=c(42.012, 42.015, 41.073, 41.071, 41.103, 41.106, 41.111, 41.114, 40.991, 40.994, 41.038, 41.036),
+                    subregion = c("Sinop", "Sinop", "Persembe", "Persembe", "Persembe", "Persembe", "Persembe", "Persembe", "Sana", "Sana", "Rize", "Rize")) %>%
   mutate(iso3c = "TUR") %>%
-  mutate(data_quality = 2) %>%
-  mutate(action_needed = "state/province based suitability")
+  mutate(data_quality = 3) %>%
+  mutate(action_needed = "Allocate spatially") 
 
 write_csv(farms_turkey, here("marine/salmon/salmon_farm/data/farm_sites/farms_tur.csv"))
 

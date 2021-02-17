@@ -1,12 +1,12 @@
-lat,lon,area_ha,iso3c,data_quality,action_needed
-6.433288,99.826952,60,MYS,2,state/province based suitability
-2.108604,102.463536,100,MYS,2,state/province based suitability
-1.676758,110.210032,165,MYS,2,state/province based suitability
-3.018046544221823,103.43838831493285,404,MYS,2,state/province based suitability
-5.674088,102.721589,520,MYS,2,state/province based suitability
-4.984545,103.328932,200,MYS,2,state/province based suitability
-5.597252273526056,102.82739417198427,1000,MYS,2,state/province based suitability
-2.19705,111.18347,430,MYS,2,state/province based suitability
-3.888025,100.704595,2175,MYS,2,state/province based suitability
-3.663462,100.975557,28,MYS,2,state/province based suitability
-3.203638,103.446051,283,MYS,2,state/province based suitability
+lat,lon,area_ha,subregion,iso3c,data_quality,action_needed
+6.433288,99.826952,60,"Ayer Hangat, Kedah",MYS,4,Land mask
+2.108604,102.463536,100,"Sebatu, Malacca",MYS,4,Land mask
+1.676758,110.210032,165,"Kuching, Sarawak",MYS,4,Land mask
+3.018046544221823,103.43838831493285,404,"Pekan, Pahang",MYS,4,Land mask
+5.674088,102.721589,520,"Setiu, Terengganu",MYS,4,Land mask
+4.984545,103.328932,200,"Marang, Terengganu",MYS,4,Land mask
+5.597252273526056,102.82739417198427,1000,"Setiu, Terengganu",MYS,4,Land mask
+2.19705,111.18347,430,"Tanjung Manis, Sarawak",MYS,4,Land mask
+3.888025,100.704595,2175,"Rungkup, Perak",MYS,4,Land mask
+3.663462,100.975557,28,"Sabak, Selangor",MYS,4,Land mask
+3.203638,103.446051,283,"Pekan, Pahang",MYS,4,Land mask

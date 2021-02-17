@@ -1,13 +1,13 @@
-lon,lat,iso3c,data_quality,action_needed
-35.193,42.012,TUR,2,state/province based suitability
-35.168,42.015,TUR,2,state/province based suitability
-37.776,41.073,TUR,2,state/province based suitability
-37.776,41.071,TUR,2,state/province based suitability
-37.788,41.103,TUR,2,state/province based suitability
-37.789,41.106,TUR,2,state/province based suitability
-37.789,41.111,TUR,2,state/province based suitability
-37.789,41.114,TUR,2,state/province based suitability
-39.812,40.991,TUR,2,state/province based suitability
-39.803,40.994,TUR,2,state/province based suitability
-40.562,41.038,TUR,2,state/province based suitability
-40.558,41.036,TUR,2,state/province based suitability
+lon,lat,subregion,iso3c,data_quality,action_needed
+35.193,42.012,Sinop,TUR,3,Allocate spatially
+35.168,42.015,Sinop,TUR,3,Allocate spatially
+37.776,41.073,Persembe,TUR,3,Allocate spatially
+37.776,41.071,Persembe,TUR,3,Allocate spatially
+37.788,41.103,Persembe,TUR,3,Allocate spatially
+37.789,41.106,Persembe,TUR,3,Allocate spatially
+37.789,41.111,Persembe,TUR,3,Allocate spatially
+37.789,41.114,Persembe,TUR,3,Allocate spatially
+39.812,40.991,Sana,TUR,3,Allocate spatially
+39.803,40.994,Sana,TUR,3,Allocate spatially
+40.562,41.038,Rize,TUR,3,Allocate spatially
+40.558,41.036,Rize,TUR,3,Allocate spatially

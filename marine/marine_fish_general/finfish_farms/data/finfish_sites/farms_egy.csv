@@ -1,4 +1,4 @@
-lat,lon,rgn_production,subrgn_name,iso3c,data_quality,action_needed
+lat,lon,rgn_production,subregion,iso3c,data_quality,action_needed
 31.360400495764903,27.236078999801336,5,Mersa Matruh,EGY,4,Land mask
 31.15023941171644,29.81109569981684,1521,Alexandria,EGY,4,Land mask
 31.319036258284083,30.225935332660324,20376,Behira,EGY,4,Land mask

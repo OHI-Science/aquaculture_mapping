@@ -588,7 +588,8 @@ communitiy <- data.frame(companies = unique(spain_shellfish$Provincia))
 
 
 farms_esp <- data.frame(lat = c(38.345509445679276, 36.83403538312481, 43.6586646127094, 39.578993240236755, 36.55518316813145, 43.488143305644364, 39.98227981322492, 41.893397069777485, 36.69547948740147, 43.36941893593161, 28.17841973419213, 36.705816371679525, 42.42511968211785, 28.464013540472575, 41.109958666992036, 39.47564987283762, 43.436972390962005),
-                        lon = c(-0.48793746088812184, -2.46312530015449, -5.838989914402157, 2.6312097506887446, -6.2759664948571094, -3.808940707432179, 0.025845987383098443, 3.1931418366760647,-3.403621978170133,  -8.412121809979775, -15.411897095500123, -4.422146790963811, -8.658739084602496, -16.25186419732133, 1.2538616546744752, -0.3208672158378773, -2.9200783381913014)) %>%
+                        lon = c(-0.48793746088812184, -2.46312530015449, -5.838989914402157, 2.6312097506887446, -6.2759664948571094, -3.808940707432179, 0.025845987383098443, 3.1931418366760647,-3.403621978170133,  -8.412121809979775, -15.411897095500123, -4.422146790963811, -8.658739084602496, -16.25186419732133, 1.2538616546744752, -0.3208672158378773, -2.9200783381913014),
+                        subregion = c("Alicante", "Almeria", "Asturias", "Baleares", "Cadiz", "Cantabria", "Castellon", "Gerona", "Granada", "La Coruna", "Las Palmas", "Malaga", "Pontevedra", "Santa Cruz de Tenerife", "Tarragona", "Valencia", "Vizcaya")) %>%
   mutate(iso3c = "ESP") %>%
   mutate(data_quality = 2) %>%
   mutate(action_needed = "state/province based suitability")
@@ -986,61 +987,6 @@ mapview(farms_twn)
 
 ```
  
-OLD WAY: 
-```{r}
-
-# gadm <- st_read("/home/shares/food-systems/Aquaculture_mapping/Data/Jared/Marine_Brackish/manipulated_data/GADM36/gadm36molcountries_simp.shp")
-# plot(gadm)
-# 
-#  TWN_shp <- gadm %>%
-#   filter(GID_0 == "TWN") %>%
-#   st_transform(., food_crs) %>%
-#   mutate(Region = 1)
-#  mapview(TWN_shp)
-# 
-# st_write(TWN_shp, "/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/taiwan/taiwan.shp")
-# 
-# twn_reg_ras <- fasterize::fasterize(TWN_shp, fake_raster, fun = "sum")
-# 
-# 
-# plot(fake_raster)
-# plot(twn_reg_ras)
-# 
-# writeRaster(twn_reg_ras, "/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/taiwan/taiwan.tif")
-# 
-# 
-# twn_reg_ras <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/taiwan/taiwan.tif")
-# 
-# twn_spatial <- as(TWN_shp, "Spatial")
-# 
-# twn_coast <- rasterize(twn_spatial, twn_reg_ras, getCover = TRUE)
-# 
-# plot(twn_coast)
-# cellStats(twn_coast, "sum") #464.63
-# 
-# # filter to include >0 <1, o.w. NA
-# 
-# twn_coast_df <- as.data.frame(twn_coast, xy=TRUE) %>%
-#   dplyr::filter(layer <1 & layer >0) %>% ## filter out anything not on taiwan coast
-#   mutate(iso3c = "TWN") %>%
-#   dplyr::select(lon=x, lat=y, iso3c)
-# 
-# farms_twn <-  st_as_sf(twn_coast_df, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_twn)
-# 
-# 
-# write_csv(twn_coast_df, here::here("marine/bivalve/bivalve_farms/data/farm_sites/farms_twn.csv"))
-# 
-# 
-# twn <- read_csv(here::here("marine/bivalve/bivalve_farms/data/bivalve_sites/farms_twn.csv"))
-# farms_twn <-  st_as_sf(twn, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_twn)
-```
-
  
 ## French Polynesia
  - http://www.fao.org/3/t5816e/t5816e04.htm
@@ -1091,17 +1037,13 @@ Source:
 FAO Fisheries & Aquaculture - National Aquaculture Sector Overview - India, 2014. National Aquaculture Sector Overview Fact Sheets.
 
 ```{r}
-# world <- ne_coastline(scale = 10) #world map with 10m resolution
-# plot(world)
 
 ## read in state shapefile
 kerala_state <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/India/Kerala/state.shp"))
 
 #info of our spatial vector object
 mapview(kerala_state)
-plot(kerala_state)
 
-# world <- st_as_sf(world)
 
 kerala_state_world_crs <- st_transform(kerala_state, crs(coast_raw))
 
@@ -1118,7 +1060,6 @@ mapview(k_meters)
 
 buff <- st_buffer(k_meters, dist = 7000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
 mapview(buff)
-plot(buff)
 
 linestring <- st_cast(buff, "LINESTRING") ## make a line string so we can filter for the outline 
 mapview(linestring)
@@ -1135,7 +1076,6 @@ mapview(kerala_state_world_crop)
 mapview(kerala_state)
 
 kerala_state_crop <- as(linestring_fix, "Spatial")
-plot(kerala_state_crop)
 mapview(kerala_state_crop)
 
 kerala_state_points_lines <- sample.line(kerala_state_crop, n = 280) ## equally place the number of farms along the coastline 
@@ -1165,7 +1105,8 @@ names(farms_ind) <- c("lon", "lat")
 farms_ind_final <- farms_ind %>%
   mutate(iso3c = "IND") %>%
   mutate(data_quality = 3) %>%
-  mutate(action_needed = "Allocate spatially")
+  mutate(action_needed = "Allocate spatially") %>%
+  mutate(subregion = "Kerala")
 
 ## visualize it 
 farms_ind <-  st_as_sf(farms_ind, coords = c("lon", "lat"), 
@@ -1408,10 +1349,6 @@ Suplicy, F.M., Vianna, L.F. de N., Rupp, G.S., Novaes, A.L.T., Garbossa, L.H.P.,
 sta_catarina <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/Brazil/Santa_Catarina/dc172qt8462.shp"))
 mapview(sta_catarina)
 
-# world <- ne_coastline(scale = 110) #world map with 110m resolution
-# plot(world)
-
-# world <- st_as_sf(world)
 
 sta_catarina_world_crs <- st_transform(sta_catarina, crs(coast_raw))
 
@@ -1428,7 +1365,6 @@ mapview(sc_meters)
 
 buff <- st_buffer(sc_meters, dist = 7000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
 mapview(buff)
-plot(buff)
 
 linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
 mapview(linestring)
@@ -1443,7 +1379,6 @@ buffer_outline_fixed <- st_transform(linestring, crs = crs(brazil))
 
 linestring_fix <- st_difference(buffer_outline_fixed, brazil) ## now grab only the outline 
 mapview(linestring_fix)
-plot(sta_catarina_world_crop)
 mapview(sta_catarina_world_crop)
 
 
@@ -1454,8 +1389,7 @@ plot(sta_catarina_crop)
 mapview(sta_catarina_crop)
 
 sta_catarina_points_lines <- sample.line(sta_catarina_crop, n = 24) ## equally place the number of farms along the coastline 
-class(sta_catarina_points_lines)
-plot(sta_catarina_points_lines)
+
 
 sta_catarina_points <- st_as_sf(sta_catarina_points_lines) %>%
   mutate(new_id = 1:168)  %>%
@@ -1476,7 +1410,8 @@ names(farms_bra) <- c("lon", "lat")
 farms_bra_final <- farms_bra %>%
   mutate(iso3c = "BRA") %>%
   mutate(data_quality = 3) %>%
-  mutate(action_needed = "Allocate spatially")
+  mutate(action_needed = "Allocate spatially") %>%
+  mutate(subregion = "Santa Catarina")
 
 ## visualize it 
 farms_bra <-  st_as_sf(farms_bra, coords = c("lon", "lat"), 
@@ -1685,10 +1620,17 @@ samar_points <- st_as_sf(samar_points_lines) %>%
   dplyr::select(-new_id)
 mapview(samar_points)
 
+samar_points_final <- samar_points %>%
+  mutate(subregion = "Samar")
 
+negros_points_final <- negros_points %>%
+  mutate(subregion = "Negros Occidental")
+
+capiz_points_final <- capiz_points %>%
+  mutate(subregion = "Capiz")
 
 ## bind all three states together
-all_points <- rbind(samar_points, negros_points, capiz_points)
+all_points <- rbind(samar_points_final, negros_points_final, capiz_points_final)
 mapview(all_points)
 
 # get lat lon points
@@ -1697,13 +1639,19 @@ phl_pts <- st_centroid(all_points)
 phl_pts_latlon <- st_transform(phl_pts, crs = "+init=epsg:4326") %>%
   dplyr::select(geometry)
 
+phl_pts_rgn <-  st_transform(phl_pts, crs = "+init=epsg:4326") %>%
+  dplyr::select(subregion)
+
 farms_phl <- data.frame(do.call(rbind, st_geometry(phl_pts_latlon)))
 names(farms_phl) <- c("lon", "lat")
 
-farms_phl_final <- farms_phl %>%
+farms_phl_rgn <- cbind(farms_phl, phl_pts_rgn)
+
+farms_phl_final <- farms_phl_rgn %>%
   mutate(iso3c = "PHL") %>%
   mutate(data_quality = 3) %>%
-  mutate(action_needed = "Allocate spatially")
+  mutate(action_needed = "Allocate spatially") %>%
+  dplyr::select(-geometry)
 
 ## visualize it 
 farms_phl <-  st_as_sf(farms_phl, coords = c("lon", "lat"), 

@@ -1,4 +1,4 @@
-lat,lon,prod,sub_rgn,iso3c,data_quality,action_needed
+lat,lon,prod,subregion,iso3c,data_quality,action_needed
 14.510536378070825, 121.08748285435844,1.81,Metro Manila,PHL,2,state/province based suitability
 17.08773382905305, 120.43638606220428,0.06,llocos Norte,PHL,2,state/province based suitability
 17.205031284221167, 120.4139227279512,0.1,llocos Sur,PHL,2,state/province based suitability

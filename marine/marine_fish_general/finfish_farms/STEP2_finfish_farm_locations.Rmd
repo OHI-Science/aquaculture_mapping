@@ -642,8 +642,8 @@ National Aquaculture Sector Overview. United Arab Emirates, 2016. , National Aqu
 farms_are <- data.frame(lat = c(25.604715925918068),
                         lon = c(56.340214330776234)) %>%
   mutate(iso3c = "ARE") %>%
-  mutate(data_quality = 2) %>%
-  mutate(action_needed = "state/province based suitability")
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask")
 
 write_csv(farms_are, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_are.csv"))
 
@@ -685,12 +685,6 @@ tunisia <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data
 mapview(tunisia)
 
 
-# world <- rnaturalearth::ne_coastline(scale = 10) # world map with 10m resolution
-# plot(world)
-# class(world)
-
-# world <- st_as_sf(world)
-
 tunisia_world_crs <- st_transform(tunisia, crs(coast_raw))
 
 tunisia_world_crop <- st_crop(coast_raw, tunisia_world_crs)  %>%
@@ -723,9 +717,6 @@ class(tunisia_crop)
 mapview(tunisia_crop)
 
 tunisia_points_lines <- sample.line(tunisia_crop, n = 25) ## equally place the number of farms along the coastline 
-class(tunisia_points_lines)
-plot(tunisia_points_lines)
-
 
 tunisia_points <- st_as_sf(tunisia_points_lines) %>%
   mutate(new_id = 1:25) %>%
@@ -744,7 +735,8 @@ names(farms_tun) <- c("lon", "lat")
 farms_tun_final <- farms_tun %>%
   mutate(iso3c = "TUN") %>%
   mutate(data_quality = 3) %>%
-  mutate(action_needed = "Allocate spatially")
+  mutate(action_needed = "Allocate spatially") %>%
+  mutate(subregion = "Monastir")
 
 ## visualize it 
 farms_tun <-  st_as_sf(farms_tun, coords = c("lon", "lat"), 
@@ -965,7 +957,7 @@ FAO Fisheries & Aquaculture - National Aquaculture Sector Overview - Egypt, 2010
 farms_egy <- data.frame(lat = c(31.360400495764903, 31.15023941171644, 31.319036258284083, 31.491306679824632, 31.52619128473819, 31.275726202441984, 29.944394112057978, 27.80632012228518),
                         lon = c(27.236078999801336, 29.81109569981684, 30.225935332660324, 31.4278324391214, 31.849352783373792, 32.30190584291966, 32.54627145839493,  34.29387671355847),
                         rgn_production = c(5, 1521, 20376, 5460, 55551, 16233, 750, 30),
-                        subrgn_name = c("Mersa Matruh", "Alexandria", "Behira", "Dakahlia", "Damietta", "Port Said", "Suez", "South Sinai")) %>%
+                        subregion = c("Mersa Matruh", "Alexandria", "Behira", "Dakahlia", "Damietta", "Port Said", "Suez", "South Sinai")) %>%
   mutate(iso3c = "EGY") %>%
   mutate(data_quality = 4) %>%
   mutate(action_needed = "Land mask")
@@ -1122,8 +1114,9 @@ Now lets map the farms
 farms_mys <- data.frame(lat=c(2.131733588116292, 2.8071936098459522, 5.384539285193906, 2.8056383383493353, 2.1305137929032876),
                         lon=c(102.40118069215845, 103.49758024234029, 100.35040003558889, 103.49881667894354, 102.40627304737939)) %>%
   mutate(iso3c = "MYS") %>%
-  mutate(data_quality = 2) %>%
-  mutate(action_needed = "state/province based suitability")
+  mutate(data_quality = 4) %>%
+  mutate(action_needed = "Land mask") %>%
+  mutate(subregion = c("Sempang, Malacca", "Rompin, Pahang", "Permatang Pauh, Pahang", "Rompin, Pahang", "Sempang, Malacca"))
 
 write_csv(farms_mys, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_mys.csv"))
 
@@ -1177,7 +1170,8 @@ farms_khm <- data.frame(lat=c(10.53427341558665, 10.748668380457524, 10.64792448
                         lon=c(103.57357940185497, 103.6089106992865, 103.5006922685572)) %>%
   mutate(iso3c = "KHM") %>%
   mutate(data_quality = 2) %>%
-  mutate(action_needed = "state/province based suitability")
+  mutate(action_needed = "state/province based suitability") %>%
+  mutate(subregion = c("Prey Nob", "Stoeng Hav", "Thomnob Rolork"))
 
 write_csv(farms_khm, here("marine/marine_fish_general/finfish_farms/data/finfish_sites/farms_khm.csv"))
 
