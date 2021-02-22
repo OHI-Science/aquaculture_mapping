@@ -28,6 +28,7 @@ library(mapview)
 library(janitor)
 library(rnaturalearth)
 library(spatialEco)
+library(countrycode)
 
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
@@ -171,7 +172,8 @@ iso <-   data.frame(iso3c = countrycode(ASC_bivalve$crt_cnt, origin = 'country.n
 
 # read in shp
 farms_all <- ASC_bivalve %>%
-  cbind(iso) 
+  cbind(iso) %>%
+  mutate(iso3c = ifelse(str_detect(comp_nm, "Jersey"), "JEY", iso3c))
 
 mapview(farms_all$geometry)
 
@@ -622,22 +624,24 @@ mapview(farms_esp)
  
 Source: 
 Fish and shellfish farming, 2020. . Government of Jersey: Information and public services for the Island of Jersey. [Accessed December 4, 2020]  https://www.gov.je/Industry/FarmingFishing/Fishing/Pages/FishFarming.aspx
+
+ - UPDATE: This is not necessary. These companies are represented in the ASC data, but listed under the UK. I will fix this, so that we aren't double counting these farms. 
  
 ```{r, evalute = F}
 
-farms_jey <- data.frame(lat = c(49.172680993306905, 49.220095937386375, 49.169912669200976, 49.242435452408536, 49.20656011166959),
-                        lon = c(-2.0255193115109957, -2.0215887506551438, -2.0230904378277916, -2.060618920921559, -2.0158403231425996)) %>%
-  mutate(iso3c = "JEY") %>%
-  mutate(data_quality = 4) %>%
-  mutate(action_needed = "Land mask")
-
-write_csv(farms_jey, here("marine/bivalve/bivalve_farms/data/bivalve_sites/farms_jey.csv"))
-
-## visualize it 
-farms_jey <-  st_as_sf(farms_jey, coords = c("lon", "lat"), 
-                 crs = crs(gadm_latlon), agr = "constant")
-
-mapview(farms_jey)
+# farms_jey <- data.frame(lat = c(49.172680993306905, 49.220095937386375, 49.169912669200976, 49.242435452408536, 49.20656011166959),
+#                         lon = c(-2.0255193115109957, -2.0215887506551438, -2.0230904378277916, -2.060618920921559, -2.0158403231425996)) %>%
+#   mutate(iso3c = "JEY") %>%
+#   mutate(data_quality = 4) %>%
+#   mutate(action_needed = "Land mask")
+# 
+# write_csv(farms_jey, here("marine/bivalve/bivalve_farms/data/bivalve_sites/farms_jey.csv"))
+# 
+# ## visualize it 
+# farms_jey <-  st_as_sf(farms_jey, coords = c("lon", "lat"), 
+#                  crs = crs(gadm_latlon), agr = "constant")
+# 
+# mapview(farms_jey)
 
 ```
 
