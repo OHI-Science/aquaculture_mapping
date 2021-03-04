@@ -78,7 +78,7 @@ need_national_allocation <- all_farms_raw %>%
 # generate prediction points for each national allocation area
 for (i in 1:unique(need_national_allocation$iso3c)) {
   
-  this_iso3 <- unique(need_national_allocation$iso3c)[3]
+  this_iso3 <- unique(need_national_allocation$iso3c)[4]
   
   this_country <- gadm_full %>% 
     filter(GID_0 == this_iso3) %>% 
@@ -145,8 +145,3 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
 
 # generate prediction points for each subnational allocation area
 # 
-
-
-tibble(str_col = c("apple", "banana", "pear", "pinapple")) %>% 
-  filter(str_col <= "apple")
-
