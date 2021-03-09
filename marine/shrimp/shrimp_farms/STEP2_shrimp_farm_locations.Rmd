@@ -129,7 +129,6 @@ Now we will map the remaining countries with shrimp farms that are not included 
  - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
  - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
  -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
- - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan). 
  - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
 
 For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
@@ -477,7 +476,7 @@ The on-growing area in Niquero (70 km from Manzanillo), where packing facilities
  - 20.047065, -77.593449
 
 Source: 
-National Aquaculture Sector Overview. Cuba, 2005. , National Aquaculture Sector Overview Fact Sheets.
+National Aquaculture Sector Overview. Cuba, 2005. National Aquaculture Sector Overview Fact Sheets.
 
 ```{r}
 farms_cub <- data.frame(lat=c(19.841789, 20.047065),
@@ -507,7 +506,7 @@ mapview(farms_cub)
  - La Unión: 13.354459, -87.863771: 50 hectares
  
  Source: 
-National Aquaculture Sector Overview. El Salvador, 2005. , National Aquaculture Sector Overview Fact Sheets. Food and Agriculture Organization of the United Nations.
+National Aquaculture Sector Overview. El Salvador, 2005. National Aquaculture Sector Overview Fact Sheets. Food and Agriculture Organization of the United Nations.
  
 ```{r}
 farms_slv <- data.frame(lat=c(13.336985, 13.354459),
@@ -641,7 +640,7 @@ mapview(farms_kor)
  - Broad suitable areas https://www.dof.gov.my/index.php/pages/view/78. I'll use these and use the area as a production estimate. Saved onto aurora /home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Malaysia/malaysia_shrimp_farms.csv. 
  
 Source: 
-Aquaculture Industrial Zone Area for High Impact Projects (HIP), n.d. . Department of Fisheries Malaysia. [Accessed November 12, 2020] https://www.dof.gov.my/index.php/pages/view/78
+Aquaculture Industrial Zone Area for High Impact Projects (HIP), n.d. Department of Fisheries Malaysia. [Accessed November 12, 2020] https://www.dof.gov.my/index.php/pages/view/78
  
 ```{r}
 malaysia_shrimp_loc <- read_csv("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/Malaysia/malaysia_shrimp_farms.csv") %>%
@@ -846,7 +845,7 @@ http://www.fao.org/fishery/countrysector/naso_sri-lanka/en#:~:text=The%20current
  - Batticalao district : 60 farms, 155/60 = 2.583333 hectares per farm
 
 Source: 
-National Aquaculture Sector Overview. Sri Lanka, 2005. , National Aquaculture Sector Overview Fact Sheets. Food and Agriculture Organization of the United Nations.
+National Aquaculture Sector Overview. Sri Lanka, 2005. National Aquaculture Sector Overview Fact Sheets. Food and Agriculture Organization of the United Nations.
 
 
 ```{r}

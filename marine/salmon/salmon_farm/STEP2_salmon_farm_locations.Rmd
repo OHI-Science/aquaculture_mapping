@@ -79,11 +79,11 @@ gadm_df <- tabularaster::as_tibble(gadm_latlon, value = TRUE, cells = TRUE) %>%
 gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id"))
 
 ```
+
 Now we will map the remaining countries with shrimp farms that are not included in the ASC dataset. Workflow will be as follows: 
  - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
  - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
  -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
- - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan). 
  - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
  
  
@@ -178,7 +178,7 @@ write_csv(farms_chile, here("marine/salmon/salmon_farm/data/farm_sites/farms_chi
 # Norway
 
 We use the number of salmon licenses to get a proxy for the relative distribution of production along the Norwegian coast. 
-
+†
 ## Load csv with lat long
 License data.
 
@@ -304,6 +304,13 @@ farms_nor <- sub_norway %>%
 
 write_csv(farms_nor, here("marine/salmon/salmon_farm/data/farm_sites/farms_nor.csv"))
 
+norway <- read_csv(here("marine/salmon/salmon_farm/data/farm_sites/farms_nor.csv"))
+
+norway_sf <- st_as_sf(norway, coords = c("lon", "lat"), 
+                         crs = crs(gadm_latlon), agr = "constant")
+
+mapview(norway_sf)
+
 ```
 
 
@@ -378,7 +385,7 @@ write_csv(farms_scotland, here("marine/salmon/salmon_farm/data/farm_sites/farms_
 We consider Faroe Islands as a single region. We have data from ASC to use for our farms.
 
 Source: 
-Aquaculture Stewardship Council Data Mapping Study, n.d. . Aquaculture Stewardship Council. [Accessed November 11, 2020] 
+Aquaculture Stewardship Council Data Mapping Study, n.d. Aquaculture Stewardship Council. [Accessed November 11, 2020] 
 https://gis.asc-aqua.org/arcgis_app/
 
 
@@ -524,7 +531,7 @@ Obtained data from here: https://data.novascotia.ca/Fishing-and-Aquaculture/Aqua
 (Feb 18 2020)
 
 Source: 
-Nova Scotia Marine Aquaculture Leases , 2020. . Nova Scotia Fisheries and Aquaculture. [Accessed February 18, 2020] https://data.novascotia.ca/Fishing-and-Aquaculture/Nova-Scotia-Marine-Aquaculture-Leases/h57h-p9mm
+Nova Scotia Marine Aquaculture Leases , 2020. Nova Scotia Fisheries and Aquaculture. [Accessed February 18, 2020] https://data.novascotia.ca/Fishing-and-Aquaculture/Nova-Scotia-Marine-Aquaculture-Leases/h57h-p9mm
 
 ```{r}
 
@@ -581,15 +588,13 @@ Salmon aquaculture occurs along the Atlantic coast and in Puget sound.
 
 Puget Sound data (2018 data): http://www.moldychum.com/violations-prompt-washington-state-cancel-atlantic-salmon-farm-lease/
 
-Source: 
-
 
 ## Puget Sound
 
 Source: 
 Our Sound, Our Salmon, 2017. [Accessed January 31, 2020] http://www.moldychum.com/violations-prompt-washington-state-cancel-atlantic-salmon-farm-lease/
 
- - this will receive a 0.667 (good quality), since I do not believe it is comprehensive, and is only a sample of points. 
+ - this will receive a 4 (good quality), since I do not believe it is comprehensive, and is only a sample of points. 
 
 ```{r}
 
@@ -769,7 +774,9 @@ Columns of interest:
  - PR_AV_TON : Average tonnes of production per year
 
 Source: 
-HELCOM Map and Data Service, n.d. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
+HELCOM HOLAS II Dataset: Finfish mariculture, 2017. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
+
+
 
 ```{r}
 
@@ -852,7 +859,7 @@ write_csv(farms_turkey, here("marine/salmon/salmon_farm/data/farm_sites/farms_tu
 # Finland
 
 Source: 
-HELCOM Map and Data Service, n.d. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
+HELCOM HOLAS II Dataset: Finfish mariculture, 2017. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
 
 ```{r}
 
@@ -889,7 +896,7 @@ farms_fi <- read_csv(here("marine/salmon/salmon_farm/data/farm_sites/farms_finla
 
 # Sweden 
 Source:
-HELCOM Map and Data Service, n.d. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
+HELCOM HOLAS II Dataset: Finfish mariculture, 2017. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
 
 ```{r}
 
@@ -933,7 +940,7 @@ write.csv(farms_sw, here("marine/salmon/salmon_farm/data/farm_sites/farms_sweden
 We are using the ASC data for this: 
 
 Source: 
-Aquaculture Stewardship Council Data Mapping Study, n.d. . Aquaculture Stewardship Council. [Accessed November 11, 2020] 
+Aquaculture Stewardship Council Data Mapping Study, n.d. Aquaculture Stewardship Council. [Accessed November 11, 2020] 
 https://gis.asc-aqua.org/arcgis_app/
 
 ```{r}

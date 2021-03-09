@@ -160,7 +160,7 @@ For each point, we will add a column for "data quality". It will be scored as ve
 Data comes from https://gis.asc-aqua.org/arcgis_app/ 
 
 Source: 
-Aquaculture Stewardship Council Data Mapping Study, n.d. . Aquaculture Stewardship Council. [Accessed November 11, 2020] 
+Aquaculture Stewardship Council Data Mapping Study, n.d. Aquaculture Stewardship Council. [Accessed November 11, 2020] 
 https://gis.asc-aqua.org/arcgis_app/
 
 
@@ -173,7 +173,7 @@ iso <-   data.frame(iso3c = countrycode(ASC_bivalve$crt_cnt, origin = 'country.n
 # read in shp
 farms_all <- ASC_bivalve %>%
   cbind(iso) %>%
-  mutate(iso3c = ifelse(str_detect(comp_nm, "Jersey"), "JEY", iso3c))
+  mutate(iso3c = ifelse(str_detect(comp_nm, "Jersey"), "JEY", iso3c)) ## fix Jersey
 
 mapview(farms_all$geometry)
 
@@ -201,7 +201,6 @@ Now we will map the remaining countries with bivalve farms that are not included
  - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
  - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
  -  If there is enough information to know there are a specific number of bivalve farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
- - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan). 
  - Lastly, if there is no evidence of marine bivalve farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be, i.e. what we've done for Russia).
 
 
@@ -323,7 +322,7 @@ write_csv(farms_us_ne, here("marine/bivalve/bivalve_farms/data/bivalve_sites/far
 ## HELCOM shellfish mariculture points - Sweden, Germany
 
 Source: 
-HELCOM Map and Data Service, n.d. . The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
+HELCOM HOLAS II Dataset: Shellfish mariculture, 2017. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
 
 ```{r}
 
@@ -361,7 +360,7 @@ write.csv(farms_bal, here("marine/bivalve/bivalve_farms/data/bivalve_sites/farms
 ## HELCOM shellfish mariculture areas - Denmark
 
 Source:
-HELCOM Map and Data Service, n.d. . The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
+HELCOM HOLAS II Dataset: Shellfish mariculture, 2017. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
 
 ```{r}
 ## SHELLFISH polygons
@@ -400,7 +399,7 @@ Shellfish hatcheries:
 https://catalogue.data.gov.bc.ca/dataset/shellfish-hatcheries-coastal-resource-information-management-system-crims/resource/f161583a-1d73-4c92-bf8d-ea67727a89d3
 
 Source: 
-Shellfish Hatcheries - Coastal Resource Information Management System (CRIMS) , 2019. Ministry of Forests, Lands, Natural Resource Operations and Rural Development. [Accessed November 30, 2020] https://catalogue.data.gov.bc.ca/dataset/shellfish-hatcheries-coastal-resource-information-management-system-crims
+Shellfish Hatcheries - Coastal Resource Information Management System (CRIMS), 2019. Ministry of Forests, Lands, Natural Resource Operations and Rural Development. [Accessed November 30, 2020] https://catalogue.data.gov.bc.ca/dataset/shellfish-hatcheries-coastal-resource-information-management-system-crims
 
 ```{r}
 
@@ -432,6 +431,9 @@ Source:
 Nova Scotia Marine Aquaculture Leases , 2020. . Nova Scotia Fisheries and Aquaculture. [Accessed February 18, 2020] https://data.novascotia.ca/Fishing-and-Aquaculture/Nova-Scotia-Marine-Aquaculture-Leases/h57h-p9mm
 
 ```{r}
+# library(jsonlite)
+# test <- fromJSON("https://data.novascotia.ca/resource/h57h-p9mm.json")
+
 ## read shapefile
 ns <- st_read(file.path(path,"Canada/Nova_Scotia_Marine_Aquaculture_Sites/geo_export_fcc6f2ef-82bb-4445-98f0-a82a56cd0d00.shp"))
 mapview(ns)
@@ -543,6 +545,7 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
 TODO: Figure out how to download exact locations 
 
 https://servicio.pesca.mapama.es/acuivisor/
+
  - This is a map of all aquaculture facilities in Spain. It will not allow for download of the locations of the facilities. However, I have downloaded all of the names of each shellfish installation, with the company name, and what general location they are located in. I will filter for unique cities, and place points in each place. 
  
 How to download: 
@@ -576,7 +579,7 @@ General location to place points:
  
  
 Source: 
-Acuivisor, 2019. . Ministerio de Agricultura, Pesca Y Alimentacion, Gobierno de Espana. [Accessed December 2, 2020] https://servicio.pesca.mapama.es/acuivisor/
+Acuivisor, 2019. Ministerio de Agricultura, Pesca Y Alimentacion, Gobierno de Espana. [Accessed December 2, 2020] https://servicio.pesca.mapama.es/acuivisor/
  
 ```{r}
 ## Read in dataset of company names:
@@ -606,45 +609,6 @@ mapview(farms_esp)
 
 ```
 
-
-
-
-## Jersey 
- - Government of Jersey: https://www.gov.je/SiteCollectionDocuments/Industry%20and%20finance/ID%20Mollusc%20farms%20registered%20businesses%20page%201.pdf
-  - https://www.gov.je/SiteCollectionDocuments/Industry%20and%20finance/ID%20Molluscs%20farms%20registered%20businesses%20page%202%2020181030%20DM.pdf
-  
- - 5 licensed farms (only including "mollusc farm open"): Locations estimated from maps and addresses listed 
- - Jersey Oyster Company Limited: 49.172680993306905, -2.0255193115109957
- - Seymour Oyster Company Ltd: 49.220095937386375, -2.0215887506551438
- - La Rocque Fisheries Limited: 49.169912669200976, -2.0230904378277916
- - Jersey Sea Farms: 49.242435452408536, -2.060618920921559
- - Island Dived Scallops: 49.20656011166959, -2.0158403231425996
- 
- 
- 
-Source: 
-Fish and shellfish farming, 2020. . Government of Jersey: Information and public services for the Island of Jersey. [Accessed December 4, 2020]  https://www.gov.je/Industry/FarmingFishing/Fishing/Pages/FishFarming.aspx
-
- - UPDATE: This is not necessary. These companies are represented in the ASC data, but listed under the UK. I will fix this, so that we aren't double counting these farms. 
- 
-```{r, evalute = F}
-
-# farms_jey <- data.frame(lat = c(49.172680993306905, 49.220095937386375, 49.169912669200976, 49.242435452408536, 49.20656011166959),
-#                         lon = c(-2.0255193115109957, -2.0215887506551438, -2.0230904378277916, -2.060618920921559, -2.0158403231425996)) %>%
-#   mutate(iso3c = "JEY") %>%
-#   mutate(data_quality = 4) %>%
-#   mutate(action_needed = "Land mask")
-# 
-# write_csv(farms_jey, here("marine/bivalve/bivalve_farms/data/bivalve_sites/farms_jey.csv"))
-# 
-# ## visualize it 
-# farms_jey <-  st_as_sf(farms_jey, coords = c("lon", "lat"), 
-#                  crs = crs(gadm_latlon), agr = "constant")
-# 
-# mapview(farms_jey)
-
-```
-
  
 ## Guernsey 
  - https://www.gov.gg/fishing#:~:text=Sea%20Fisheries%20is%20responsible%20for,one%20licensed%20site%20on%20Herm.
@@ -652,7 +616,7 @@ Fish and shellfish farming, 2020. . Government of Jersey: Information and public
  - Allocate 7 farms equally across coastline
  
 Source: 
-Fishing and Aquaculture, 2020. . Government of the States of Guernsey. [Accessed December 3, 2020] https://www.gov.gg/fishing#:~:text=Sea%20Fisheries%20is%20responsible%20for,one%20licensed%20site%20on%20Herm
+Fishing and Aquaculture, 2020. Government of the States of Guernsey. [Accessed December 3, 2020] https://www.gov.gg/fishing#:~:text=Sea%20Fisheries%20is%20responsible%20for,one%20licensed%20site%20on%20Herm
 
 ```{r}
 ## read in country shapefile
@@ -966,7 +930,7 @@ mapview(farms_cub)
 
  
 ## Taiwan
-- I can't find any information on the locations of shellfish farms in Taiwan, however, they have a lot of production. I will randomly place a point in the Qigu lagoon (see article). 
+- I can't find any information on the locations of shellfish farms in Taiwan. I will randomly place a point in the Qigu lagoon (see article). 
  - https://www.newsecuritybeat.org/2019/10/taiwan-beach-snow/
  
 Source:
@@ -1129,7 +1093,7 @@ http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
  - This shows both Shrimp and Bivalve aquaculture sites in Thailand. Although it is not comprehensive, it is the best information I could find. I'll filter for the bivalve sites.
  
 Source:
-NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
+NASO aquaculture maps collection, 2010. Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/
 
 ```{r}
 ## read in thailand shp file
@@ -1731,7 +1695,7 @@ All farms are located in Deep Bay, specifically shown in the map.
  - I will place a point in Deep Bay 
  
 Source: 
-Marine fish culture, pond fish culture and oyster culture, n.d. . Agriculture, Fisheries, and Conservation Department; The Government of the Hong Kong Special Administrative Region.  https://www.afcd.gov.hk/english/fisheries/fish_aqu/fish_aqu_mpo/fish_aqu_mpo.html 
+Marine fish culture, pond fish culture and oyster culture, n.d. Agriculture, Fisheries, and Conservation Department; The Government of the Hong Kong Special Administrative Region.  https://www.afcd.gov.hk/english/fisheries/fish_aqu/fish_aqu_mpo/fish_aqu_mpo.html 
  
 ```{r}
 

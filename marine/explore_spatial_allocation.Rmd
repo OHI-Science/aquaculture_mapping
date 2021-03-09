@@ -24,7 +24,7 @@ library(mapview)
 library(janitor)
 library(rnaturalearth)
 library(spatialEco)
-
+library(countrycode)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
 
@@ -54,7 +54,7 @@ gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id")
 
 ```
 
-Read in and summarise all data quality farm data 
+Read in and combine all farm data 
 ```{r}
 bivalves <- read_csv(here::here("marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon_data_quality.csv")) %>%
   mutate(group = "bivalve") %>%
@@ -86,7 +86,35 @@ all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"),
 
 mapview(all_farms_sf)
 
+
+```
+
+Read in and combine all FAO tonnage data per country
+```{r}
+bivalves_tonnes <- read_csv(here::here("marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve.csv")) %>%
+  mutate(group = "bivalve")
   
+shrimp_tonnes <- read_csv(here::here("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv")) %>%
+  mutate(group = "shrimp") %>%
+  filter(year == 2017)
+  
+marine_fish_tonnes <- read_csv(here::here("marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish.csv")) %>%
+  mutate(group = "marine_fish_general") %>%
+  filter(year == 2017)
+  
+salmon_tonnes <- read_csv(here::here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
+  mutate(group = "salmon") %>%
+  filter(year == 2017)
+  
+crustaceans_tonnes <- read_csv(here::here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
+  mutate(group = "crustaceans") %>%
+  filter(year == 2017)
+  
+tuna_tonnes <- read_csv(here::here("marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv")) %>%
+  mutate(group = "tuna") %>%
+  filter(year == 2017)
+
+all_species_country_tonnes <- rbind(bivalves_tonnes, shrimp_tonnes, marine_fish_tonnes, salmon_tonnes, crustaceans_tonnes, tuna_tonnes)
 ```
 
 
@@ -94,13 +122,44 @@ mapview(all_farms_sf)
 n_farms <- all_farms %>%
   group_by(iso3c, data_quality, group) %>%
   summarise(n_farms = n()) %>%
-  ungroup() %>%
-  group_by(iso3c) %>%
-  mutate(avg_quality = mean(data_quality)) %>%
-  ungroup()
+  ungroup() 
 
 ## n_farms shows us the number of points that will need spatial allocation within each country according to our new rules (any of the rows that score 3. Those that score 1 or 2, will need some sort of suitability analysis.)
 
+
+## make a dataset with the country, species type (farm type), tonnage, and # of farms, for those that score data quality %in% c(3,4,5)
+sum(all_species_country_tonnes$fao_tonnes_production) # 29623515
+
+n_farms_final <- n_farms %>%
+  filter(data_quality %in% c(3,4,5)) %>%
+  group_by(iso3c, group) %>%
+  summarise(n_farms = sum(n_farms)) %>%
+  left_join(all_species_country_tonnes, by = c("iso3c", "group")) %>%
+  dplyr::select(iso3c, country, year, group, n_farms, fao_tonnes_production)
+sum(n_farms_final$fao_tonnes_production) # 26812832
+
+n_farms_tonnes_no_info <- n_farms %>%
+  filter(data_quality %in% c(1, 2)) %>%
+  group_by(iso3c, group) %>%
+  summarise(n_farms = sum(n_farms)) %>%
+  left_join(all_species_country_tonnes, by = c("iso3c", "group")) %>%
+  mutate(n_farms = NA)
+sum(n_farms_tonnes_no_info$fao_tonnes_production) # 2810682
+
+26812832 + 2810682 # 29623514 # perfect
+
+n_farms_final_final <- rbind(n_farms_final, n_farms_tonnes_no_info)
+sum(n_farms_final_final$fao_tonnes_production) # 29623515
+
+
+## save n_farms_final to use to make a model of farms and production
+write.csv(n_farms_final_final, "data/n_farms_production_data.csv", row.names = FALSE)
+
+```
+
+Now let's do some exploration:
+
+```{r}
 n_countries <- n_farms %>%
   group_by(data_quality, group) %>%
   summarise(n_countries = n()) %>%
@@ -109,6 +168,13 @@ n_countries <- n_farms %>%
   mutate(total_countries = sum(n_countries)) %>%
   ungroup() %>%
   mutate(percent = n_countries/total_countries)
+
+test2 <- n_farms %>%
+  group_by(data_quality) %>%
+  summarise(n_countries = n())
+
+countries <- data.frame(iso3c = unique(all_farms_sf$iso3c)) %>%
+  mutate(country = countrycode(iso3c, origin = 'iso3c', destination = 'country.name'))
 
 ## n_countries shows us the number of countries that will need spatial allocation within each species group according to our new rules (any of the rows that score 3 in the data quality column. Those that score 1 or 2, will need some sort of suitability analysis, based on country or provice/state.)
 
