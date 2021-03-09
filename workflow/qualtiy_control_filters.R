@@ -9,6 +9,7 @@
 #### load libraries and data ####
 #------------------------------------------------------------------------------#
 library(sf)
+library(spatialEco)
 library(tidyverse)
 library(raster)
 library(rgeos)
@@ -34,8 +35,8 @@ bathy_raw <- raster("/home/shares/clean-seafood/raw_data/bathymetry_data/full_ba
 bathy_raw2 <- bathy_raw2 %>% 
   projectRaster(to = fake_raster)
 
-bathy_raw2 <- bathy_raw
-bathy_raw <- bathy_raw2
+#bathy_raw2 <- bathy_raw
+#bathy_raw <- bathy_raw2
 bathy_raw[bathy_raw >    1] <- NA # replace all values over 1m asl as NA
 bathy_raw[bathy_raw < -250] <- NA # replace all values under 250 bsl as NA
 bathy_raw[!is.na(bathy_raw)] <- 1 # replace all suitable depths with 1
@@ -47,8 +48,7 @@ all_farms_raw   <-
               mutate(type = "bivalve") %>% 
               select(-X1),
             read_csv("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon_data_quality.csv") %>% 
-              mutate(type = "crustacean") %>% 
-              rename(subregion = sub_rgn),
+              mutate(type = "crustacean"),
             read_csv("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv") %>% 
               mutate(type = "salmon"),
             read_csv("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon_data_quality.csv") %>% 
@@ -75,10 +75,24 @@ need_national_allocation <- all_farms_raw %>%
   filter(action_needed == "Allocate spatially", 
          is.na(subregion))
 
+# stucture of the loop for each country 
+# 1. Get the country ranges land-eez-bbox
+# 2. Calculate the dist to shore, port, and pull depth
+# 3. Create final acceptable range rasters
+# 4. Create buffered coast line
+
+# layers of data needed gadm_full, eez_sf, coastline, 
+
 # generate prediction points for each national allocation area
 for (i in 1:unique(need_national_allocation$iso3c)) {
   
-  this_iso3 <- unique(need_national_allocation$iso3c)[4]
+  #1. Get country ranges
+  
+  ## 1.a get country shape file
+  this_iso3 <- unique(need_national_allocation$iso3c)[7]
+  
+  
+  the_farm_number <- 100
   
   this_country <- gadm_full %>% 
     filter(GID_0 == this_iso3) %>% 
@@ -88,7 +102,7 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
     ungroup()
   #select(GID_0) %>% 
   
-  
+  ## 1.b get eez
   this_eez <- eez_sf %>% 
     filter(ISO_Ter1 == this_iso3) %>% 
     group_by(ISO_Ter1)%>% 
@@ -96,52 +110,125 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
     sf::st_as_sf() %>% 
     ungroup() 
   
+  ## 1.c both country and eez
   this_area <- this_country %>% 
     bind_rows(this_eez)
   
+  ## 1.d get bounding box
   this_bbox <- st_bbox(this_eez)
-  this_coast <- st_crop(coastline, this_bbox)
+  
+  ## 1.e filter for ports and coast line of this country
+  this_coast <- this_country %>%
+    st_union() %>% # union all touching polygons
+    sf::st_as_sf() %>%
+    st_cast("MULTILINESTRING") # Cast to a multilinestring
+  
+  #this_coast <- st_crop(coastline, this_bbox)
   these_ports <- st_crop(ports_raw, this_bbox)
   
+  ## 1.f crop down the rasters
   this_raster_area <- crop(fake_raster, this_eez)
-  this_eez_mask <- mask(fake_raster, this_eez) %>% 
-    crop(this_eez)
+  this_eez_mask <- crop(fake_raster, this_eez) #%>% 
+    #crop(this_eez)
+  this_eez_mask <- rasterize(this_eez)
   
+  # 2 Calculate the dist to shore, port, and pull depth
   
+  ## 2.a prep the coasts, ports, and eez to spatial points 
   this_raster_points <- as(this_eez_mask, "SpatialPoints")
   this_coast_sp <- as(this_coast, "Spatial")
   this_port_sp <- as(these_ports, "Spatial")
   
-  # calculate distance to the coast!
+  ## 2.b calculate distance to the coast!
   dis_to_coast_rast <- this_eez_mask
   this_dist <- gDistance(this_raster_points, this_coast_sp, byid = TRUE)
   this_dmin = apply(this_dist,2,min)
   dis_to_coast_rast[!is.na(dis_to_coast_rast[])]=this_dmin
   
-  ps_1 <- dis_to_coast_rast
-  ps_1[ps_1 < .1] <- NA
-  ps_1[ps_1 > 3] <- NA
-  plot(ps_1)
+  coast_test_rast <-dis_to_coast_rast
+  coast_test_rast[coast_test_rast > 1] <- NA # replace all values over 1m asl as NA
   
-  xbox <- dis_to_port_rast
-  xbox[xbox > 2] <- NA
-  plot(xbox)
-  
-  nice <- xbox + ps_1 + this_bathy_mask
-  mapview::mapview(this_bathy_mask)
-  plot(nice, col = c("red", "green"))
-  
-  # calculate distance to ports!
+  plot(dis_to_coast_rast)
+  ## 2.c calculate distance to ports!
   dis_to_port_rast <- this_eez_mask
   this_dist_port <- gDistance(this_raster_points, this_port_sp, byid = TRUE)
   this_dmin_port = apply(this_dist_port,2,min)
   dis_to_port_rast[!is.na(dis_to_port_rast[])]=this_dmin_port
   
-  # get depth data!
-  this_bathy_mask <- crop(bathy_raw2, this_bbox) #%>% 
-    mask(this_eez_mask)
+  port_test_rast <- dis_to_port_rast
+  port_test_rast[port_test_rast >.5 ] <- NA
   
+  ## 3.d get depth data!
+  this_bathy_mask <- crop(bathy_raw, this_eez) 
+  
+    
+  # 4 make full suitability map!
+  suitability_rast <- port_test_rast+coast_test_rast+this_bathy_mask
+    
+  # 5 Create a buffered coastline
+  this_coast_meters <- st_transform(this_coast, crs = 7801) %>% ## transform to a crs that can buffer in meters 
+    st_buffer(dist = 10000) %>% # buffer in meters
+    st_cast("MULTILINESTRING") %>% 
+    st_transform(crs = crs(the_crs)) %>%  # 
+    st_difference(this_country)
+  
+  this_cell_polygons <- rasterToPolygons(suitability_rast)%>% 
+    st_as_sf() %>% 
+    st_union()%>% 
+    sf::st_as_sf()
+  
+  x_test <- st_intersection(this_coast_meters, this_cell_polygons) %>%  
+    as_Spatial() 
+  
+  c <- length(x_test@lines[[1]]@Lines)
+  c_n <- c(1:c)
+  
+  x_lines <- SpatialLines(x_test@lines)#[[1]]@Lines)
+
+  
+  
+  df <- data.frame(len = sapply(1:length(x_lines), function(i) gLength(x_lines[i, ])))
+  rownames(df) <- sapply(1:length(x_lines), function(i) x_lines@lines[[i]]@ID)
+  
+  y_test <- SpatialLinesDataFrame(x_lines, data = df )
+
+  
+  ## equally place the number of farms along
+  this_points_lines <- spatialEco::sample.line(y_test, 
+                                               n = 100, 
+                                               longlat = FALSE, 
+                                               match.ID = FALSE)
+  
+  
+  this_points <- st_as_sf(this_points_lines)
+  mapview(this_points)
+  
+  
+  sp.lines <- SpatialLines(list(Lines(list(Line(cbind(c(1,2,3),c(3,2,2)))),
+                                      ID="2")))
+  sp.lines <- SpatialLinesDataFrame(sp.lines, data.frame(ID=1:2,row.names=c(1,2)) )
+                                     
+  reg.sample <- sample.line(sp.lines, d = 20, type = "regular", longlat = TRUE)
 }
+
+
+
+
+ps_1 <- dis_to_coast_rast
+ps_1[ps_1 < .1] <- NA
+ps_1[ps_1 > 3] <- NA
+plot(ps_1)
+
+xbox <- dis_to_port_rast
+xbox[xbox > 2] <- NA
+plot(xbox)
+
+nice <- xbox + ps_1 + this_bathy_mask
+mapview::mapview(this_bathy_mask)
+plot(nice, col = c("red", "green"))
+
+
+
 
 # generate prediction points for each subnational allocation area
 # 
