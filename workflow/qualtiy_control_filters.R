@@ -91,8 +91,12 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
   ## 1.a get country shape file
   this_iso3 <- unique(need_national_allocation$iso3c)[7]
   
+  the_farm_number <- all_farms_raw %>% 
+    filter(iso3c == this_iso3,
+           data_quality != 5) %>% 
+    nrow()
   
-  the_farm_number <- 100
+  
   
   this_country <- gadm_full %>% 
     filter(GID_0 == this_iso3) %>% 
@@ -167,68 +171,25 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
     
   # 5 Create a buffered coastline
   this_coast_meters <- st_transform(this_coast, crs = 7801) %>% ## transform to a crs that can buffer in meters 
-    st_buffer(dist = 10000) %>% # buffer in meters
+    st_buffer(dist = 200) %>% # buffer in meters
     st_cast("MULTILINESTRING") %>% 
     st_transform(crs = crs(the_crs)) %>%  # 
-    st_difference(this_country)
+    st_difference(this_country) %>% 
+    mutate(info = "names")
   
+  ## create polygons of suitable rasters
   this_cell_polygons <- rasterToPolygons(suitability_rast)%>% 
     st_as_sf() %>% 
     st_union()%>% 
     sf::st_as_sf()
   
-  x_test <- st_intersection(this_coast_meters, this_cell_polygons) %>%  
-    as_Spatial() 
+  this_suitable_coast <- st_intersection(this_coast_meters, this_cell_polygons) %>% 
+    as_Spatial()
   
-  c <- length(x_test@lines[[1]]@Lines)
-  c_n <- c(1:c)
-  
-  x_lines <- SpatialLines(x_test@lines)#[[1]]@Lines)
-
+  # regularly sample points along line
+  this_farm_points <- sp::spsample(this_suitable_coast, n=the_farm_number, type = "regular") %>% 
+    sf::st_as_sf()
   
   
-  df <- data.frame(len = sapply(1:length(x_lines), function(i) gLength(x_lines[i, ])))
-  rownames(df) <- sapply(1:length(x_lines), function(i) x_lines@lines[[i]]@ID)
-  
-  y_test <- SpatialLinesDataFrame(x_lines, data = df )
-
-  
-  ## equally place the number of farms along
-  this_points_lines <- spatialEco::sample.line(y_test, 
-                                               n = 100, 
-                                               longlat = FALSE, 
-                                               match.ID = FALSE)
-  
-  
-  this_points <- st_as_sf(this_points_lines)
-  mapview(this_points)
-  
-  
-  sp.lines <- SpatialLines(list(Lines(list(Line(cbind(c(1,2,3),c(3,2,2)))),
-                                      ID="2")))
-  sp.lines <- SpatialLinesDataFrame(sp.lines, data.frame(ID=1:2,row.names=c(1,2)) )
-                                     
-  reg.sample <- sample.line(sp.lines, d = 20, type = "regular", longlat = TRUE)
 }
 
-
-
-
-ps_1 <- dis_to_coast_rast
-ps_1[ps_1 < .1] <- NA
-ps_1[ps_1 > 3] <- NA
-plot(ps_1)
-
-xbox <- dis_to_port_rast
-xbox[xbox > 2] <- NA
-plot(xbox)
-
-nice <- xbox + ps_1 + this_bathy_mask
-mapview::mapview(this_bathy_mask)
-plot(nice, col = c("red", "green"))
-
-
-
-
-# generate prediction points for each subnational allocation area
-# 
