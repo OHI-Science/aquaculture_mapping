@@ -32,12 +32,12 @@ bathy_raw <- raster("/home/shares/clean-seafood/raw_data/bathymetry_data/full_ba
   #projectRaster(to = fake_raster,
                 #res = res(fake_raster))
 
-bathy_raw2 <- bathy_raw2 %>% 
+bathy_raw <- bathy_raw %>% 
   projectRaster(to = fake_raster)
 
 #bathy_raw2 <- bathy_raw
 #bathy_raw <- bathy_raw2
-bathy_raw[bathy_raw >    1] <- NA # replace all values over 1m asl as NA
+bathy_raw[bathy_raw >    10] <- NA # replace all values over 1m asl as NA
 bathy_raw[bathy_raw < -250] <- NA # replace all values under 250 bsl as NA
 bathy_raw[!is.na(bathy_raw)] <- 1 # replace all suitable depths with 1
 
@@ -86,7 +86,7 @@ need_national_allocation <- all_farms_raw %>%
 # generate prediction points for each national allocation area
 for (i in 1:unique(need_national_allocation$iso3c)) {
   
-  #1. Get country ranges
+  #1. Get the country ranges land-eez-bbox
   
   ## 1.a get country shape file
   this_iso3 <- unique(need_national_allocation$iso3c)[7]
@@ -119,7 +119,7 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
     bind_rows(this_eez)
   
   ## 1.d get bounding box
-  this_bbox <- st_bbox(this_eez)
+  this_bbox <- st_bbox(this_area)
   
   ## 1.e filter for ports and coast line of this country
   this_coast <- this_country %>%
@@ -140,6 +140,9 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
   
   ## 2.a prep the coasts, ports, and eez to spatial points 
   this_raster_points <- as(this_eez_mask, "SpatialPoints")
+  
+  mapview(this_raster_points)
+  this_area_sp <- as(this_area, "Spatial")
   this_coast_sp <- as(this_coast, "Spatial")
   this_port_sp <- as(these_ports, "Spatial")
   
@@ -160,18 +163,22 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
   dis_to_port_rast[!is.na(dis_to_port_rast[])]=this_dmin_port
   
   port_test_rast <- dis_to_port_rast
-  port_test_rast[port_test_rast >.5 ] <- NA
+  port_test_rast[port_test_rast >.2 ] <- NA
   
   ## 3.d get depth data!
-  this_bathy_mask <- crop(bathy_raw, this_eez) 
-  
+  this_bathy_mask <- raster::crop(bathy_raw, this_area_sp) 
+  this_bathy_mask2 <- raster::mask(this_bathy_mask, this_area_sp)
     
   # 4 make full suitability map!
-  suitability_rast <- port_test_rast+coast_test_rast+this_bathy_mask
-    
+  suitability_rast <- port_test_rast+coast_test_rast#+this_bathy_mask
+  #suitability_rast[suitability_rast >= 0] <- 1
+  
+  #suitability_rast[!is.na(suitability_rast)] = 1  
+  #suitability_rast[!is.na(suitability_rast[])] <- 1
+  #values(suitability_rast)[!is.na(values(suitability_rast))] = 1
   # 5 Create a buffered coastline
   this_coast_meters <- st_transform(this_coast, crs = 7801) %>% ## transform to a crs that can buffer in meters 
-    st_buffer(dist = 200) %>% # buffer in meters
+    st_buffer(dist = 200) %>% # buffer in meters km 
     st_cast("MULTILINESTRING") %>% 
     st_transform(crs = crs(the_crs)) %>%  # 
     st_difference(this_country) %>% 
@@ -187,9 +194,21 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
     as_Spatial()
   
   # regularly sample points along line
-  this_farm_points <- sp::spsample(this_suitable_coast, n=the_farm_number, type = "regular") %>% 
+  this_farm_points <- sp::spsample(this_suitable_coast, n=this_farm_points, type = "regular") %>% 
     sf::st_as_sf()
   
   
 }
 
+
+library(mapview)
+# suitability layers
+mapview(dis_to_coast_rast) # might not be needed! 
+mapview(port_test_rast)
+mapview(suitability_rast) 
+mapview(this_coast_meters)
+mapview(this_suitable_coast)
+
+
+# Making the suitable coastline
+mapview(this_farm_points)
