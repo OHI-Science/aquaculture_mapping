@@ -83,7 +83,6 @@ Now we will map the remaining countries with tuna farms that are not included in
  - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
  - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
  -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
- - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan). 
  - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
 
 For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
@@ -115,7 +114,7 @@ https://www.emodnet-humanactivities.eu/search-results.php?dataname=Finfish+Produ
 https://www.emodnet-humanactivities.eu/view-data.php
 
 Source:
-EMODnet Human Activities: Finfish production, 2019. [Accessed December 8, 2020] 
+EMODnet Human Activities: Marine Finfish Aquaculture, 2019. [Accessed December 8, 2020] 
 https://www.emodnet-humanactivities.eu/search-results.php?dataname=Finfish+Production
 
 

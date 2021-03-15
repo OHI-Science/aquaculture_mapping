@@ -127,7 +127,6 @@ Now we will map the remaining countries with marine finfish farms that are not i
  - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
  - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
  -  If there is enough information to know there are a specific number of finfish farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise.
- - If there are not exact numbers of farms in the country, but you know there are a lot, randomly place points along the coast line (a non-exact number, like we did for Taiwan bivalve/shrimp). 
  - Lastly, if there is no evidence of marine finfish farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be, i.e. what we've done for Russia for bivalves).
 
 
@@ -445,7 +444,7 @@ mapview(farms_idn)
  - I will equally allocate 112 points along the coast of Portugal.
  
 Source: 
-Estatísticas da Pesca, 2020. . Instituto Nacional de Estatística. [Accessed December 21, 2020]
+Estatísticas da Pesca, 2020. Instituto Nacional de Estatística. [Accessed December 21, 2020]
   
   
  
@@ -1010,7 +1009,7 @@ https://www.sfa.gov.sg/food-farming/food-farms/farming-in-singapore
 I'll place 109 farms equally along the coast of Singapore.
 
 Source: 
-Food Farms in Singapore, 2019. . Singapore Food Agency. [Accessed December 17, 2020] https://www.sfa.gov.sg/food-farming/food-farms/farming-in-singapore
+Food Farms in Singapore, 2019. Singapore Food Agency. [Accessed December 17, 2020] https://www.sfa.gov.sg/food-farming/food-farms/farming-in-singapore
 
 ```{r}
 # world <- rnaturalearth::ne_coastline(scale = 10) # world map with 10m resolution
