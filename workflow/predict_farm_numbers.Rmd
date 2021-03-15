@@ -12,15 +12,69 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(janitor)
 library(tidymodels)
 library(WDI)
 library(countrycode)
 
 
-raw <- read_csv("marine/data/n_farms_production_data.csv")
+aq_info <- read_csv('/home/shares/clean-seafood/raw_data/FAO/production/CL_FI_COUNTRY_GROUPS.csv') %>% 
+  clean_names() %>% 
+  select(iso3_code, geo_region_group, continent_group, eco_class_group)
+
+raw <- read_csv("/home/blasco/github/aquaculture_mapping/marine/data/n_farms_production_data.csv") %>% 
+  left_join(aq_info, by = c('iso3c' = 'iso3_code'))
 
 
 
+aq_types <- raw %>% 
+  filter(!is.na(n_farms)) %>% 
+  mutate(tonnes_per_farm = fao_tonnes_production/n_farms) %>% 
+  group_by(continent_group, group) %>% 
+  summarise(tonnes_per_farm = mean(tonnes_per_farm))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
 ready <- raw %>% 
   mutate(iso2c = purrr::map_chr(.x = iso3c, 
                            ~countrycode(sourcevar = .x, 

@@ -46,9 +46,10 @@ bathy_raw[!is.na(bathy_raw)] <- 1 # replace all suitable depths with 1
 all_farms_raw   <-
   bind_rows(read_csv("marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon_data_quality.csv") %>% 
               mutate(type = "bivalve") %>% 
-              select(-X1),
+              dplyr::select(-X1),
             read_csv("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon_data_quality.csv") %>% 
-              mutate(type = "crustacean"),
+              mutate(type = "crustacean") %>% 
+              dplyr::select(-prod),
             read_csv("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv") %>% 
               mutate(type = "salmon"),
             read_csv("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon_data_quality.csv") %>% 
@@ -61,6 +62,10 @@ all_farms_raw   <-
            coords = c("lon", "lat"),
            crs = crs(food_raster), 
            agr = "constant") 
+
+all_the_farm_points <- all_farms_raw %>% 
+  dplyr::select(iso3c, data_quality, type) %>%
+  .[0, ]
 
 
 ####  Allocate spatially ####
@@ -84,16 +89,20 @@ need_national_allocation <- all_farms_raw %>%
 # layers of data needed gadm_full, eez_sf, coastline, 
 
 # generate prediction points for each national allocation area
-for (i in 1:unique(need_national_allocation$iso3c)) {
+for (i in 1:length(unique(need_national_allocation$iso3c))) {
   
   #1. Get the country ranges land-eez-bbox
   
   ## 1.a get country shape file
-  this_iso3 <- unique(need_national_allocation$iso3c)[7]
+  this_iso3 <- unique(need_national_allocation$iso3c)[8]
   
-  the_farm_number <- all_farms_raw %>% 
+  this_farm_info <- all_farms_raw %>% 
     filter(iso3c == this_iso3,
-           data_quality != 5) %>% 
+           data_quality == 3) 
+  
+  this_type_vector <- this_farm_info$type
+  
+  the_farm_number <- this_farm_info %>% 
     nrow()
   
   
@@ -134,14 +143,14 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
   this_raster_area <- crop(fake_raster, this_eez)
   this_eez_mask <- crop(fake_raster, this_eez) #%>% 
     #crop(this_eez)
-  this_eez_mask <- rasterize(this_eez)
+  #this_eez_mask <- rasterize(this_eez)
   
   # 2 Calculate the dist to shore, port, and pull depth
   
   ## 2.a prep the coasts, ports, and eez to spatial points 
   this_raster_points <- as(this_eez_mask, "SpatialPoints")
   
-  mapview(this_raster_points)
+  #mapview(this_raster_points)
   this_area_sp <- as(this_area, "Spatial")
   this_coast_sp <- as(this_coast, "Spatial")
   this_port_sp <- as(these_ports, "Spatial")
@@ -155,7 +164,7 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
   coast_test_rast <-dis_to_coast_rast
   coast_test_rast[coast_test_rast > 1] <- NA # replace all values over 1m asl as NA
   
-  plot(dis_to_coast_rast)
+  #plot(dis_to_coast_rast)
   ## 2.c calculate distance to ports!
   dis_to_port_rast <- this_eez_mask
   this_dist_port <- gDistance(this_raster_points, this_port_sp, byid = TRUE)
@@ -194,9 +203,18 @@ for (i in 1:unique(need_national_allocation$iso3c)) {
     as_Spatial()
   
   # regularly sample points along line
-  this_farm_points <- sp::spsample(this_suitable_coast, n=this_farm_points, type = "regular") %>% 
-    sf::st_as_sf()
-  
+  this_farm_points <- sp::spsample(this_suitable_coast, n=the_farm_number*2, type = "random") %>% 
+    sf::st_as_sf() %>% 
+    sample_n(the_farm_number) %>% 
+    mutate(
+      iso3 = this_iso3,
+      data_quality = 4,
+      type = this_type_vector
+    )
+    
+  all_the_farm_points <- all_the_farm_points %>% 
+    rbind(this_farm_points)
+    
   
 }
 
@@ -211,4 +229,6 @@ mapview(this_suitable_coast)
 
 
 # Making the suitable coastline
-mapview(this_farm_points)
+mapview(all_the_farm_points)
+
+# south korea does not have enough ports I think. 
