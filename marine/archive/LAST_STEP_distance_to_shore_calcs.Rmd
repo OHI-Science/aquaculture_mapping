@@ -1,0 +1,340 @@
+---
+title: "Distance to shore calcs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This script calculates the distance to shore for each aquaculture point that falls under data quality = 4 or data quality = 5. 
+
+```{r}
+library(raster)
+library(tidyverse)
+library(stringr)
+library(rgdal)
+library(PBSmapping)
+library(maptools)
+library(sf)
+library(lwgeom)
+library(data.table)
+library(here)
+library(mapview)
+library(janitor)
+library(rnaturalearth)
+library(spatialEco)
+
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+source(here::here("_spatial/template_raster.R"))
+
+gordon_coast <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/outline_st.shp"))
+```
+
+
+```{r}
+
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- projectRaster(gadm, food_raster)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+```{r}
+
+gadm_df <- tabularaster::as_tibble(gadm_latlon, value = TRUE, cells = TRUE) %>% 
+  mutate(cellvalue = round(cellvalue, 0))
+
+gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id"))
+
+```
+
+Read in and summarise all data quality farm data 
+```{r}
+bivalves <- read_csv(here::here("marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "bivalve") %>%
+  dplyr::select(-X1)
+  
+shrimp <- read_csv(here::here("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "shrimp") %>%
+  dplyr::select(-area_ha, -prod)
+  
+marine_fish <- read_csv(here::here("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "marine_fish_general") %>%
+  dplyr::select(-rgn_production)
+  
+salmon <- read_csv(here::here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv")) %>%
+  mutate(group = "salmon")
+  
+crustaceans <- read_csv(here::here("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "crustaceans") %>%
+  dplyr::select(-prod)
+  
+tuna <- read_csv(here::here("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "tuna") %>%
+  mutate(subregion = NA)
+
+all_farms <- rbind(shrimp, bivalves, marine_fish, salmon, crustaceans, tuna)
+
+all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
+                         crs = crs(gadm_latlon), agr = "constant")
+
+mapview(all_farms_sf)
+
+## find average distance to shore per each spp group 
+
+## do bivalves 
+datalist_biv = list()
+
+  group_df <- all_farms_sf %>%
+    filter(action_needed == "Land mask") %>%
+    filter(group == "bivalve") 
+  
+  num_rows <- nrow(group_df)
+  
+  group_df_final <- group_df %>%
+    mutate(row_number = 1:num_rows) %>%
+    filter(row_number > 2322) ## now delete the rows that have already been completed 
+  
+num_rows_final <- group_df_final$row_number  
+    
+for(i in num_rows_final){
+  
+    # i = 1411 # testing
+  final_df <- group_df_final %>%
+    filter(row_number == i)
+    
+  datalist_biv[[i]] <- cbind(final_df, data.frame(distance = st_distance(final_df, gordon_coast)))
+  
+}
+   
+
+dist_data_biv = do.call(rbind, datalist_biv)
+
+## save the first round just in case... it only made it through 1404 rows. Delete the rows already done and continue
+st_write(dist_data_biv, file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/bivalve_dist.shp"))
+
+
+## do tunas 
+datalist_tuna = list()
+
+  group_df <- all_farms_sf %>%
+    filter(action_needed == "Land mask") %>%
+    filter(group == "tuna") 
+  
+  num_rows <- nrow(group_df)
+  
+  group_df_final <- group_df %>%
+    mutate(row_number = 1:num_rows) #%>%
+    #filter(row_number > 2322) ## now delete the rows that have already been completed 
+  
+num_rows_final <- group_df_final$row_number  
+    
+for(i in num_rows_final){
+  
+    # i = 1411 # testing
+  final_df <- group_df_final %>%
+    filter(row_number == i)
+    
+  datalist_tuna[[i]] <- cbind(final_df, data.frame(distance = st_distance(final_df, gordon_coast)))
+  
+}
+   
+
+dist_data_tuna = do.call(rbind, datalist_tuna)
+
+## save the first round just in case... it only made it through 1404 rows. Delete the rows already done and continue
+st_write(dist_data_tuna, file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/tuna_dist.shp"))
+
+
+## do marine fish  
+datalist_mf = list()
+
+  group_df <- all_farms_sf %>%
+    filter(action_needed == "Land mask") %>%
+    filter(group == "marine_fish_general") 
+  
+  num_rows <- nrow(group_df)
+  
+  group_df_final <- group_df %>%
+    mutate(row_number = 1:num_rows) #%>%
+    #filter(row_number > 2322) ## now delete the rows that have already been completed 
+  
+num_rows_final <- group_df_final$row_number  
+    
+for(i in num_rows_final){
+  
+    # i = 1411 # testing
+  final_df <- group_df_final %>%
+    filter(row_number == i)
+    
+  datalist_mf[[i]] <- cbind(final_df, data.frame(distance = st_distance(final_df, gordon_coast)))
+  
+}
+   
+
+dist_data_mf = do.call(rbind, datalist_mf)
+
+## save the first round just in case... it only made it through 1404 rows. Delete the rows already done and continue
+st_write(dist_data_mf, file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/marine_fish_general_dist.shp"))
+
+
+## do salmon 
+datalist_salmon = list()
+
+  group_df <- all_farms_sf %>%
+    filter(action_needed == "Land mask") %>%
+    filter(group == "salmon") 
+  
+  num_rows <- nrow(group_df)
+  
+  group_df_final <- group_df %>%
+    mutate(row_number = 1:num_rows)#  %>%
+# filter(row_number < 2345, row_number > 2235) ## now delete the rows that have already been completed 
+   
+num_rows_final <- group_df_final$row_number  
+    
+for(i in num_rows_final){
+  
+    # i = 2235 # testing
+  final_df <- group_df_final %>%
+    filter(row_number == i)
+    
+  datalist_salmon[[i]] <- cbind(final_df, data.frame(distance = st_distance(final_df, gordon_coast)))
+  
+}
+   
+
+dist_data_salmon = do.call(rbind, datalist_salmon)
+## ~100 per hour = there are 3400 rows... = 34 hours to run....
+
+## save the first round just in case... it only made it through 1404 rows. Delete the rows already done and continue
+st_write(dist_data_salmon, file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/salmon_dist.shp"))
+
+
+
+## do shrimp
+datalist_shrimp = list()
+
+  group_df <- all_farms_sf %>%
+    filter(action_needed == "Land mask") %>%
+    filter(group == "shrimp") 
+  
+  num_rows <- nrow(group_df)
+  
+  group_df_final <- group_df %>%
+     mutate(row_number = 1:num_rows)
+    # filter(row_number > 3464) ## now delete the rows that have already been completed 
+  
+num_rows_final <- group_df_final$row_number  
+    
+for(i in num_rows_final){
+  
+    # i = 1411 # testing
+  final_df <- group_df_final %>%
+    filter(row_number == i)
+    
+  datalist_shrimp[[i]] <- cbind(final_df, data.frame(distance = st_distance(final_df, gordon_coast)))
+  
+}
+   
+
+  dist_data_shrimp = do.call(rbind, datalist_shrimp)
+
+
+st_write(dist_data_shrimp, file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/shrimp_dist.shp"))
+
+
+## there are no crustaceans that fall in that category.. we will probably just need to use the shrimp distance for crustaceans
+  group_df <- all_farms_sf %>%
+    filter(action_needed == "Land mask") %>%
+    filter(group == "crustaceans") 
+  
+  
+## Now compile them together and write as a shp. And calculate some summary stats.
+  
+
+all_farms_bad <- all_farms_sf %>%
+  dplyr::filter(action_needed != "Land mask")
+
+biv_dist <- st_read(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/bivalve_dist.shp"))
+  
+shrimp_dist <- st_read(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/shrimp_dist.shp"))
+  
+tuna_dist <- st_read(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/tuna_dist.shp"))
+  
+mf_dist <- st_read(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/marine_fish_general_dist.shp"))
+  
+salmon_dist <- st_read(file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/salmon_dist.shp"))
+  
+crust_dist <- all_farms_sf %>%
+  dplyr::filter(group == "crustaceans") %>%
+  dplyr::filter(action_needed == "Land mask") %>%
+  dplyr::filter(distance = NA) ## there are none...
+
+
+all_farms_distance <- rbind(biv_dist, shrimp_dist, tuna_dist, mf_dist, salmon_dist)
+
+## save this file
+st_write(all_farms_distance, file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/point_placement/all_farms_distance.shp"))
+
+## Now calculate some summary stats
+stats <- all_farms_distance %>%
+  mutate(distanc_km = distanc/1000) %>%
+  group_by(group) %>%
+  summarise(mean_dist = mean(distanc_km), 
+            sd_dist = sd(distanc_km),
+            max_dist = max(distanc_km), 
+            min_dist = min(distanc_km), 
+            quant_90 = quantile(distanc_km, 0.9),
+            quant_10 = quantile(distanc_km, 0.1), 
+            points = n()) %>%
+  ungroup()
+
+data.table(stats)
+
+## lets explore some outliers... 
+
+shrimp_outliers <- shrimp_dist %>%
+  mutate(distanc_km = distanc/1000) %>%
+  filter(distanc_km > 10)
+
+mapview(shrimp_outliers) ## it appears all of the shrimp outliers are on land... which makes sense, because marine shrimp ponds are usually on land. I think they are ok. But I wonder if we should only grab those points that dont fall on land for our spatial allocation. Or maybe just place the shrimp ones very close to the shore. 
+
+biv_outliers <- biv_dist %>%
+  mutate(distanc_km = distanc/1000) %>%
+  filter(distanc_km > 10)
+
+mapview(biv_outliers) ## similarly, the largest outliers are on land. Aside from one in New Zealand, but it comes from the ASC dataset, and I think is probably a mistake.. removing it doesn't make much of a difference anyways. 
+
+biv_fix <- biv_dist %>%
+  filter(distanc < 200000)
+mean(biv_fix$distanc)/1000 # 2.502882
+
+## tuna seems fine
+
+mf_outliers <- mf_dist %>%
+  mutate(distanc_km = distanc/1000) %>%
+  filter(distanc_km > 10)
+
+mapview(mf_outliers) ## similarly, the largest outliers are on land.
+
+salmon_outliers <- salmon_dist %>%
+  mutate(distanc_km = distanc/1000) %>%
+  filter(distanc_km > 10)
+
+mapview(salmon_outliers) ## similarly, the largest outliers are on land/along waterways/lakes.
+
+
+mapview(biv_dist)
+mapview(shrimp_dist)
+mapview(salmon_dist)
+mapview(mf_dist)
+mapview(tuna_dist)
+```
+

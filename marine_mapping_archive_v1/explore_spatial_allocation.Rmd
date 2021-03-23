@@ -1,0 +1,231 @@
+---
+title: "Explore spatial allocation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This script explores the distribution/data quality of aquaculture within each country. 
+
+```{r}
+library(raster)
+library(tidyverse)
+library(stringr)
+library(rgdal)
+library(PBSmapping)
+library(maptools)
+library(sf)
+library(lwgeom)
+library(data.table)
+library(here)
+library(mapview)
+library(janitor)
+library(rnaturalearth)
+library(spatialEco)
+library(countrycode)
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+source(here::here("_spatial/template_raster.R"))
+
+gordon_coast <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/outline_st.shp"))
+```
+
+
+```{r}
+
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- projectRaster(gadm, food_raster)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+```{r}
+
+gadm_df <- tabularaster::as_tibble(gadm_latlon, value = TRUE, cells = TRUE) %>% 
+  mutate(cellvalue = round(cellvalue, 0))
+
+gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id"))
+
+```
+
+Read in and combine all farm data 
+```{r}
+bivalves <- read_csv(here::here("marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "bivalve") %>%
+  dplyr::select(-X1)
+  
+shrimp <- read_csv(here::here("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "shrimp") %>%
+  dplyr::select(-area_ha, -prod)
+  
+marine_fish <- read_csv(here::here("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "marine_fish_general") %>%
+  dplyr::select(-rgn_production)
+  
+salmon <- read_csv(here::here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv")) %>%
+  mutate(group = "salmon")
+  
+crustaceans <- read_csv(here::here("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "crustaceans") %>%
+  dplyr::select(-prod)
+  
+tuna <- read_csv(here::here("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon_data_quality.csv")) %>%
+  mutate(group = "tuna") %>%
+  mutate(subregion = NA)
+
+all_farms <- rbind(shrimp, bivalves, marine_fish, salmon, crustaceans, tuna)
+
+all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
+                         crs = crs(gadm_latlon), agr = "constant")
+
+mapview(all_farms_sf)
+
+
+```
+
+Read in and combine all FAO tonnage data per country
+```{r}
+bivalves_tonnes <- read_csv(here::here("marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve.csv")) %>%
+  mutate(group = "bivalve")
+  
+shrimp_tonnes <- read_csv(here::here("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv")) %>%
+  mutate(group = "shrimp") %>%
+  filter(year == 2017)
+  
+marine_fish_tonnes <- read_csv(here::here("marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish.csv")) %>%
+  mutate(group = "marine_fish_general") %>%
+  filter(year == 2017)
+  
+salmon_tonnes <- read_csv(here::here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
+  mutate(group = "salmon") %>%
+  filter(year == 2017)
+  
+crustaceans_tonnes <- read_csv(here::here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
+  mutate(group = "crustaceans") %>%
+  filter(year == 2017)
+  
+tuna_tonnes <- read_csv(here::here("marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv")) %>%
+  mutate(group = "tuna") %>%
+  filter(year == 2017)
+
+all_species_country_tonnes <- rbind(bivalves_tonnes, shrimp_tonnes, marine_fish_tonnes, salmon_tonnes, crustaceans_tonnes, tuna_tonnes)
+```
+
+
+```{r}
+n_farms <- all_farms %>%
+  group_by(iso3c, data_quality, group) %>%
+  summarise(n_farms = n()) %>%
+  ungroup() 
+
+## n_farms shows us the number of points that will need spatial allocation within each country according to our new rules (any of the rows that score 3. Those that score 1 or 2, will need some sort of suitability analysis.)
+
+
+## make a dataset with the country, species type (farm type), tonnage, and # of farms, for those that score data quality %in% c(3, 4, 5)... review all of these, since many of these are just subsets of total number of farms...
+
+sum(all_species_country_tonnes$fao_tonnes_production) # 29623515
+
+n_farms_final <- n_farms %>%
+  filter(data_quality %in% c(3,4,5))
+
+n_farms_final <- n_farms %>%
+  filter(data_quality %in% c(3,4,5)) %>%
+  group_by(iso3c, group) %>%
+  summarise(n_farms = sum(n_farms)) %>%
+  left_join(all_species_country_tonnes, by = c("iso3c", "group")) %>%
+  dplyr::select(iso3c, country, year, group, n_farms, fao_tonnes_production)
+sum(n_farms_final$fao_tonnes_production) # 26812832
+
+n_farms_tonnes_no_info <- n_farms %>%
+  filter(data_quality %in% c(1, 2)) %>%
+  group_by(iso3c, group) %>%
+  summarise(n_farms = sum(n_farms)) %>%
+  left_join(all_species_country_tonnes, by = c("iso3c", "group")) %>%
+  mutate(n_farms = NA)
+sum(n_farms_tonnes_no_info$fao_tonnes_production) # 2810682
+
+26812832 + 2810682 # 29623514 # perfect
+
+n_farms_final_final <- rbind(n_farms_final, n_farms_tonnes_no_info)
+sum(n_farms_final_final$fao_tonnes_production) # 29623515
+
+
+## save n_farms_final to use to make a model of farms and production
+write.csv(n_farms_final_final, "data/n_farms_production_data.csv", row.names = FALSE)
+
+```
+
+Now let's do some exploration:
+
+```{r}
+n_countries <- n_farms %>%
+  group_by(data_quality, group) %>%
+  summarise(n_countries = n()) %>%
+  ungroup() %>%
+  group_by(group) %>%
+  mutate(total_countries = sum(n_countries)) %>%
+  ungroup() %>%
+  mutate(percent = n_countries/total_countries)
+
+test2 <- n_farms %>%
+  group_by(data_quality) %>%
+  summarise(n_countries = n())
+
+countries <- data.frame(iso3c = unique(all_farms_sf$iso3c)) %>%
+  mutate(country = countrycode(iso3c, origin = 'iso3c', destination = 'country.name'))
+
+## n_countries shows us the number of countries that will need spatial allocation within each species group according to our new rules (any of the rows that score 3 in the data quality column. Those that score 1 or 2, will need some sort of suitability analysis, based on country or provice/state.)
+
+n_countries_allocated <- n_countries %>%
+  dplyr::filter(data_quality == 3)
+sum(n_countries_allocated$n_countries)
+## 15 countries/species group combos that will need spatial allocation according to our rules (7-10km to port, depth requirements)
+
+n_countries_test <- all_farms_sf %>%
+  filter(data_quality == 3) %>%
+  group_by(iso3c, action_needed, data_quality, group, subregion) %>%
+  summarise(count = n())
+
+
+n_countries_no_data <- n_countries %>%
+  dplyr::filter(data_quality == 1)
+sum(n_countries_no_data$n_countries) # 15
+## 15 countries/species group combos that will need country level spatial allocation according to our rules (7-10km to port, depth requirements)
+
+n_states_no_data <- n_countries %>%
+  dplyr::filter(data_quality == 2)
+sum(n_states_no_data$n_countries) # 10
+## 14 countries/species group combos that will need subregional spatial allocation according to our rules (7-10km to port, depth requirements)
+
+## these were the rules for the data quality column: 
+# For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
+#  5: Very Good qualifications - Locations taken from leases, or from a map with specific locations
+#    - Must not intersect with land mask
+#    - "Land mask"
+# 
+# 4: Good qualifications - Locations are projected or it is a only sample of total locations
+#    - Must not intersect with land mask
+#    - "Land mask"
+# 
+# 3: Fair qualifications - A specific number of farms are placed on the coast, without knowing exact locations. 
+#    - Must be allocated spatially
+#    - Must not intersect with land mask
+#    - Flagged as "allocate spatially"
+# 
+# 2: Bad qualifications -  We know that aquaculture is limited to a specific subregion/state, but do not know how many or where the farms are. 
+#    - Must be allocated using suitability analysis.
+#    - Flagged as 2 and "state/province suitability"
+# 
+# 1: Very Bad qualifications - No data at all.
+#    - Must be allocated using suitability analysis.
+#    - Flagged as 1 and "country suitability"  
+```
+
+
+

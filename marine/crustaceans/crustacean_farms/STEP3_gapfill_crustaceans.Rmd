@@ -1,0 +1,81 @@
+---
+title: "Gapfilling the number of farms to add for shrimp countries based on tonnes of production"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read in all the relevant farm datasets... the only one that is represented for crustaceans are data_quality = 1.
+
+```{r}
+
+no_info_files <- list.files(here("marine/crustaceans/crustacean_farms/data/no_info_1"), full=TRUE)
+no_info_1 = plyr::ldply(no_info_files, read_csv)
+
+
+```
+
+Read in relevant production data
+```{r}
+crustaceans_tonnes <- read_csv(here::here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
+  mutate(type = "crustaceans") %>%
+  filter(year == 2017)
+```
+
+Calculate a global tonnes per farm for crustaceans
+
+ - We don't have any tonnes per farm estimates for crustaceans... Therefore we will use the shrimp tonnes/farm, as it is the most similar aquaculture practice to crustaceans.
+
+```{r}
+avg_global_shrimp_tonnes_per_farm = 337.7357
+avg_global_shrimp_tonnes_per_farm # 337.7357
+```
+
+Now let's gapfill those that are data quality = 1
+```{r}
+
+
+## now lets do the locations that have no info and need gapfilling based on tonnes/farm
+gapfill_1 <- no_info_1 %>%
+  left_join(crustaceans_tonnes) %>%
+  mutate(avg_tonnes_per_farm = avg_global_shrimp_tonnes_per_farm) %>%
+  mutate(num_additional_farms = ceiling(fao_tonnes_production/avg_tonnes_per_farm)) %>%
+  dplyr::select(iso3c, type, num_additional_farms, avg_tonnes_per_farm) %>%
+  mutate(estimated = 1) %>%
+  filter(num_additional_farms != 0)
+
+
+```
+
+```{r}
+  
+
+## write this out to our data folder
+
+write.csv(gapfill_1, here("marine/crustaceans/crustacean_farms/output/crustaceans_points_to_add_final.csv"), row.names = FALSE)
+```
+
+
+
+Data check 
+
+```{r}
+
+
+
+test_2 <- gapfill_1 %>%
+  dplyr::select(iso3c)
+
+length(unique(test_2$iso3c)) ## 6 countries
+
+
+length(unique(crustaceans_tonnes$iso3c)) ## 6 countries
+
+
+## Perfect
+
+```
+
+

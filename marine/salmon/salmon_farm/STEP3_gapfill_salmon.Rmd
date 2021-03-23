@@ -1,0 +1,152 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read in all the relevant farm datasets 
+
+```{r}
+
+farm_files <- list.files(here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5"), full=TRUE)
+all_known_farms = plyr::ldply(farm_files, read_csv) %>%
+  mutate(type = "salmon")
+
+number_files <- list.files(here("marine/salmon/salmon_farm/data/known_number_farms_3"), full=TRUE)
+all_number_3 = plyr::ldply(number_files, read_csv)
+
+subset_farms_files <- list.files(here("marine/salmon/salmon_farm/data/subset_known_add_points_4"), full=TRUE)
+subset_add_4 = plyr::ldply(subset_farms_files, read_csv)
+
+no_info_files <- list.files(here("marine/salmon/salmon_farm/data/no_info_1"), full=TRUE)
+no_info_1 = plyr::ldply(no_info_files, read_csv)
+
+subset_gapfill_2 <- all_known_farms %>%
+  filter(data_quality == 2)
+```
+
+Read in relevant production data
+```{r}
+salmon_tonnes <- read_csv(here::here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
+  mutate(type = "salmon") %>%
+  filter(year == 2017)
+```
+
+Calculate a global tonnes per farm for salmon
+
+```{r}
+## Filter for data_quality = 4 or 5 and group by country to get number of farms
+comprehensive_farms <- all_known_farms %>%
+  filter(data_quality %in% c(4,5)) %>% 
+  group_by(iso3c, type, data_quality) %>%
+  summarise(n_farms = n()) %>% ## now we can see that new zealand has additional farms to add
+  ungroup()
+
+## Join this with the additional farms we need to add to new zealand, so we can calculate a comprehensive tonnes/farm for salmon 
+
+data_quality_3 <- all_number_3 %>%
+    rename("n_farms" = "num_additional_farms")
+
+data_quality_4 <- subset_add_4 %>%
+    rename("n_farms" = "num_additional_farms")
+
+comprehensive_farms_total <- comprehensive_farms %>%
+  full_join(data_quality_3) %>%
+  full_join(data_quality_4) %>%
+  group_by(iso3c, type) %>%
+  summarise(n_farms = sum(n_farms))
+  
+
+tonnes_per_farm <- comprehensive_farms_total %>%
+  left_join(salmon_tonnes) %>%
+  mutate(tonnes_per_farm = fao_tonnes_production/n_farms)
+
+avg_global_salmon_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)
+avg_global_salmon_tonnes_per_farm # 930.3976
+```
+
+Now let's gapfill those that are data quality = 2 and data quality = 1
+
+```{r}
+## start with the subset of locations that need gapfilling based on tonnes/farm
+gapfill_2 <- subset_gapfill_2 %>%
+  group_by(iso3c, type) %>%
+  summarise(n_existing_farms = n()) %>%
+  ungroup() %>%
+  left_join(salmon_tonnes) %>%
+  mutate(avg_tonnes_per_farm = avg_global_salmon_tonnes_per_farm) %>%
+  mutate(tonnes_accounted_for = avg_tonnes_per_farm*n_existing_farms) %>%
+  mutate(tonnes_remaining = fao_tonnes_production - tonnes_accounted_for) %>%
+  mutate(tonnes_remaining = ifelse(tonnes_remaining <= 0, 0, tonnes_remaining)) %>%
+  mutate(num_additional_farms = ceiling(tonnes_remaining/avg_tonnes_per_farm)) %>%
+  dplyr::select(iso3c, type, num_additional_farms, avg_tonnes_per_farm) %>%
+  mutate(estimated = 1) %>%
+  filter(num_additional_farms != 0)
+
+## now lets do the locations that have no info and need gapfilling based on tonnes/farm
+gapfill_1 <- no_info_1 %>%
+  left_join(salmon_tonnes) %>%
+  mutate(avg_tonnes_per_farm = avg_global_salmon_tonnes_per_farm) %>%
+  mutate(num_additional_farms = ceiling(fao_tonnes_production/avg_tonnes_per_farm)) %>%
+  dplyr::select(iso3c, type, num_additional_farms, avg_tonnes_per_farm) %>%
+  mutate(estimated = 1) %>%
+  filter(num_additional_farms != 0)
+
+
+## Wrangle those that just need a specific number of points added to existing points (data_quality = 4)
+
+number_add_points_4 <- subset_add_4 %>%
+  dplyr::select(-data_quality) %>%
+  mutate(estimated = 0, 
+         avg_tonnes_per_farm = avg_global_salmon_tonnes_per_farm)
+```
+
+Now join the gapfilled number of farms with data quality = 3 and write the final file of points that need to allocated 
+
+```{r}
+number_additional_points <- all_number_3 %>%
+  mutate(estimated = 0,
+         avg_tonnes_per_farm = avg_global_salmon_tonnes_per_farm) %>%
+  dplyr::select(-data_quality) %>%
+  rbind(gapfill_1, gapfill_2, number_add_points_4)
+  
+
+## write this out to our final data folder
+
+write.csv(number_additional_points, here("marine/salmon/salmon_farm/output/salmon_points_to_add_final.csv"), row.names = FALSE)
+```
+
+Now lets make the file with all of the known farms 
+
+```{r}
+all_known_farms_final <- all_known_farms %>%
+  dplyr::select(-data_quality)
+
+write.csv(all_known_farms_final, here("marine/salmon/salmon_farm/output/all_known_salmon_farms_final.csv"), row.names = FALSE)
+```
+
+Data check 
+
+```{r}
+test <- all_known_farms %>% 
+  group_by(iso3c) %>%
+  summarise(n_farms = n()) %>%
+  dplyr::select(iso3c)
+
+
+test_2 <- number_additional_points %>%
+  dplyr::select(iso3c)
+
+
+test_all <- rbind(test, test_2)
+length(unique(test_all$iso3c)) ## 16 countries
+
+
+length(unique(salmon_tonnes$iso3c)) ## 16 countries
+
+## perfect
+
+```

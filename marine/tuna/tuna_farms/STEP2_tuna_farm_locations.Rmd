@@ -79,33 +79,29 @@ gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id")
 
 
 
-Now we will map the remaining countries with tuna farms that are not included in the ASC dataset. Workflow will be as follows: 
+Now we will map the remaining countries with shrimp farms. Workflow will be as follows: 
  - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
- - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
- -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
- - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
-
+ - If there are not exact locations or comprehensive locations, find the number of farms. 
+ - If there is no information at all, note it. We will gapfill later. 
+ 
 For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
- 5: Very Good qualifications - Locations taken from leases, or from a map with specific locations
-   - Must not intersect with land mask
-   - "Land mask"
 
-4: Good qualifications - Locations are projected or it is a only sample of total locations
-   - Must not intersect with land mask
-   - "Land mask"
+5: Comprehensive number of exact farms 
 
-3: Fair qualifications - A specific number of farms are placed on the coast, without knowing exact locations. 
-   - Must be allocated spatially
-   - Must not intersect with land mask
-   - Flagged as "Allocate spatially"
+4: Subset of exact locations, need to add a specific number of farms to existing locations. 
+  - country|species|farm locations
+  - country|species|additional points
 
-2: Bad qualifications -  We know that aquaculture is limited to a specific subregion/state, but do not know how many or where the farms are. 
-   - Must be allocated using suitability analysis.
-   - Flagged as 2 and "state/province suitability"
+3: A specific number of farms are known, but no locations 
+ - country|species|additional points
+ 
+2.5: A specific number of farms that are not comprehensive, so we will have to gapfill on top of those, if necessary. 
+ - country, species, n_existing_points
 
-1: Very Bad qualifications - No data at all.
-   - Must be allocated using suitability analysis.
-   - Flagged as 1 and "country suitability" 
+2: Exact locations are a subset of total farms. But the number of total farms are unknown. Need to be gapfilled by tonnage. 
+
+1: No information on number of farms at all. Need to be gapfilled by tonnage. 
+ - country|species|# additional farms (this will be NA) 
 
 
 
@@ -117,6 +113,7 @@ Source:
 EMODnet Human Activities: Marine Finfish Aquaculture, 2019. [Accessed December 8, 2020] 
 https://www.emodnet-humanactivities.eu/search-results.php?dataname=Finfish+Production
 
+ - Comprehensive
 
 ```{r}
 
@@ -185,22 +182,41 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
     COUNTRY == "Malta" ~ "MLT"
   )) %>%
   dplyr::select(-COUNTRY) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 
- write_csv(farms_eu_final, here("marine/tuna/tuna_farms/data/tuna_sites/farms_ESP_MLT.csv"))
+ write_csv(farms_eu_final, here("marine/tuna/tuna_farms/data/known_farm_sites_2_4_5/farms_ESP_MLT.csv"))
 
 ```
 
 
 ## Croatia, Turkey
 http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/mediterranean-basin/en/
-
- - It says both Tuna and Finfish, but we'll assume Croatia and Turkey are tuna...
  
 Source:
-NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/thailand/en/ 
- 
+NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/
+
+
+Croatia: 
+Need to add 14 points to existing 1 (a final total of 15 points)
+
+Current data is from NASO maps collection and is only a subset of farms 
+
+NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/
+
+We need to add 14 farms to match the total listed by this government source: 
+Lukin, A., 2014. Spatial Planning For Marine Aquaculture, Croatia, Zadar County Case. Croatian Ministry of Agriculture, Directorate of Fisheries.
+
+
+Turkey:
+Need to add 5 points to existing 3 (a final total of 8 points)
+
+Data is from NASO maps collection, so only a subset
+
+However the FAO gives us specific numbers 
+ - http://www.fao.org/fishery/countrysector/naso_turkey/en
+ - 8 farms 	
+
+
 ```{r}
 ## read in thailand shp file
 med_file <- file.path(path, "FAO_NASO/NASO/Point/Mediterranean.kml")
@@ -241,17 +257,26 @@ farms_med <- farms_med %>%
   cbind(countries) %>%
   mutate(iso3c = ifelse(country == "Croatia", "HRV", "TUR")) %>%
   dplyr::select(-country, -geometry) %>%
-  mutate(data_quality = 4) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 4)
 
 
-write_csv(farms_med, here("marine/tuna/tuna_farms/data/tuna_sites/farms_hrv_tur.csv"))
+write_csv(farms_med, here("marine/tuna/tuna_farms/data/known_farm_sites_2_4_5/farms_hrv_tur.csv"))
 
 
 farms_med <-  st_as_sf(farms_med, coords = c("lon", "lat"),
                  crs = crs(gadm_latlon), agr = "constant")
 
 mapview(farms_med)
+
+#### Croatia
+## Now we will make a file that tells us the number of additional farms that need to be added to be comprehensive
+hrv_additional <- data.frame(iso3c = "HRV", type = "tuna", num_additional_farms = 14, data_quality = 4, total_farms = 15)
+write.csv(hrv_additional, here("marine/tuna/tuna_farms/data/subset_known_add_points_4/add_farms_hrv.csv"), row.names = FALSE)
+
+#### Turkey 
+tur_additional <- data.frame(iso3c = "TUR", type = "tuna", num_additional_farms = 5, data_quality = 4, total_farms = 8)
+write.csv(tur_additional, here("marine/tuna/tuna_farms/data/subset_known_add_points_4/add_farms_tur.csv"), row.names = FALSE)
+
 ```
 
 ## Australia
@@ -310,9 +335,9 @@ library("rvest")
 
 coords_list <- list()
 
-for(i in seq_along(tuna_links)){
+for(i in 2:seq_along(tuna_links)){
 
-  # i = 2
+  # i = 1
 # Read the webpage into R
 webpage <- read_html(tuna_links[i])
 
@@ -350,8 +375,7 @@ lat_lon_final <- coords_list %>%
     bind_rows() %>%
   mutate(lat = -lat) %>% ## change lat to have a negative in front of it (because it S)
   mutate(iso3c = "AUS") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 ## now that we have coordinates, place them on a map and save
 
 
@@ -361,7 +385,7 @@ farms_aus_map <-  st_as_sf(lat_lon_final, coords = c("lon", "lat"),
 mapview(farms_aus_map)
 
 
-write_csv(lat_lon_final, here("marine/tuna/tuna_farms/data/tuna_sites/farms_AUS.csv"))
+write_csv(lat_lon_final, here("marine/tuna/tuna_farms/data/known_farm_sites_2_4_5/farms_AUS.csv"))
 ```
 
 
@@ -375,81 +399,9 @@ Source:
 FAO Fisheries & Aquaculture - National Aquaculture Sector Overview - Japan, 2017. National Aquaculture Sector Overview Fact Sheets.
 
 ```{r}
-world <- rnaturalearth::ne_coastline(scale = 110) # world map with 10m resolution
-plot(world)
+farms_jpn <- data.frame(iso3c = "JPN", type = "tuna", num_additional_farms = 92, data_quality = 3)
 
-japan <- ne_countries(scale = 10, country = "Japan", returnclass = "sf")
-
-#info of our spatial vector object
-japan
-mapview(japan)
-plot(japan)
-
-world <- st_as_sf(world)
-
-japan_world_crs <- st_transform(japan, crs(world))
-
-japan_world_crop <- st_crop(world, japan_world_crs)
-
-japan_world_crop <- japan_world_crop[-c(2,3,4), ]
-plot(japan_world_crop)
-mapview(japan_world_crop)
-
-j_meters <- st_transform(japan_world_crop, crs = 7801) ## transform to a crs that can buffer in meters 
-mapview(j_meters)
-
-buff <- st_buffer(j_meters, dist = 7000) # buffer out to XX km so that we can place points along a line 1 km from the coastline
-mapview(buff)
-
-linestring <- st_cast(buff, "MULTILINESTRING") ## make a line string so we can filter for the outline 
-mapview(linestring)
-
-## now reproject back to original 
-buffer_outline_fixed <- st_transform(linestring, crs = crs(japan_world_crop))
-
-japan <- ne_countries(scale = 10, country = "Japan", returnclass = "sf")
-
-linestring_fix <- st_difference(buffer_outline_fixed, japan) ## now grab only the outline 
-mapview(linestring_fix)
-
-
-japan_crop <- as(buffer_outline_fixed, "Spatial")
-
-
-japan_points_lines <- sample.line(japan_crop, n = 190) ## equally place the number of farms along the coastline 
-class(japan_points_lines)
-plot(japan_points_lines)
-
-
-japan_points <- st_as_sf(japan_points_lines) %>%
-  mutate(new_id = 1:190) %>%
-  filter(!(new_id %in% c(2, 95, 73, 67, 62, 56, 48, 47, 33,  32, 31, 29, 23, 12, 9,  93:112, 116, 118, 121, 123:126, 129:140, 124:145, 148:167, 171:174, 176, 178:190)))
-mapview(japan_points)
-
-
-
-## now prep dataframe for lat lon points
-jpn_pts <- st_centroid(japan_points)
-
-jpn_pts_latlon <- st_transform(jpn_pts, crs = "+init=epsg:4326") %>%
-  dplyr::select(geometry)
-
-farms_jpn <- data.frame(do.call(rbind, st_geometry(jpn_pts_latlon)))
-names(farms_jpn) <- c("lon", "lat")
-
-farms_jpn_final <- farms_jpn %>%
-  mutate(iso3c = "JPN") %>%
-  mutate(data_quality = 3) %>%
-  mutate(action_needed = "Allocate spatially")
-
-## visualize it 
-farms_jpn <-  st_as_sf(farms_jpn, coords = c("lon", "lat"), 
-                 crs = crs(gadm_latlon), agr = "constant")
-
-mapview(farms_jpn)
-
-## write to farms folder 
-write_csv(farms_jpn_final, here("marine/tuna/tuna_farms/data/tuna_sites/farms_jpn.csv"))
+write_csv(farms_jpn, here("marine/tuna/tuna_farms/data/known_number_farms_3/farms_jpn.csv"))
 ```
 
 
@@ -482,8 +434,7 @@ Monterey Bay Aquarium Seafood Watch Report on Pacific Bluefin Tuna Farming in Me
 farms_mex <- data.frame(lat = c(31.972882899404116, 31.96836856413186, 31.963417102445995, 31.95861101663323, 31.955698114940013, 31.952930772763118, 31.95030900327055, 31.945939221180044, 31.932974311561416, 31.929769220541903, 31.95016334721594, 31.959630510399904, 31.96764042474878),
                           lon = c(-116.81987407899483, -116.8094027351974, -116.80339458711688, -116.7956698252991, -116.79343822744065, -116.79000499996607, -116.78777340210759, -116.78193691540082, -116.77575710594658, -116.77180889435084, -116.77060726473474, -116.78262356089573, -116.79395321156183), 
                           iso3c = "MEX") %>%
-  mutate(data_quality = 4) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 
 
 farms_mex_map <-  st_as_sf(farms_mex, coords = c("lon", "lat"),
@@ -492,7 +443,7 @@ farms_mex_map <-  st_as_sf(farms_mex, coords = c("lon", "lat"),
 mapview(farms_mex_map)
 
 
-write_csv(farms_mex, here("marine/tuna/tuna_farms/data/tuna_sites/farms_MEX.csv"))
+write_csv(farms_mex, here("marine/tuna/tuna_farms/data/known_farm_sites_2_4_5/farms_MEX.csv"))
 
 
 ```
@@ -501,11 +452,11 @@ write_csv(farms_mex, here("marine/tuna/tuna_farms/data/tuna_sites/farms_MEX.csv"
 # Join cell count dataframes
 
 ```{r}
-farm_files <- list.files(here::here("marine/tuna/tuna_farms/data/tuna_sites"), full=TRUE)
+farm_files <- list.files(here::here("marine/tuna/tuna_farms/data/known_farm_sites_2_4_5"), full=TRUE)
 all_farms = plyr::ldply(farm_files, read_csv)
 
 all_farms_1 <- all_farms %>%
-  dplyr::select(-data_quality, -action_needed)
+  dplyr::select(-data_quality)
 
 all_farms_sf <- st_as_sf(all_farms, coords = c("lon", "lat"), 
                          crs = crs(gadm_latlon), agr = "constant")

@@ -49,14 +49,6 @@ source(here("_spatial/template_raster.R"))
 
 ```
 
-```{r}
-
-coast_raw <- st_read("/home/shares/food-systems/Aquaculture_mapping/Data/Jared/Marine_Brackish/raw_data/Coastline/lines.shp")
-
-mapview(head(coast_raw))
-
-```
-
 
 # Global regions
 
@@ -80,34 +72,25 @@ gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id")
 
 ```
 
-Now we will map the remaining countries with shrimp farms that are not included in the ASC dataset. Workflow will be as follows: 
+Now we will map the remaining countries with shrimp farms. Workflow will be as follows: 
  - Try to obtain exact locations of farms from published source or dataset (such as FAO or a research paper)
- - If there are no exact locations, but the source lists a city or state, place a point in that particular city or state
- -  If there is enough information to know there are a specific number of shrimp farms, equally allocate the farms across the coastline. If there are estimates of farms per state/province, equally allocate them across the state/province, to be even more precise. 
- - Lastly, if there is no evidence of marine shrimp farm locations, place a point on the coast of the country (preferably with some intuition/knowledge of where they might be).
- 
+ - If there are not exact locations or comprehensive locations, find the number of farms. 
+ - If there is no information at all, note it. 
  
 For each point, we will add a column for "data quality". It will be scored as very good (5), good (4), fair (3), bad (2), and very bad (1). 
- 5: Very Good qualifications - Locations taken from leases, or from a map with specific locations
-   - Must not intersect with land mask
-   - "Land mask"
+ 5: Comprehensive number of exact farms 
 
-4: Good qualifications - Locations are projected or it is a only sample of total locations
-   - Must not intersect with land mask
-   - "Land mask"
+4: Subset of exact locations, need to add a specific number of farms to existing locations. 
+  - country|species|farm locations
+  - country|species|additional points
 
-3: Fair qualifications - A specific number of farms are placed on the coast, without knowing exact locations. 
-   - Must be allocated spatially
-   - Must not intersect with land mask
-   - Flagged as "Allocate spatially"
+3: A specific number of farms are known, but no locations 
+ - country|species|additional points
 
-2: Bad qualifications -  We know that aquaculture is limited to a specific subregion/state, but do not know how many or where the farms are. 
-   - Must be allocated using suitability analysis.
-   - Flagged as 2 and "state/province suitability"
+2: Exact locations are a subset of total farms. But the number of total farms are unknown. Need to be gapfilled by tonnage. 
 
-1: Very Bad qualifications - No data at all.
-   - Must be allocated using suitability analysis.
-   - Flagged as 1 and "country suitability" 
+1: No information on number of farms at all. Need to be gapfilled by tonnage. 
+ - country|species|# additional farms (this will be NA)
 
 # Chile
 
@@ -167,10 +150,9 @@ farms_chile <- data.frame(do.call(rbind, st_geometry(chile_pts)))
 names(farms_chile) <- c("lon", "lat")
 farms_chile <- farms_chile %>%
   mutate(iso3c="CHL") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 
-write_csv(farms_chile, here("marine/salmon/salmon_farm/data/farm_sites/farms_chile.csv"))
+write_csv(farms_chile, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_chile.csv"))
 
 ```
 
@@ -180,7 +162,7 @@ write_csv(farms_chile, here("marine/salmon/salmon_farm/data/farm_sites/farms_chi
 We use the number of salmon licenses to get a proxy for the relative distribution of production along the Norwegian coast. 
 †
 ## Load csv with lat long
-License data.
+Comprehensive License data.
 
 Source: 
 Fiskeridirektoratet, 2019. 2019 aquaculture license data. [accessed May 2019] https://fiskeridir.no/Akvakultur/Registre-og-skjema/Akvakulturregisteret
@@ -299,12 +281,11 @@ arrange(N_GEOWGS84, Ø_GEOWGS84)
 
 farms_nor <- sub_norway %>% 
   distinct(lon=Ø_GEOWGS84, lat=N_GEOWGS84, iso3c="NOR") %>% # Counting duplicate liscense locations once
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5)
 
-write_csv(farms_nor, here("marine/salmon/salmon_farm/data/farm_sites/farms_nor.csv"))
+write_csv(farms_nor, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_nor.csv"))
 
-norway <- read_csv(here("marine/salmon/salmon_farm/data/farm_sites/farms_nor.csv"))
+norway <- read_csv(here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_nor.csv"))
 
 norway_sf <- st_as_sf(norway, coords = c("lon", "lat"), 
                          crs = crs(gadm_latlon), agr = "constant")
@@ -316,6 +297,7 @@ mapview(norway_sf)
 
 
 # Scotland
+ - Comprehensive data 
 
 Based on these data for the UK region, it appears that salmon aquaculture is occurring only in Scotland. 
 
@@ -372,10 +354,9 @@ names(farms_scotland) <- c("lon", "lat")
 farms_scotland$subregion <- sub_scotland$subregion
 farms_scotland <- farms_scotland %>%
   mutate(iso3c = "GBR") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5)
 
-write_csv(farms_scotland, here("marine/salmon/salmon_farm/data/farm_sites/farms_scotland.csv"))
+write_csv(farms_scotland, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_scotland.csv"))
 
 ```
 
@@ -383,6 +364,8 @@ write_csv(farms_scotland, here("marine/salmon/salmon_farm/data/farm_sites/farms_
 # Faroe Islands
 
 We consider Faroe Islands as a single region. We have data from ASC to use for our farms.
+
+ - Even though it is ASC, all indications point to that it is comprehensive. 
 
 Source: 
 Aquaculture Stewardship Council Data Mapping Study, n.d. Aquaculture Stewardship Council. [Accessed November 11, 2020] 
@@ -407,16 +390,17 @@ farms_fro <- data.frame(do.call(rbind, st_geometry(fro_pts_latlon)))
 names(farms_fro) <- c("lon", "lat")
 farms_all_fro <- farms_fro %>%
   cbind(iso3c = fro_pts_latlon$iso3c) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 
-write_csv(farms_all_fro, here("marine/salmon/salmon_farm/data/farm_sites/farms_fro.csv"))
+write_csv(farms_all_fro, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_fro.csv"))
 
 ```
 
 
 # Australia
 
+ - Comprehensive data 
+ 
 Data is from the national map (https://nationalmap.gov.au/#share=s-9CWx9q1BlcDp56T59yiCGgZDU3Q). Instructions on how to access raw data are here: https://nationalmap.gov.au/help/help.html.
 
 Julia Blanchard's RA helped extract the data by manually going through the map and selecting individual farm leases to record their locations, then reading the DPIPWE documentation to identify the species farmed at each location.
@@ -444,11 +428,10 @@ farms_tas <- tas_csv %>%
   filter(species_farmed1 == "salmon" | species_farmed2 == "salmon" | species_farmed3 == "salmon") %>%
   dplyr::select(lon, lat) %>%
   mutate(iso3c="AUS") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 
 
-write_csv(farms_tas, here("marine/salmon/salmon_farm/data/farm_sites/farms_tas.csv"))
+write_csv(farms_tas, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_tas.csv"))
 
 ```
 
@@ -471,6 +454,8 @@ Newfoundland and Labrador data was extracted from figures found on the web: http
 
 ## British colombia
 
+ - Comprehensive data
+
 Source: 
 Saltwater Finfish Tenures - Coastal Resource Information Management System (CRIMS) , 2019. Ministry of Forests, Lands, Natural Resource Operations and Rural Development. [Accessed January 17, 2020] https://catalogue.data.gov.bc.ca/dataset/saltwater-finfish-tenures-coastal-resource-information-management-system
 
@@ -489,15 +474,17 @@ farms_bc <- data.frame(do.call(rbind, st_geometry(bc_pts_latlon)))
 names(farms_bc) <- c("lon", "lat")
 farms_bc <- farms_bc %>%
   mutate(iso3c="CAN") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5)
 
-write_csv(farms_bc, here("marine/salmon/salmon_farm/data/farm_sites/farms_bc_can.csv"))
+write_csv(farms_bc, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_bc_can.csv"))
 
 ```
 
 
 ## New Brunswick
+
+ - Comprehensive data
+ 
 Source: 
 NB Agriculture, Aquaculture and Fisheries, 2019. Finfish. [Accessed Oct 2019]
 https://hub.arcgis.com/datasets/DAAF-MAAP::masmps-data
@@ -515,10 +502,9 @@ farms_nb <- data.frame(do.call(rbind, st_geometry(nb_pts_latlon)))
 names(farms_nb) <- c("lon", "lat")
 farms_nb <- farms_nb %>%
   mutate(iso3c="CAN") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5)
 
-write_csv(farms_nb, here("marine/salmon/salmon_farm/data/farm_sites/farms_nb_can.csv"))
+write_csv(farms_nb, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_nb_can.csv"))
 
 ```
 
@@ -529,6 +515,8 @@ https://www.nsgc.gov.ns.ca/fishaqua/provinceSalmon.htm (other aquaculture specie
 
 Obtained data from here: https://data.novascotia.ca/Fishing-and-Aquaculture/Aquaculture-License-and-Lease-GIS-Database/h57h-p9mm
 (Feb 18 2020)
+
+ - Comprehensive data
 
 Source: 
 Nova Scotia Marine Aquaculture Leases , 2020. Nova Scotia Fisheries and Aquaculture. [Accessed February 18, 2020] https://data.novascotia.ca/Fishing-and-Aquaculture/Nova-Scotia-Marine-Aquaculture-Leases/h57h-p9mm
@@ -554,16 +542,17 @@ farms_ns <- data.frame(do.call(rbind, st_geometry(ns_pts_latlon)))
 names(farms_ns) <- c("lon", "lat")
 farms_ns <- farms_ns %>%
   mutate(iso3c="CAN") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5)
 
-write_csv(farms_ns, here("marine/salmon/salmon_farm/data/farm_sites/farms_ns_can.csv"))
+write_csv(farms_ns, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_ns_can.csv"))
 
 ```
 
 
 ## Newfoundland and Labrador
 
+ - Comprehensive data
+  
 Source: 
 Newfoundland Labrador Fisheries, Forestry and Agriculture, 2015. [Accessed February 18, 2020] https://www.gov.nl.ca/flr/lands/ownership/commercial/aquaculture/
 
@@ -575,10 +564,9 @@ new_lab <- read.csv(file.path(path,"Canada/NewFoundland_Labrador/NewFoundland_La
 farms_new_lab <- new_lab %>%
   mutate(iso3c = "CAN") %>%
   dplyr::select(lon, lat, iso3c) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
  
-write_csv(farms_new_lab, here("marine/salmon/salmon_farm/data/farm_sites/farms_new_lab_can.csv"))
+write_csv(farms_new_lab, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_new_lab_can.csv"))
 
 ```
 
@@ -594,17 +582,16 @@ Puget Sound data (2018 data): http://www.moldychum.com/violations-prompt-washing
 Source: 
 Our Sound, Our Salmon, 2017. [Accessed January 31, 2020] http://www.moldychum.com/violations-prompt-washington-state-cancel-atlantic-salmon-farm-lease/
 
- - this will receive a 4 (good quality), since I do not believe it is comprehensive, and is only a sample of points. 
+ - NOT comprehensive, existing points need gapfilling
 
 ```{r}
 
 farms_ps <- read.csv(file.path(path, "USA/PugetSound/USA_PugetSound_AtSalmon.csv")) %>%
   mutate(iso3c = "USA") %>%
   dplyr::select(lon, lat, iso3c) %>%
-  mutate(data_quality = 4) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 2) 
 
-write_csv(farms_ps, here("marine/salmon/salmon_farm/data/farm_sites/farms_ps_usa.csv"))
+write_csv(farms_ps, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_ps_usa.csv"))
 
 ```
 
@@ -612,6 +599,8 @@ write_csv(farms_ps, here("marine/salmon/salmon_farm/data/farm_sites/farms_ps_usa
 Source:
 Northeast Regional Ocean Council, 2018. Northeast ocean data: aquaculture. [Accessed January 17, 2020] https://www.northeastoceandata.org/data-download/
 
+ - NOT comprehensive, existing points need gapfilling
+ 
 ```{r}
 
 us_ne <- st_read(file.path(path,"USA/NE/US_NE_Aquaculture.shp"))
@@ -636,10 +625,9 @@ farms_us_ne <- data.frame(do.call(rbind, st_geometry(us_ne_salmon_pts_latlon)))
 names(farms_us_ne) <- c("lon", "lat")
 farms_us_ne <- farms_us_ne %>%
   mutate(iso3c = "USA") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 2)
 
-write_csv(farms_us_ne, here("marine/salmon/salmon_farm/data/farm_sites/farms_ne_usa.csv"))
+write_csv(farms_us_ne, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_ne_usa.csv"))
 
 ```
 
@@ -650,6 +638,12 @@ We use the data from ASC for our New Zealand farms.
 Source: 
 Aquaculture Stewardship Council Data Mapping Study, n.d. . Aquaculture Stewardship Council. [Accessed November 11, 2020] 
 https://gis.asc-aqua.org/arcgis_app/
+
+ - comprehensive (need to add to existing points) - We need add 22 points to existing 1 (a final total 23 of  points)
+ 
+http://www.fao.org/fishery/countrysector/naso_newzealand/en
+“There were 23 king salmon farms in 2004 occupying 60 hectares of water space and producing 7 400 tonnes of fish (NZAC, 2005). Most of these farms were located in marine waters in the Marlborough Sounds, and Stewart Island, but also a smaller number in freshwater in hydroelectric water channels”
+
 
 ```{r}
 ASC_salmon_sf <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/ASC_data/ASC_all_sf.shp"))
@@ -670,10 +664,13 @@ farms_nzl <- data.frame(do.call(rbind, st_geometry(nzl_pts_latlon)))
 names(farms_nzl) <- c("lon", "lat")
 farms_all_nzl <- farms_nzl %>%
   cbind(iso3c = nzl_pts_latlon$iso3c) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 4)
 
-write_csv(farms_all_nzl, here("marine/salmon/salmon_farm/data/farm_sites/farms_nz.csv"))
+write_csv(farms_all_nzl, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_nz.csv"))
+
+## Now we will make a file that tells us the number of additional farms that need to be added to be comprehensive
+nz_additional <- data.frame(iso3c = "NZL", type = "salmon", num_additional_farms = 22, data_quality = 4)
+write.csv(nz_additional, here("marine/salmon/salmon_farm/data/subset_known_add_points_4/add_farms_nz.csv"), row.names = FALSE)
 
 ```
 
@@ -681,6 +678,8 @@ write_csv(farms_all_nzl, here("marine/salmon/salmon_farm/data/farm_sites/farms_n
 # Ireland
 Downloaded from here (Jan 31 2020): https://www.agriculture.gov.ie/seafood/engineering/publications/gisdata/
 
+ - Comprehensive data 
+ 
 Source:
 Ireland Department of Agriculture, Food and the Marine., 2019. Aquaculture licence GIS data. [accessed January 31, 2020]  https://www.agriculture.gov.ie/seafood/engineering/publications/gisdata/
 
@@ -699,10 +698,9 @@ farms_ire <- data.frame(do.call(rbind, st_geometry(ire_pts_latlon)))
 names(farms_ire) <- c("lon", "lat")
 farms_ire <- farms_ire %>%
   mutate(iso3c="IRL") %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 
-write_csv(farms_ire, here("marine/salmon/salmon_farm/data/farm_sites/farms_ire.csv"))
+write_csv(farms_ire, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_ire.csv"))
 
 ```
 
@@ -718,17 +716,22 @@ Russian Aquaculture is the only in Russia company farming Atlantic salmon. The c
 
 Appears that most of Russia's salmon aquaculture occurs in the Barents Sea in the Murmansk region.  Trout are in the White Seas and lakes of the Republic of Karelia (not sure if this is freshwater).  There are multiple salmon sites within the region, but we do not have specific locations.
 
+ - No info at all, needs to be fully gapfilled
+
 ```{r}
 
-# lat long estimates from google earth
-farms_russia <- data.frame(lon=c(33.7149),
-                    lat=c(69.4953)) %>%
-  mutate(iso3c = "RUS") %>%
-  mutate(data_quality = 1) %>%
-  mutate(action_needed = "country based suitability")
 
-write_csv(farms_russia, here("marine/salmon/salmon_farm/data/farm_sites/farms_russia.csv"))
+# farms_russia <- data.frame(lon=c(33.7149),
+#                     lat=c(69.4953)) %>%
+#   mutate(iso3c = "RUS") %>%
+#   mutate(data_quality = 1) %>%
+#   mutate(action_needed = "country based suitability")
+# 
+# write_csv(farms_russia, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_russia.csv"))
 
+# Write a file for russia to indicate it has no information and will need to be fully gapfilled
+rus_gf <- data.frame(iso3c = "RUS", type = "salmon", num_additional_farms = NA, data_quality = 1)
+write_csv(rus_gf, here("marine/salmon/salmon_farm/data/no_info_1/gf_rus.csv"))
 ```
 
 
@@ -758,10 +761,9 @@ farms_JPN <- data.frame(do.call(rbind, st_geometry(JPN_pts_latlon)))
 names(farms_JPN) <- c("lon", "lat")
 farms_all_JPN <- farms_JPN %>%
   cbind(iso3c = JPN_pts_latlon$iso3c) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 2)
 
-write_csv(farms_all_JPN, here("marine/salmon/salmon_farm/data/farm_sites/farms_japan.csv"))
+write_csv(farms_all_JPN, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_japan.csv"))
 
 ```
 
@@ -803,60 +805,36 @@ farms_dk <- farms_dk %>%
 
 farms_dk <- cbind(farms_dk, dk_subregions ) %>%
   dplyr::select(lon, lat, iso3c, subregion = NAME) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 
-write.csv(farms_dk, here("marine/salmon/salmon_farm/data/farm_sites/farms_denmark.csv"), row.names = FALSE)
+write.csv(farms_dk, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_denmark.csv"), row.names = FALSE)
 
-#farms_dk <- read_csv(here("aquaculture/marine/salmon/salmon_farm/data/farm_sites/farms_denmark.csv"))
+#farms_dk <- read_csv(here("aquaculture/marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_denmark.csv"))
 ```
 
 
 # Turkey
 There is salmon and trout aquaculture in Turkey. 
 
-Page 33 of this indicates there are 12 marine rainbow trout farms in turkey: http://tudav.org/wp-content/uploads/2018/04/marine_aquaculture_in_turkey.pdf
+http://www.fao.org/fishery/countrysector/naso_turkey/en
+14 Trout and seabass farms, 6 trout farms, 1 seabass and bream and trout,  
+Based on this, we will treat the FAO as truth… and spatially allocate 21 farms. 
 
-It says that half of those farms (6 farms) are located in Persembe bay. I will allocate the remaining 6 equally across Sinop bay, Sana bay, and Rize bay (2 farms each). 
 
-Source: 
-Candan, A., Karatas, S., Kücüktas, H., Okumus, I. (Eds.), 2007. Marine aquaculture in Turkey. Türk Denzi Araştırmaları Vakfı, İstanbul.
+ - comprehensive - need to spatially allocate 21 farms randomly in turkey 
 
 ```{r}
 
-# Sinop: 2 farms, randomly picked locations
-# lat 42.011686, lon 35.193134
-# 42.015462, 35.168353
+farms_turkey <- data.frame(iso3c = "TUR", type = "salmon", num_additional_farms = 21, data_quality = 3)
 
-# Persembe: 6 farms
-# 41.073031, 37.776490
-# 41.071171, 37.776501
-# 41.103902, 37.788303
-# 41.106756, 37.788893
-# 41.111485, 37.788643
-# 41.114387, 37.788943
 
-# Sana: 2 farms
-# 40.991640, 39.812112
-# 40.994117, 39.803345
-
-# Rize: 2 farms
-# 41.038866, 40.562498,
-# 41.036462, 40.558582
-
-farms_turkey <- data.frame(lon=c(35.193, 35.168, 37.776,  37.776, 37.788, 37.789, 37.789, 37.789, 39.812, 39.803, 40.562, 40.558),
-                    lat=c(42.012, 42.015, 41.073, 41.071, 41.103, 41.106, 41.111, 41.114, 40.991, 40.994, 41.038, 41.036),
-                    subregion = c("Sinop", "Sinop", "Persembe", "Persembe", "Persembe", "Persembe", "Persembe", "Persembe", "Sana", "Sana", "Rize", "Rize")) %>%
-  mutate(iso3c = "TUR") %>%
-  mutate(data_quality = 3) %>%
-  mutate(action_needed = "Allocate spatially") 
-
-write_csv(farms_turkey, here("marine/salmon/salmon_farm/data/farm_sites/farms_tur.csv"))
+write_csv(farms_turkey, here("marine/salmon/salmon_farm/data/known_number_farms_3/farms_tur.csv"))
 
 ```
 
 
 # Finland
+ - Comprehensive data
 
 Source: 
 HELCOM HOLAS II Dataset: Finfish mariculture, 2017. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
@@ -886,15 +864,17 @@ farms_fi <- farms_fi %>%
 
 farms_fi <- cbind(farms_fi, fi_subregions ) %>%
   dplyr::select(lon, lat, iso3c, subregion = NAME) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5)
 
-write.csv(farms_fi, here("marine/salmon/salmon_farm/data/farm_sites/farms_finland.csv"), row.names = FALSE)
+write.csv(farms_fi, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_finland.csv"), row.names = FALSE)
 
-farms_fi <- read_csv(here("marine/salmon/salmon_farm/data/farm_sites/farms_finland.csv"))
+farms_fi <- read_csv(here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_finland.csv"))
 ```
 
 # Sweden 
+
+ - Comprehensive data
+ 
 Source:
 HELCOM HOLAS II Dataset: Finfish mariculture, 2017. The Baltic Marine Environment Protection Commission. [Accessed October 12, 2020]
 
@@ -927,17 +907,16 @@ farms_sw <- farms_sw %>%
 farms_sw <- cbind(farms_sw, sw_subregions ) %>%
   dplyr::select(lon, lat, iso3c, subregion = NAME) %>%
   filter(!is.na(lat)) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 5) 
 
-write.csv(farms_sw, here("marine/salmon/salmon_farm/data/farm_sites/farms_sweden.csv"), row.names = FALSE)
+write.csv(farms_sw, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_sweden.csv"), row.names = FALSE)
 
-#farms_sw <- read_csv(here("marine/salmon/salmon_farm/data/farm_sites/farms_sweden.csv"))
+#farms_sw <- read_csv(here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_sweden.csv"))
 ```
 
 ## Iceland
 
-We are using the ASC data for this: 
+We are using the ASC data for this, however this is only a subset of farms in Iceland. We will treat this as needed to be gapfilled with existing points (data_quality = 2)
 
 Source: 
 Aquaculture Stewardship Council Data Mapping Study, n.d. Aquaculture Stewardship Council. [Accessed November 11, 2020] 
@@ -961,10 +940,9 @@ farms_ISL <- data.frame(do.call(rbind, st_geometry(ISL_pts_latlon)))
 names(farms_ISL) <- c("lon", "lat")
 farms_all_ISL <- farms_ISL %>%
   cbind(iso3c = ISL_pts_latlon$iso3c) %>%
-  mutate(data_quality = 5) %>%
-  mutate(action_needed = "Land mask")
+  mutate(data_quality = 2)
 
-write_csv(farms_all_ISL, here("marine/salmon/salmon_farm/data/farm_sites/farms_isl.csv"))
+write_csv(farms_all_ISL, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_isl.csv"))
 
 ```
 
@@ -972,11 +950,11 @@ write_csv(farms_all_ISL, here("marine/salmon/salmon_farm/data/farm_sites/farms_i
 
 ```{r}
 
-farm_files <- list.files(here("marine/salmon/salmon_farm/data/farm_sites"), full=TRUE)
+farm_files <- list.files(here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5"), full=TRUE)
 all_farms = plyr::ldply(farm_files, read_csv)
 
 all_farms_1 <- all_farms %>%
-  dplyr::select(-data_quality, -action_needed)
+  dplyr::select(-data_quality)
 
 write.csv(all_farms_1, here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon.csv"), row.names = FALSE)
 
