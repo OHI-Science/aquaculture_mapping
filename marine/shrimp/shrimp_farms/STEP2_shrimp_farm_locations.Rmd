@@ -292,7 +292,7 @@ farms_ecu <- read.csv(here("marine/shrimp/shrimp_farms/data/ASC_shrimp_farm_lat_
   dplyr::filter(iso3c == "ECU") %>%
   mutate(data_quality = 2)
 
-write_csv(farms_ecu, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5/farms_ecu.csv"))
+75+write_csv(farms_ecu, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5/farms_ecu.csv"))
 
 
 ```
@@ -343,8 +343,9 @@ write_csv(farms_tha, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_
 
 Need to add 4 points to existing 2 (a final total of 6 points)
 
-From FAO:
-For marine aquaculture, the six shrimp breeding companies created 4 325 full-time jobs, 4 267 of which were for local people and 58 for expatriates (Anon. 2005b). These 4 325 full-time jobs were distributed as follows: 90 mariners, 1 072 in the processing plant, 400 in administration, 267 in hatcheries, 2 114 in farms, and 382 in other areas. This kind of shrimp farming also created 30 000 indirect jobs. Seaweed culture was being practised by 126 farmers.
+From FAO: http://www.fao.org/fishery/countrysector/naso_madagascar/en
+
+"For marine aquaculture, the **six shrimp breeding companies** created 4 325 full-time jobs, 4 267 of which were for local people and 58 for expatriates (Anon. 2005b). These 4 325 full-time jobs were distributed as follows: 90 mariners, 1 072 in the processing plant, 400 in administration, 267 in hatcheries, 2 114 in farms, and 382 in other areas. This kind of shrimp farming also created 30 000 indirect jobs. Seaweed culture was being practised by 126 farmers."
 
 Data quality = 4
 
@@ -539,7 +540,7 @@ mapview(farms_blz)
 Source:
 Mole, P., Bunge, J., 2002. Shrimp Farming in Brazil: An Industry Overview.
 
- - Because this source doesn't hav especifics on numbers of farms or where they are located, I will treat this as no information that will need to be fully gapfilled. 
+ - Because this source doesn't have specifics on numbers of farms or where they are located, I will treat this as no information that will need to be fully gapfilled. 
 
 
 ```{r}

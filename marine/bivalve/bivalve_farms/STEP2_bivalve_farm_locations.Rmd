@@ -270,23 +270,23 @@ write.csv(zaf_additional, here("marine/bivalve/bivalve_farms/data/subset_known_a
 
 # Australia  
 
-We currently know the exact location of 1 bivalve farms in Australia, however there is much more production that just 1 farm. However, aquaculture websites say there are 20 abalone farms, 14 oyster farms, and 25 mussel farms in Australia 
+We currently know the exact location of 1 bivalve farms in Australia, however there is much more production that just 1 farm. However, aquaculture websites say there are 20 abalone farms, 22 oyster farms, and 25 mussel farms in Australia 
 
 Need to add 68 points to existing 1 point (for a total of 69 points)
 
  - Abalone
-  - https://www.oceanwatch.org.au/seafood/aquaculture/species/abalone/
+  - https://www.oceanwatch.org.au/aquaculture-species/
   - “There are around 20 farms that produce about 725 tonnes of abalone every year, with production volume increasing by about 25% every year.”
   - 725 tonnes of abalone matches really well to what is reported for abalone in Australia by the FAO. 
 
  - Oysters
   - This states that nearly all oyster license holders are a part of this association:   
   - https://www.aquaculturealliance.org/advocate/oyster-farming-in-south-australia/
-  - We will use this as truth: http://www.oysterssa.com.au/south-australian-oyster-growers
-  - We will need to place an additional 14 oyster farms in Australia 
+  - We will use this as truth: https://oysterssa.com.au/oyster-growers/
+  - We will need to place an additional 22 oyster farms in Australia 
 
  - Mussels
-  - https://www.oceanwatch.org.au/seafood/aquaculture/species/mussels/
+  - https://www.oceanwatch.org.au/aquaculture-species/
   - “Concentrated in the south of country, there are about 25 mussel farms spread across SA, Tasmania, Victoria, Tasmania and the south coasts of both NSW and WA.”
 
   - We will place a total of 69 bivalve points in Australia. 
@@ -378,7 +378,7 @@ write_csv(farms_mex, here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_
 
 
 # Jersey
-Current data is from ASC, only 5 farm. However, this is comprehensive. When comparing to governmental lease data, there are only 7 leases in Jersey. 
+Current data is from ASC, only 5 farm. However, this is comprehensive. When comparing to governmental lease data, there are 5 leases in Jersey. 
 
 ```{r}
 farms_jey <- read.csv(here("marine/bivalve/bivalve_farms/data/ASC_bivalve_farm_lat_lon.csv")) %>%

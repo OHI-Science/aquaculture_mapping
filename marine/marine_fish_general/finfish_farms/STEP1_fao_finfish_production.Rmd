@@ -79,6 +79,11 @@ explore <- read_csv(here("marine/marine_fish_general/finfish_farms/data/fao_mari
    arrange(-fao_tonnes_production) %>%
    mutate(percent = round(fao_tonnes_production/sum(fao_tonnes_production)*100,2))
 
+sum(explore$fao_tonnes_production) # 3901214
+unique(explore$country) # 37 countries
+
+## explore ASC and emod data
+
 emod_countries <- explore %>%
   dplyr::filter(country %in% c("Cyprus", "Greece", "Malta", "Norway", "Spain"))
 sum(emod_countries$percent)
@@ -98,3 +103,18 @@ unique(sort(asc_countries$country))
 
 ```
 
+```{r}
+## write out bivalve taxa and production for Juliette
+fao_finfish_taxa_prod <- fao %>%
+  filter(species %in% finfish_list) %>%  
+  filter(!is.na(value)) %>%
+  arrange(-value, country) %>%
+  group_by(country, year) %>%
+  summarise(value = sum(value)) %>%
+  filter(value>=500) %>% # countries with less do not appear to be stable producers at this point
+  filter(year == 2017)
+
+sum(fao_finfish_taxa_prod$value) # 3916717  
+
+unique(fao_finfish_taxa_prod$country) # 37 countries 
+```

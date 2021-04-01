@@ -54,6 +54,7 @@ fao_salmon <- fao %>%
   group_by(country, iso3c, year) %>%
   summarize(fao_tonnes_production = sum(value)) %>%
   arrange(country, iso3c, year)
+
  
 write.csv(fao_salmon, here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv"), row.names=FALSE)
         
@@ -64,5 +65,24 @@ write.csv(fao_salmon, here("marine/salmon/salmon_farm/data/fao_mariculture_salmo
 
 sum(explore$fao_tonnes_production) # 2753752
 sum(explore$percent) # 100.01
+
+unique(explore$country) # - 16 countries 
 ```
+
+```{r}
+## write out bivalve taxa and production for Juliette
+fao_salmon_taxa_prod <- fao %>%
+  filter(species %in% salmon_list) %>%  
+  filter(!is.na(value)) %>%
+  arrange(-value, country) %>%
+  group_by(country, year) %>%
+  summarise(value = sum(value)) %>%
+  filter(value>=500) %>% # countries with less do not appear to be stable producers at this point
+  filter(year == 2017)
+
+sum(fao_salmon_taxa_prod$value) # 2754210 - adds 458 tonnes 
+
+unique(fao_salmon_taxa_prod$country) # 16 countries 
+```
+
 

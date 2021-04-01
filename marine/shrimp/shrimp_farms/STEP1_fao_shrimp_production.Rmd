@@ -78,7 +78,11 @@ write.csv(fao_shrimp, here("marine/shrimp/shrimp_farms/data/fao_mariculture_shri
    arrange(-fao_tonnes_production) %>%
    mutate(percent = round((fao_tonnes_production/sum(fao_tonnes_production)*100),2))
 
-sum(explore$fao_tonnes_production)
+sum(explore$fao_tonnes_production) # 5094133
+unique(explore$country) # 35 countries
+
+
+## explore ASC data
 
 asc_countries <- c("Australia", "Bangladesh", "Belize", "China", "Colombia", "Ecuador", "Guatemala", "Honduras", "India", "Indonesia", "Madagascar", "Mexico", "New Caledonia", "Nicaragua", "Panama", "Peru", "Thailand", "Venezuela, Boliv Rep of", "Viet Nam")
 
@@ -99,5 +103,21 @@ sum(asc_explore$percent) + sum(explore_test$percent)
 sum(asc_explore$fao_tonnes_production) + sum(explore_test$fao_tonnes_production)
 
 sum(explore$fao_tonnes_production)
+```
+
+```{r}
+## write out bivalve taxa and production for Juliette
+fao_shrimp_taxa_prod <- fao %>%
+  filter(species %in% shrimp_list) %>%  
+  filter(!is.na(value)) %>%
+  arrange(-value, country) %>%
+  group_by(country, year) %>%
+  summarise(value = sum(value)) %>%
+  filter(value>=500) %>% # countries with less do not appear to be stable producers at this point
+  filter(year == 2017)
+
+sum(fao_shrimp_taxa_prod$value) # 5095394 - adds ~1000 tonnes 
+
+unique(fao_shrimp_taxa_prod$country) # 35 countries 
 ```
 

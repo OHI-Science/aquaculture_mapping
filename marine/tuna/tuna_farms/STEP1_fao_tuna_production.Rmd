@@ -73,5 +73,24 @@ write.csv(fao_tuna, here("marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv")
    filter(year==2017) %>%
    arrange(-fao_tonnes_production) %>%
    mutate(percent = round((fao_tonnes_production/sum(fao_tonnes_production))*100, 2))
+ sum(explore$fao_tonnes_production) # 37072.56
+ unique(explore$country) # 7 countries 
 ```
+
+```{r}
+## write out bivalve taxa and production for Juliette
+fao_tuna_taxa_prod <- fao %>%
+  filter(species %in% tuna_list) %>%  
+  filter(!is.na(value)) %>%
+  arrange(-value, country) %>%
+  group_by(country, year) %>%
+  summarise(value = sum(value)) %>%
+  filter(value>=500) %>% # countries with less do not appear to be stable producers at this point
+  filter(year == 2017)
+
+sum(fao_tuna_taxa_prod$value) # 37072.56
+
+unique(fao_tuna_taxa_prod$country) # 16 countries 
+```
+
 

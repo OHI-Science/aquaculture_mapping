@@ -597,7 +597,7 @@ write_csv(farms_ps, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/
 
 ## US Northeast
 Source:
-Northeast Regional Ocean Council, 2018. Northeast ocean data: aquaculture. [Accessed January 17, 2020] https://www.northeastoceandata.org/data-download/
+Northeast Regional Ocean Council, 2018. Northeast ocean data: aquaculture. [Accessed January 17, 2020] 
 
  - NOT comprehensive, existing points need gapfilling
  

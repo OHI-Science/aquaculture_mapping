@@ -48,12 +48,21 @@ fao_bivalve_taxa_prod <- fao %>%
   filter(species %in% bivalve_list) %>%  
   filter(!is.na(value)) %>%
   arrange(-value, country) %>%
-  filter(value>=500) %>%  # countries with less do not appear to be stable producers at this point
+  # group_by(country, year) %>%
+  # summarise(value = sum(value)) %>%
+  filter(value>=500) %>% # countries with less do not appear to be stable producers at this point
   group_by(country, iso3c, species, year) %>%
   dplyr::filter(year == 2017) %>%
   summarize(fao_tonnes_production = sum(value)) %>%
   arrange(country, iso3c, species, year) 
+
+sum(fao_bivalve_taxa_prod$fao_tonnes_production) # 17435623
+unique(fao_bivalve_taxa_prod$country) # 42 countries
   
+## When doing the filter for >500 tonnes by taxa group: 
+# sum(fao_bivalve_taxa_prod$value) # 17446096
+# unique(fao_bivalve_taxa_prod$country) # 43 countries - senegal added
+
 write.csv(fao_bivalve_taxa_prod, here("marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve_taxa_production.csv"), row.names=FALSE)
 
 # include only bivalves

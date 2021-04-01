@@ -73,7 +73,27 @@ write.csv(fao_crustaceans, here("marine/crustaceans/crustacean_farms/data/fao_ma
    filter(year==2017) %>%
    arrange(-fao_tonnes_production) %>%
    mutate(percent = round((fao_tonnes_production/sum(fao_tonnes_production))*100,2))
+ 
+sum(explore$fao_tonnes_production) # 401719.1
+unique(explore$country) # 6 countries 
 
 
 ```
+
+```{r}
+## write out bivalve taxa and production for Juliette
+fao_crustaceans_taxa_prod <- fao %>%
+  filter(species %in% crustaceans_list) %>%  
+  filter(!is.na(value)) %>%
+  arrange(-value, country) %>%
+  group_by(country, year) %>%
+  summarise(value = sum(value)) %>%
+  filter(value>=500) %>% # countries with less do not appear to be stable producers at this point
+  filter(year == 2017)
+
+sum(fao_crustaceans_taxa_prod$value) # 401733.5 - adds 14 tonnes 
+
+unique(fao_crustaceans_taxa_prod$country) # 6 countries 
+```
+
 
