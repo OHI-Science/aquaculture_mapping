@@ -23,49 +23,97 @@ eez_mask <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Aquacultu
 eez_sf <- st_read("/home/shares/food-systems/Global_datasets/EEZ/eez_v10.shp")
 coastline <- readRDS("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/outline.rds")
 
+#x <- raster("/home/shares/food-systems/Aquaculture_mapping/Data/ports/distance-from-port-v20201104.tiff")
+
+#plot(x)
+# ports_gfw <- read_csv("/home/shares/food-systems/Aquaculture_mapping/Data/ports/named_anchorages_v2_20201104.csv") %>% 
+#   st_as_sf(coords = c("lon", "lat"),
+#            crs = 4326) %>% 
+#   head(400)
+
+#mapview::mapview(ports_gfw, zcol = "at_dock")
+
 the_crs <- crs(fake_raster, asText = TRUE)
 # depth and ports
 ports_raw <- st_read("/home/shares/clean-seafood/raw_data/ports_data/Commercial_ports.shp") %>% 
   st_transform(the_crs)
-bathy_raw <- raster("/home/shares/clean-seafood/raw_data/bathymetry_data/full_bathy_layer.tif") %>%
-  resample(fake_raster, method = 'bilinear')
-  #projectRaster(to = fake_raster,
-                #res = res(fake_raster))
 
-bathy_raw <- bathy_raw %>% 
-  projectRaster(to = fake_raster)
-
-#bathy_raw2 <- bathy_raw
-#bathy_raw <- bathy_raw2
-bathy_raw[bathy_raw >    10] <- NA # replace all values over 1m asl as NA
-bathy_raw[bathy_raw < -250] <- NA # replace all values under 250 bsl as NA
-bathy_raw[!is.na(bathy_raw)] <- 1 # replace all suitable depths with 1
+#all_ports_sp <- as(ports_raw, "Spatial")
+#dist_ports_raster <- distanceFromPoints(food_raster, all_ports_sp)
+#write_rds(dist_ports_raster, "dist_ports_raster.rds")
 
 
-# load in each of the aquaculture maps and convert to sf objects
-all_farms_raw   <-
-  bind_rows(read_csv("marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon_data_quality.csv") %>% 
-              mutate(type = "bivalve") %>% 
-              dplyr::select(-X1),
-            read_csv("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon_data_quality.csv") %>% 
-              mutate(type = "crustacean") %>% 
-              dplyr::select(-prod),
-            read_csv("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv") %>% 
-              mutate(type = "salmon"),
-            read_csv("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon_data_quality.csv") %>% 
-              mutate(type = "shrimp"),
-            read_csv("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon_data_quality.csv") %>% 
-              mutate(type = "tuna"),
-            read_csv("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon_data_quality.csv") %>% 
-              mutate(type = "marine_fish_general")) %>%
+
+# bathy_raw <- raster("/home/shares/clean-seafood/raw_data/bathymetry_data/full_bathy_layer.tif") %>%
+#   resample(fake_raster, method = 'bilinear')
+#   #projectRaster(to = fake_raster,
+#                 #res = res(fake_raster))
+# 
+# bathy_raw <- bathy_raw %>% 
+#   projectRaster(to = fake_raster)
+# 
+# #bathy_raw2 <- bathy_raw
+# #bathy_raw <- bathy_raw2
+# bathy_raw[bathy_raw >    10] <- NA # replace all values over 1m asl as NA
+# bathy_raw[bathy_raw < -250] <- NA # replace all values under 250 bsl as NA
+# bathy_raw[!is.na(bathy_raw)] <- 1 # replace all suitable depths with 1
+# 
+
+
+data <- read_csv("marine/output/all_marine_farms.csv") %>% 
   st_as_sf(., 
            coords = c("lon", "lat"),
            crs = crs(food_raster), 
            agr = "constant") 
 
-all_the_farm_points <- all_farms_raw %>% 
-  dplyr::select(iso3c, data_quality, type) %>%
-  .[0, ]
+
+
+#### load in number of farms ####
+#------------------------------------------------------------------------------#
+
+
+
+
+
+
+
+
+
+
+# THIS SECTION CAN BE DELETED
+# 
+# 
+# 
+# 
+# 
+# # load in each of the aquaculture maps and convert to sf objects
+# all_farms_raw   <-
+#   bind_rows(read_csv("marine/bivalve/bivalve_farms/data/global_bivalve_farm_lat_lon_data_quality.csv") %>% 
+#               mutate(type = "bivalve") %>% 
+#               dplyr::select(-X1),
+#             read_csv("marine/crustaceans/crustacean_farms/data/global_crustacean_farm_lat_lon_data_quality.csv") %>% 
+#               mutate(type = "crustacean") %>% 
+#               dplyr::select(-prod),
+#             read_csv("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv") %>% 
+#               mutate(type = "salmon"),
+#             read_csv("marine/shrimp/shrimp_farms/data/global_shrimp_farm_lat_lon_data_quality.csv") %>% 
+#               mutate(type = "shrimp"),
+#             read_csv("marine/tuna/tuna_farms/data/global_tuna_farm_lat_lon_data_quality.csv") %>% 
+#               mutate(type = "tuna"),
+#             read_csv("marine/marine_fish_general/finfish_farms/data/global_finfish_farm_lat_lon_data_quality.csv") %>% 
+#               mutate(type = "marine_fish_general")) %>%
+#   st_as_sf(., 
+#            coords = c("lon", "lat"),
+#            crs = crs(food_raster), 
+#            agr = "constant") 
+# 
+# all_the_farm_points <- data %>% 
+#   dplyr::select(iso3c, type) %>%
+#   .[0, ]
+
+
+
+
 
 
 ####  Allocate spatially ####
@@ -75,10 +123,13 @@ all_the_farm_points <- all_farms_raw %>%
 # subregion so we do those separately as well
 
 ## do it for national 
+need_national_allocation <- read_csv("marine/output/all_points_to_add.csv") %>% 
+  group_by(iso3c, type) %>% 
+  summarize(num_farms = sum(num_additional_farms))
 
-need_national_allocation <- all_farms_raw %>% 
-  filter(action_needed == "Allocate spatially", 
-         is.na(subregion))
+all_the_farm_points <- data %>% 
+  dplyr::select(iso3c, type) %>%
+  .[0, ]
 
 # stucture of the loop for each country 
 # 1. Get the country ranges land-eez-bbox
@@ -89,22 +140,25 @@ need_national_allocation <- all_farms_raw %>%
 # layers of data needed gadm_full, eez_sf, coastline, 
 
 # generate prediction points for each national allocation area
-for (i in 1:length(unique(need_national_allocation$iso3c))) {
+for (i in 43:length(unique(need_national_allocation$iso3c))) {
   
   #1. Get the country ranges land-eez-bbox
-  
+  # need to do china!!! i = 5 an cuba 7?
   ## 1.a get country shape file
-  this_iso3 <- unique(need_national_allocation$iso3c)[8]
+  this_iso3 <- unique(need_national_allocation$iso3c)[i]
   
-  this_farm_info <- all_farms_raw %>% 
-    filter(iso3c == this_iso3,
-           data_quality == 3) 
+  this_farm_info <- need_national_allocation %>% 
+    filter(iso3c == this_iso3) 
   
-  this_type_vector <- this_farm_info$type
+  set.seed(001)
   
-  the_farm_number <- this_farm_info %>% 
-    nrow()
-  
+  this_type_vector <- this_farm_info %>% 
+    group_by(type) %>% 
+    expand(types = seq(1:num_farms)) %>% 
+    pull(type) %>% 
+    sample()
+
+  the_farm_number <- sum(this_farm_info$num_farms)
   
   
   this_country <- gadm_full %>% 
@@ -156,30 +210,32 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
   this_port_sp <- as(these_ports, "Spatial")
   
   ## 2.b calculate distance to the coast!
-  dis_to_coast_rast <- this_eez_mask
-  this_dist <- gDistance(this_raster_points, this_coast_sp, byid = TRUE)
-  this_dmin = apply(this_dist,2,min)
-  dis_to_coast_rast[!is.na(dis_to_coast_rast[])]=this_dmin
+  #dis_to_coast_rast <- this_eez_mask
+  #this_dist <- gDistance(this_raster_points, this_coast_sp, byid = TRUE)
+  #this_dmin = apply(this_dist,2,min)
+  #dis_to_coast_rast[!is.na(dis_to_coast_rast[])]=this_dmin
   
-  coast_test_rast <-dis_to_coast_rast
-  coast_test_rast[coast_test_rast > 1] <- NA # replace all values over 1m asl as NA
+  dis_to_port_rast <- distanceFromPoints(this_raster_area, these_ports, meters = FALSE)
+  
+  #coast_test_rast <-dis_to_coast_rast
+  #coast_test_rast[coast_test_rast > 1] <- NA # replace all values over 1m asl as NA
   
   #plot(dis_to_coast_rast)
   ## 2.c calculate distance to ports!
-  dis_to_port_rast <- this_eez_mask
-  this_dist_port <- gDistance(this_raster_points, this_port_sp, byid = TRUE)
-  this_dmin_port = apply(this_dist_port,2,min)
-  dis_to_port_rast[!is.na(dis_to_port_rast[])]=this_dmin_port
+  #dis_to_port_rast <- this_eez_mask
+  #this_dist_port <- gDistance(this_raster_points, this_port_sp, byid = TRUE)
+  #this_dmin_port = apply(this_dist_port,2,min)
+  #dis_to_port_rast[!is.na(dis_to_port_rast[])]=this_dmin_port
   
   port_test_rast <- dis_to_port_rast
-  port_test_rast[port_test_rast >.2 ] <- NA
+  port_test_rast[port_test_rast >100000 ] <- NA
   
   ## 3.d get depth data!
-  this_bathy_mask <- raster::crop(bathy_raw, this_area_sp) 
-  this_bathy_mask2 <- raster::mask(this_bathy_mask, this_area_sp)
+  # this_bathy_mask <- raster::crop(bathy_raw, this_area_sp) 
+  # this_bathy_mask2 <- raster::mask(this_bathy_mask, this_area_sp)
     
   # 4 make full suitability map!
-  suitability_rast <- port_test_rast+coast_test_rast#+this_bathy_mask
+  suitability_rast <- port_test_rast#+coast_test_rast#+this_bathy_mask
   #suitability_rast[suitability_rast >= 0] <- 1
   
   #suitability_rast[!is.na(suitability_rast)] = 1  
@@ -203,18 +259,18 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
     as_Spatial()
   
   # regularly sample points along line
-  this_farm_points <- sp::spsample(this_suitable_coast, n=the_farm_number*2, type = "random") %>% 
+  this_farm_points <- sp::spsample(this_suitable_coast, n=the_farm_number*100, type = "random") %>% 
     sf::st_as_sf() %>% 
     sample_n(the_farm_number) %>% 
     mutate(
       iso3 = this_iso3,
-      data_quality = 4,
       type = this_type_vector
     )
     
   all_the_farm_points <- all_the_farm_points %>% 
     rbind(this_farm_points)
-    
+  
+  write_rds(all_the_farm_points, paste0("data/temp_data/temp_farms_", i, ".rds"))
   
 }
 
@@ -232,3 +288,9 @@ mapview(this_suitable_coast)
 mapview(all_the_farm_points)
 
 # south korea does not have enough ports I think. 
+
+c(1,2,3) %>% 
+  sample()
+
+
+test <- read_rds("data/temp_data/temp_farms_4.rds")

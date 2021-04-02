@@ -18,8 +18,8 @@ library(WDI)
 library(countrycode)
 
 
-aq_info <- read_csv('/home/shares/clean-seafood/raw_data/FAO/production/CL_FI_COUNTRY_GROUPS.csv') %>% 
-  clean_names() %>% 
+continent_info <- read_csv('data/CL_FI_COUNTRY_GROUPS.csv') %>% 
+  janitor::clean_names() %>% 
   select(iso3_code, geo_region_group, continent_group, eco_class_group)
 
 raw <- read_csv("/home/blasco/github/aquaculture_mapping/marine/data/n_farms_production_data.csv") %>% 
@@ -27,11 +27,7 @@ raw <- read_csv("/home/blasco/github/aquaculture_mapping/marine/data/n_farms_pro
 
 
 
-aq_types <- raw %>% 
-  filter(!is.na(n_farms)) %>% 
-  mutate(tonnes_per_farm = fao_tonnes_production/n_farms) %>% 
-  group_by(continent_group, group) %>% 
-  summarise(tonnes_per_farm = mean(tonnes_per_farm))
+
 ```
 
 
