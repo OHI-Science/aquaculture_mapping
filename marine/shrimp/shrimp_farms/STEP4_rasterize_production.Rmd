@@ -1,0 +1,236 @@
+---
+title: "Rasterizing prodution per each region"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "10/09/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+In this script we allocated the production per farm (equally if there is no subregional production estimates). 
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+
+source(here("_spatial/template_raster.R"))
+
+
+```
+
+
+# Global regions
+
+```{r}
+
+# this file includes ocean regions:
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
+plot(gadm_latlon)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+# read in points and converted to spatial dataframe
+```{r}
+
+data <- read_csv("marine/output/all_marine_farms.csv") %>% 
+  st_as_sf(., 
+           coords = c("lon", "lat"),
+           crs = crs(food_raster), 
+           agr = "constant") 
+
+all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+  map_df(., readRDS) %>% 
+  rename(iso3c = iso3) %>% 
+  mutate(source = "modeled") %>% 
+  rbind(data %>% mutate(source = "real"))
+
+shrimp_farms <- all_farms %>%
+  filter(type == "shrimp")
+
+```
+
+
+# determine subregions where points are located
+
+```{r}
+
+shrimp_farms$reg_id <- raster::extract(gadm_latlon, shrimp_farms) 
+
+farms_sf <- shrimp_farms %>%
+  left_join(gadm_codes, by="reg_id") %>%
+  dplyr::mutate(NAME_1 = as.character(NAME_1)) 
+
+farms_sf$check <-  paste(farms_sf$iso3c, farms_sf$GID_0, sep=":")
+table(farms_sf$check)
+
+mapview(farms_sf)
+# some annoying mismatches due to raster resolution. Fix these
+
+# CHN:HKG
+# CHN:MAC
+# CRI:NIC
+# CRI:PAN
+# ECU:COL
+# GTM:HND
+# GTM:MEX
+# HND:NIC
+# HND:SLV
+# IDN:PNG
+# IDN:TLS
+# IRN:IRQ
+# MEX:GTM
+# MEX:USA
+# MYS:BRN
+# MYS:SGP
+# MYS:THA
+# PER:ECU
+# SAU:KWT
+# SLV:HND
+# THA:MMR
+# THA:MYS
+# VNM:KHM
+
+
+farms_sf_correct <- farms_sf %>%
+  mutate(GID_0 = as.character(GID_0)) %>%
+  mutate(NAME_0 = as.character(NAME_0)) %>%
+  mutate(NAME_1 = as.character(NAME_1)) %>%
+  mutate(GID_0 = ifelse(check %in% "CHN:HKG", "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CHN:HKG", "China", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "CHN:MAC", "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CHN:MAC", "China", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "CRI:NIC", "CRI", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CRI:NIC", "Costa Rica", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "CRI:PAN", "CRI", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CRI:PAN", "Costa Rica", NAME_0)) %>%  
+  mutate(GID_0 = ifelse(check %in% "ECU:COL", "ECU", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "ECU:COL", "Ecuador", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "GTM:HND", "GTM", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "GTM:HND", "Guatemala", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "GTM:MEX", "GTM", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "GTM:MEX", "Guatemala", NAME_0)) %>%  
+  mutate(GID_0 = ifelse(check %in% "HND:NIC", "HND", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "HND:NIC", "Honduras", NAME_0)) %>%  
+  mutate(GID_0 = ifelse(check %in% "HND:SLV", "HND", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "HND:SLV", "Honduras", NAME_0)) %>%   
+  mutate(GID_0 = ifelse(check %in% "IDN:PNG", "IDN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "IDN:PNG", "Indonesia", NAME_0)) %>% 
+  mutate(GID_0 = ifelse(check %in% "IDN:TLS", "IDN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "IDN:TLS", "Indonesia", NAME_0)) %>% 
+  mutate(GID_0 = ifelse(check %in% "IRN:IRQ", "IRN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "IRN:IRQ", "Iran", NAME_0)) %>%  
+  mutate(GID_0 = ifelse(check %in% "MEX:GTM", "MEX", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MEX:GTM", "Mexico", NAME_0)) %>%   
+  mutate(GID_0 = ifelse(check %in% "MEX:USA", "MEX", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MEX:USA", "Mexico", NAME_0)) %>%   
+  mutate(GID_0 = ifelse(check %in% "MYS:BRN", "MYS", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MYS:BRN", "Malaysia", NAME_0)) %>% 
+  mutate(GID_0 = ifelse(check %in% "MYS:SGP", "MYS", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MYS:SGP", "Malaysia", NAME_0)) %>% 
+  mutate(GID_0 = ifelse(check %in% "MYS:THA", "MYS", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MYS:THA", "Malaysia", NAME_0)) %>% 
+  mutate(GID_0 = ifelse(check %in% "PER:ECU", "PER", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "PER:ECU", "Peru", NAME_0)) %>% 
+  mutate(GID_0 = ifelse(check %in% "SAU:KWT", "SAU", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "SAU:KWT", "Saudi Arabia", NAME_0)) %>%  
+  mutate(GID_0 = ifelse(check %in% "SLV:HND", "SLV", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "SLV:HND", "El Salvador", NAME_0)) %>%  
+  mutate(GID_0 = ifelse(check %in% "THA:MMR", "THA", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "THA:MMR", "Thailand", NAME_0)) %>%  
+  mutate(GID_0 = ifelse(check %in% "THA:MYS", "THA", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "THA:MYS", "Thailand", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "VNM:KHM", "VNM", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "VNM:KHM", "Vietnam", NAME_0)) 
+  
+farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
+table(farms_sf_correct$check)
+
+
+
+
+mapview(farms_sf_correct) # this all looks reasonable, no crazy points
+```
+
+
+# FAO salmon production data per country
+```{r}
+
+fao <- read.csv(here("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp.csv")) %>%
+  dplyr::filter(year == 2017) %>%
+  dplyr::select(iso3c, fao_tonnes_production)
+
+```
+
+
+# join country production to farms by iso3c
+
+```{r}
+
+farms_sf_correct <- farms_sf_correct %>%
+  left_join(fao, by="iso3c")
+
+summary(farms_sf_correct) # make sure no production NA values
+
+```
+
+# get areas with no regional production data and calculate production per farm
+
+```{r}
+
+## calculate farm production
+farms_prod <- farms_sf_correct %>%
+  group_by(NAME_0) %>%
+  add_tally() %>%
+  ungroup() %>%
+  mutate(tonnes_per_farm = fao_tonnes_production/n) %>%
+  dplyr::select(iso3c, tonnes_per_farm, geometry)
+
+```
+
+# combine and check it all matches ok
+
+```{r}
+
+test <- farms_prod %>%
+  group_by(iso3c) %>%
+  summarize(total_tonnes = sum(tonnes_per_farm, na.rm=TRUE)) %>%
+  left_join(fao) %>%
+  mutate(difference = fao_tonnes_production - total_tonnes)
+
+
+```
+
+## convert to raster, with the value of each cell equalling the sum tonnes per farm for all farms landing in cell.
+
+```{r}
+
+farms_sf <- st_as_sf(farms_prod)
+mapview(farms_sf)
+
+shrimp_raster_check <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum)
+mapview(shrimp_raster_check)
+
+shrimp_raster <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum, background=0)
+plot(log(shrimp_raster + 1))
+
+shrimp_raster_df <- as.data.frame(shrimp_raster, xy=TRUE) %>%
+  dplyr::select(x,y, tonnes_production=layer)
+
+cellStats(shrimp_raster, stat = "sum") # 5094133
+sum(shrimp_raster_df$tonnes_production) # 5094133
+sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 5094133
+sum(fao$fao_tonnes_production) # 5094133
+
+write_csv(shrimp_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/shrimp/shrimp_farm_updated.csv")
+
+```

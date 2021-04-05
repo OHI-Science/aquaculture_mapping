@@ -1,0 +1,177 @@
+---
+title: "Rasterizing prodution per each region"
+author: "Gage Clawson (NCEAS, UCSB, OHI)"
+date: "12/17/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+
+source(here::here("_spatial/template_raster.R"))
+
+
+```
+
+# Global regions
+
+```{r}
+
+# this file includes ocean regions:
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
+plot(gadm_latlon)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+# read in points and converted to spatial dataframe
+```{r}
+
+data <- read_csv("marine/output/all_marine_farms.csv") %>% 
+  st_as_sf(., 
+           coords = c("lon", "lat"),
+           crs = crs(food_raster), 
+           agr = "constant") 
+
+all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+  map_df(., readRDS) %>% 
+  rename(iso3c = iso3) %>% 
+  mutate(source = "modeled") %>% 
+  #left_join(tonnage_per_farms)
+  rbind(data %>% mutate(source = "real"))
+
+crust_farms <- all_farms %>%
+  filter(type == "crustaceans")
+```
+
+
+# determine subregions where points are located
+
+```{r}
+
+crust_farms$reg_id <- raster::extract(gadm_latlon, crust_farms) 
+
+farms_sf <- crust_farms %>%
+  left_join(gadm_codes, by="reg_id") %>%
+  dplyr::mutate(NAME_1 = as.character(NAME_1))
+
+farms_sf$check <-  paste(farms_sf$iso3c, farms_sf$GID_0, sep=":")
+table(farms_sf$check)
+
+unique(farms_sf$iso3c)
+
+
+# some annoying mismatches due to raster resolution. Fix these
+
+unique(farms_sf$NAME_1)
+
+farms_sf_correct <- farms_sf %>%
+  mutate(GID_0 = as.character(GID_0)) %>%
+  mutate(NAME_0 = as.character(NAME_0)) %>%
+  mutate(NAME_1 = as.character(NAME_1)) %>%
+  mutate(GID_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "China", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "MMR:THA", "MMR", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MMR:THA", "Myanmar", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "VNM:KHM", "VNM", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "VNM:KHM", "Vietnam", NAME_0))
+
+farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
+table(farms_sf_correct$check)
+
+
+```
+
+
+# FAO crustacean production data per country
+```{r}
+
+fao <- read.csv(here::here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
+  dplyr::filter(year == 2017) %>%
+  dplyr::select(iso3c, fao_tonnes_production)
+
+setdiff(fao$iso3c, farms_sf_correct$iso3c)
+setdiff(farms_sf_correct$iso3c, fao$iso3c)
+
+```
+
+
+# join country production to farms by iso3c
+
+```{r}
+
+farms_sf_correct <- farms_sf_correct %>%
+  left_join(fao, by="iso3c")
+
+summary(farms_sf_correct) # make sure no production NA values
+
+```
+
+# get areas with no regional production data and calculate production per farm
+
+```{r}
+
+## calculate farm production
+farms_prod <- farms_sf_correct %>%
+  group_by(NAME_0) %>%
+  add_tally() %>%
+  ungroup() %>%
+  mutate(tonnes_per_farm = fao_tonnes_production/n) %>%
+  dplyr::select(iso3c, tonnes_per_farm, geometry) 
+
+```
+
+# combine and check it all matches ok
+
+```{r}
+
+test <- farms_prod %>%
+  dplyr::group_by(iso3c) %>%
+  dplyr::summarize(total_tonnes = sum(tonnes_per_farm, na.rm=TRUE)) %>%
+  left_join(fao, by = "iso3c") %>%
+  mutate(difference = fao_tonnes_production - total_tonnes)
+
+```
+
+## convert to raster, with the value of each cell equalling the sum tonnes per farm for all farms landing in cell.
+
+```{r}
+
+farms_sf <- st_as_sf(farms_prod)
+mapview(farms_sf)
+
+
+sum(farms_sf$tonnes_per_farm) # 401719.1
+sum(fao$fao_tonnes_production) # 401719.1
+
+crustacean_raster_check <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum)
+plot(log(crustacean_raster_check+1))
+cellStats(crustacean_raster_check, stat = "sum", na.rm = TRUE) # 401719.1
+
+
+crustacean_raster <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum, background=0)
+
+plot(log(crustacean_raster+1))
+
+crustacean_raster_df <- as.data.frame(crustacean_raster, xy=TRUE) %>%
+  dplyr::select(x,y, tonnes_production=layer)
+
+cellStats(crustacean_raster, stat = "sum") # 401719.1
+sum(crustacean_raster_df$tonnes_production) # 401719.1
+sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 401719.1
+sum(fao$fao_tonnes_production) # 401719.1
+
+write_csv(crustacean_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/crustaceans/crustaceans_farm_updated.csv")
+
+```

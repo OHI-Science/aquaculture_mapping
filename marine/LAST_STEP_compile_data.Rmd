@@ -59,3 +59,14 @@ summary(all_point_additions)
 unique(all_point_additions$type)
 ```
 
+```{r}
+countries_1 <- data.frame(iso3c = unique(all_farms$iso3c))
+
+countries_2 <- data.frame(iso3c = unique(all_point_additions$iso3c))
+
+all_countries <- rbind(countries_1, countries_2)
+
+unique(all_countries$iso3c) # 73 total countries mapped 
+```
+
+
