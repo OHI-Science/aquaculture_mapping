@@ -1,0 +1,71 @@
+---
+title: "Data checking"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "03/06/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+
+source(here("_spatial/template_raster.R"))
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+```
+
+
+# Global regions
+
+```{r}
+
+# this file includes ocean regions:
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
+plot(gadm_latlon)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+# read in points and converted to spatial dataframe
+```{r}
+
+data <- read_csv("marine/output/all_marine_farms.csv") %>% 
+  st_as_sf(., 
+           coords = c("lon", "lat"),
+           crs = crs(food_raster), 
+           agr = "constant") 
+
+all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+  map_df(., readRDS) %>% 
+  rename(iso3c = iso3) %>% 
+  mutate(source = "modeled") %>% 
+  rbind(data %>% mutate(source = "real"))
+
+
+by_type <- all_farms %>%
+  group_by(type) %>%
+  summarise(n()) %>%
+  st_drop_geometry()
+
+
+by_country_type <- all_farms %>%
+  st_drop_geometry() %>%
+  group_by(iso3c, type) %>%
+  summarise(n())
+
+
+
+
+```

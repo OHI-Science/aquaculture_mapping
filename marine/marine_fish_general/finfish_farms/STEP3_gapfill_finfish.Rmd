@@ -68,7 +68,7 @@ tonnes_per_farm <- comprehensive_farms_total %>%
   mutate(tonnes_per_farm = fao_tonnes_production/n_farms)
 
 avg_global_marine_fish_general_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)
-avg_global_marine_fish_general_tonnes_per_farm # 864.3575
+avg_global_marine_fish_general_tonnes_per_farm # 865.6905
 ```
 
 Now let's gapfill those that are data quality = 2 and data quality = 1, and data quality = 2.5 (if applicable)
@@ -132,6 +132,9 @@ all_known_farms_final <- all_known_farms %>%
 
 write.csv(all_known_farms_final, here("marine/marine_fish_general/finfish_farms/output/all_known_finfish_farms_final.csv"), row.names = FALSE)
 
+
+test <- all_known_farms_final %>%
+  filter(iso3c == "GRC") # perfect
 ```
 
 

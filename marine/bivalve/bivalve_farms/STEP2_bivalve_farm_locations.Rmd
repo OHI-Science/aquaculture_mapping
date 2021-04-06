@@ -272,7 +272,7 @@ write.csv(zaf_additional, here("marine/bivalve/bivalve_farms/data/subset_known_a
 
 We currently know the exact location of 1 bivalve farms in Australia, however there is much more production that just 1 farm. However, aquaculture websites say there are 20 abalone farms, 22 oyster farms, and 25 mussel farms in Australia 
 
-Need to add 68 points to existing 1 point (for a total of 69 points)
+Need to add 45 points to existing 24 point (for a total of 69 points)
 
  - Abalone
   - https://www.oceanwatch.org.au/aquaculture-species/
@@ -283,7 +283,7 @@ Need to add 68 points to existing 1 point (for a total of 69 points)
   - This states that nearly all oyster license holders are a part of this association:   
   - https://www.aquaculturealliance.org/advocate/oyster-farming-in-south-australia/
   - We will use this as truth: https://oysterssa.com.au/oyster-growers/
-  - We will need to place an additional 22 oyster farms in Australia 
+  - We will need to place an additional 23 oyster farms in Australia 
 
  - Mussels
   - https://www.oceanwatch.org.au/aquaculture-species/
@@ -295,13 +295,27 @@ Need to add 68 points to existing 1 point (for a total of 69 points)
 ```{r}
 farms_AUS <- read.csv(here("marine/bivalve/bivalve_farms/data/ASC_bivalve_farm_lat_lon.csv")) %>%
   dplyr::filter(iso3c == "AUS") %>%
+  mutate(data_quality = 4) ## this is an abalone farm
+
+## now we need to add the oyster farms from this map: https://oysterssa.com.au/oyster-growers/
+farms_AUS_2 <- data.frame(lat_lon = c("-32.377148325671286, 133.93965198614558", "-34.91844207220454, 137.7783987555795", "-35.77943962962783, 137.77191642975748", "-33.693162657803185, 136.924417900667", "-32.37607854727286, 133.94039259834852", "-32.373416358293625, 133.9357013204693", "-32.80283080755049, 134.1850786971314", "-34.62455022926624, 135.46366166621291", "-33.67979293746246, 136.91678920994693", "-34.551319592404916, 135.3981400818773", "-34.61868048533167, 135.4628853832039", "-32.3774179110106, 133.94079648728368", "-33.71698462803702, 136.90259542838538", "-34.90762372887531, 137.7836548109512", "-34.623471540228394, 135.46192328133426", "-33.67594103960825, 136.92673532055025", "-32.37775541730595, 133.94005795577584", "-34.52175570620221, 135.38834856713308", "-33.677446237574934, 136.92623952576452", "-32.37683026324807, 133.94078430357064", "-34.625125897259146, 135.46296226954271", "-34.61986531053386, 135.46279518888247", "-32.3779085349619, 133.9409211712551")) %>%
+  separate(col = lat_lon, sep = ", ", into = c("lat", "lon")) %>% 
+  mutate(iso3c = "AUS") %>%
   mutate(data_quality = 4)
 
-write.csv(farms_AUS, here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_4_5/farms_AUS.csv"), row.names = FALSE)
+all_farms_AUS <- rbind(farms_AUS, farms_AUS_2)
 
+
+write.csv(all_farms_AUS, here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_4_5/farms_AUS.csv"), row.names = FALSE)
+
+
+all_farms_sf <- st_as_sf(all_farms_AUS, coords = c("lon", "lat"),
+                         crs = crs(gadm_latlon), agr = "constant")
+
+mapview(all_farms_sf)
 
 ## Now we will make a file that tells us the number of additional farms that need to be added to be comprehensive
-AUS_additional <- data.frame(iso3c = "AUS", type = "bivalve", num_additional_farms = 68, data_quality = 4, total_farms = 69)
+AUS_additional <- data.frame(iso3c = "AUS", type = "bivalve", num_additional_farms = 45, data_quality = 4, total_farms = 69)
 write.csv(AUS_additional, here("marine/bivalve/bivalve_farms/data/subset_known_add_points_4/add_farms_aus.csv"), row.names = FALSE)
 ```
 

@@ -292,7 +292,7 @@ farms_ecu <- read.csv(here("marine/shrimp/shrimp_farms/data/ASC_shrimp_farm_lat_
   dplyr::filter(iso3c == "ECU") %>%
   mutate(data_quality = 2)
 
-75+write_csv(farms_ecu, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5/farms_ecu.csv"))
+write_csv(farms_ecu, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5/farms_ecu.csv"))
 
 
 ```
@@ -471,7 +471,7 @@ Need to add 19 points to existing 1 (a final total of 20 points)
 Current data is from the ASC, which is a subset of points. 
 
 http://www.fao.org/fishery/countrysector/naso_colombia/en
- - “The shrimp farming industry operates nine maturation laboratories, eighteen larval culture laboratories, twenty shrimp farms and seven processing plants. All of them employ qualified labour force, made up of professionals and expert technicians in their respective field of work (Minagricultura and ACUANAL, 2002).”
+ - “The shrimp farming industry operates nine maturation laboratories, eighteen larval culture laboratories, **twenty shrimp farms** and seven processing plants. All of them employ qualified labour force, made up of professionals and expert technicians in their respective field of work (Minagricultura and ACUANAL, 2002).”
  
 ```{r}
 farms_col <- read.csv(here("marine/shrimp/shrimp_farms/data/ASC_shrimp_farm_lat_lon.csv")) %>%
@@ -523,7 +523,7 @@ farms_blz_asc <- read.csv(here("marine/shrimp/shrimp_farms/data/ASC_shrimp_farm_
 farms_blz_total <- full_join(farms_blz, farms_blz_asc) 
 
 
-write_csv(farms_blz, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5/farms_blz.csv"))
+write_csv(farms_blz_total, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5/farms_blz.csv"))
 
 ## visualize it 
 farms_blz <-  st_as_sf(farms_blz_total, coords = c("lon", "lat"), 

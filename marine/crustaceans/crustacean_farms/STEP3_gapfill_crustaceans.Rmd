@@ -29,8 +29,8 @@ Calculate a global tonnes per farm for crustaceans
  - We don't have any tonnes per farm estimates for crustaceans... Therefore we will use the shrimp tonnes/farm, as it is the most similar aquaculture practice to crustaceans.
 
 ```{r}
-avg_global_shrimp_tonnes_per_farm = 337.7357
-avg_global_shrimp_tonnes_per_farm # 337.7357
+avg_global_shrimp_tonnes_per_farm = 336.5783
+avg_global_shrimp_tonnes_per_farm # 336.5783
 ```
 
 Now let's gapfill those that are data quality = 1

@@ -68,7 +68,7 @@ tonnes_per_farm <- comprehensive_farms_total %>%
   mutate(tonnes_per_farm = fao_tonnes_production/n_farms)
 
 avg_global_shrimp_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)
-avg_global_shrimp_tonnes_per_farm # 337.7357
+avg_global_shrimp_tonnes_per_farm # 336.5783
 ```
 
 Now let's gapfill those that are data quality = 2 and data quality = 1, and data quality = 2.5 (if applicable)
