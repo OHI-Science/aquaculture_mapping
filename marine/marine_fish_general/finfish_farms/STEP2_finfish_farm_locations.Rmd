@@ -444,6 +444,10 @@ farms_eu_final <- cbind(farms_eu, eu_countries) %>%
 
 write_csv(farms_eu_final, here("marine/marine_fish_general/finfish_farms/data/known_farm_sites_2_4_5/farms_ESP_CYP_NOR_GRC_MLT.csv"))
 
+
+test <- farms_eu_final %>%
+  group_by(iso3c) %>%
+  summarise(n())
 ```
 
 

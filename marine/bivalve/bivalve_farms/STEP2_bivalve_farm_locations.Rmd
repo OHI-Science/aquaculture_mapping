@@ -270,9 +270,9 @@ write.csv(zaf_additional, here("marine/bivalve/bivalve_farms/data/subset_known_a
 
 # Australia  
 
-We currently know the exact location of 1 bivalve farms in Australia, however there is much more production that just 1 farm. However, aquaculture websites say there are 20 abalone farms, 22 oyster farms, and 25 mussel farms in Australia 
+We currently know the exact location of 1 ASC bivalve farm, and 23 oyster farms in Australia, however there is much more production that just 24 farms. Aquaculture websites say there are 20 abalone farms, 23 oyster farms, and 25 mussel farms in Australia 
 
-Need to add 45 points to existing 24 point (for a total of 69 points)
+Need to add 45 points to existing 24 points (for a total of 69 points)
 
  - Abalone
   - https://www.oceanwatch.org.au/aquaculture-species/
@@ -915,6 +915,10 @@ write_csv(farms_nld, here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_
 
 nld_additional <- data.frame(iso3c = "NLD", type = "bivalve", num_additional_farms = 76 , data_quality = 4, total_farms = 82)
 write.csv(nld_additional, here("marine/bivalve/bivalve_farms/data/subset_known_add_points_4/add_farms_nld.csv"), row.names = FALSE)
+
+test <- farms_eu_final %>%
+  group_by(iso3c) %>%
+  summarise(n())
 
 ```
 
