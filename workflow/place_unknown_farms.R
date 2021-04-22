@@ -26,6 +26,8 @@ the_crs <- crs(fake_raster, asText = TRUE)
 ports_raw <- st_read("/home/shares/clean-seafood/raw_data/ports_data/Commercial_ports.shp") %>% 
   st_transform(the_crs)
 
+# consider removing "L" HARB_SIZE_ points
+
 
 data <- read_csv("marine/output/all_marine_farms.csv") %>% 
   st_as_sf(., 
@@ -44,8 +46,16 @@ all_the_farm_points <- data %>%
   dplyr::select(iso3c, type) %>%
   .[0, ]
 
+# create arctic raster 
+arctic_raster <- raster("/home/shares/food-systems/Aquaculture_mapping/latitude_abs.tif")
+crs(arctic_raster) <- crs(fake_raster)
+m <- c(-1000, -66, 1, 1000, 66, 1,  -66, 66, NA)
+rclmat <- matrix(m, ncol=3, byrow=TRUE)
+arctic_raster <- reclassify(arctic_raster, c(66,Inf, NA, 0,66,1))
 
-for (i in 3:length(unique(need_national_allocation$iso3c))) {
+arctic_fixed <- resample(arctic_raster, blank_raster, method = "ngb")
+
+for (i in 1:length(unique(need_national_allocation$iso3c))) {
   
   ## 1.a get country shape file
   this_iso3 <- unique(need_national_allocation$iso3c)[i]
@@ -113,7 +123,7 @@ for (i in 3:length(unique(need_national_allocation$iso3c))) {
   dis_to_port_rast <- distanceFromPoints(this_raster_area, these_ports)
   port_test_rast <- dis_to_port_rast
   port_test_rast[port_test_rast >35000 ] <- NA
-  suitability_rast <- port_test_rast
+  suitability_rast <- port_test_rast+arctic_fixed
   
 
   this_coast_meters <- st_transform(this_simplified_coast, crs = "+proj=moll") %>% ## transform to a crs that can buffer in meters 
@@ -140,22 +150,49 @@ for (i in 3:length(unique(need_national_allocation$iso3c))) {
       type = this_type_vector
     )
   
-  write_rds(this_farm_points, paste0("data/temp_data/temp_farms_", i, ".rds"))
+  if (nrow(this_farm_points) != the_farm_number) stop
   
+  write_rds(this_farm_points, paste0("data/temp_data/temp_marine_final/temp_farms_", i, ".rds"))
+  print(paste0(this_iso3, " has been saved"))
   
 }
 
 
-all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   mutate(source = "modeled") %>% 
   #left_join(tonnage_per_farms)
-  rbind(data %>% mutate(source = "real"))# %>% 
-  #left_join()
+  rbind(data %>% mutate(source = "real")) %>% 
+  left_join(tonnage_per_farms)
+
+n_placed_known <- all_farms %>% 
+  st_set_geometry(NULL) %>% 
+  group_by(iso3c, type, source) %>%
+  summarize(count = n()) %>% 
+  pivot_wider(names_from = source, 
+              values_from = count)
 
 
+## check for all farms and countries
 
+testing <- all_farms %>% 
+  filter(source == "modeled") %>% 
+  st_set_geometry(NULL)
+
+testing %>% 
+  group_by(iso3c, type) %>%
+  summarise(number_places = n()) %>% 
+  left_join(need_national_allocation) %>% 
+  filter(number_places != num_farms)
+
+testing %>% 
+  group_by(iso3c, type) %>%
+  summarise(number_places = n()) %>% 
+  right_join(need_national_allocation)
+
+
+write_rds(all_farms, "/data/all_modeled_marine_farms.rds")
 
 
 
@@ -166,21 +203,49 @@ mapview(plotted,
         zcol = "type")
 
 
+#### ADD in tonnages ####
+#------------------------------------------------------------------------------#
+
+farm_numbers <- all_farms %>% 
+  st_set_geometry(NULL) %>% 
+  group_by(iso3c, type) %>% 
+  summarize(number_of_farms = n())
 
 
 
+fao <- read_csv("data/fao_aquaculture_clean.csv") %>% 
+  dplyr::select(country, iso3c) %>% 
+  distinct()
 
 
-
+total_tonnages <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv") %>% 
+  left_join(fao) %>%
+  mutate(type = case_when(
+    aq_group == "salmonids" ~ "salmon",
+    aq_group == "bivalves" ~ "bivalve",
+    aq_group == "shrimps_prawns" ~ "shrimp",
+    
+    aq_group == "marine_fish_general" ~ "marine_fish_general",
+    aq_group == "crustaceans" ~ "crustaceans",
+    aq_group == "tuna" ~ "tuna"
+    
+  )) %>% 
+  dplyr::select(-aq_group) %>% 
+  left_join(farm_numbers) %>% 
+  left_join(n_placed_known) %>% 
+  mutate(tonnage_per_farm = total_tonnes/number_of_farms)
 
 
 #### Rasterize ####
 #------------------------------------------------------------------------------#
 
 
+read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv")
 
-
-test <- rasterize(all_farms, 
+rasterized_tonnage <- rasterize(all_farms, 
                   blank_raster, 
                   field = "avg_tonnes_per_farm", 
-                  fun = )
+                  fun = sum)
+
+
+
