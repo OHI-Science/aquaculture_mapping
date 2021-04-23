@@ -638,10 +638,14 @@ Source:
 National Aquaculture Sector Overview. Cuba, 2005. National Aquaculture Sector Overview Fact Sheets.
 
 
+https://edepot.wur.nl/531775
+
 “Production of market-size shrimp takes place in 5 state-owned farms that are located at Cuba’s southern coast (which is less prone to the impact of storms than the country’s northern coast)”
 
 This means that we need to place 3 more farms in Cuba. 
 
+Source: 
+Van Der Heijden, P., 2020. Aquaculture in Cuba. Aquaculture Europe 45.
 
 ```{r}
 farms_cub <- data.frame(lat=c(19.841789, 20.047065),
@@ -667,7 +671,7 @@ write.csv(cub_additional, here("marine/shrimp/shrimp_farms/data/subset_known_add
 # El Salvador 
 http://www.fao.org/fishery/countrysector/naso_elsalvador/en
 
- = “According to the aquaculture method and the scale of production, aquaculture production units are distributed as follows: 15 production units of tilapia cages, 26 reservoirs for household consumption, 50 small and medium scale units, 1 industrial scale unit; 2 ornamental fish production units, 23 units of fresh water prawns, and 39 marine shrimp farms.”
+ “According to the aquaculture method and the scale of production, aquaculture production units are distributed as follows: 15 production units of tilapia cages, 26 reservoirs for household consumption, 50 small and medium scale units, 1 industrial scale unit; 2 ornamental fish production units, 23 units of fresh water prawns, and 39 marine shrimp farms.”
  
  - I must’ve missed this my first lit review, so we will place 39 marine shrimp farms in suitable locations along the El Salvador coast. 
 

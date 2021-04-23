@@ -106,7 +106,7 @@ sum(explore$fao_tonnes_production)
 ```
 
 ```{r}
-## write out bivalve taxa and production for Juliette
+## write out shrimp taxa and production for Juliette
 fao_shrimp_taxa_prod <- fao %>%
   filter(species %in% shrimp_list) %>%  
   filter(!is.na(value)) %>%

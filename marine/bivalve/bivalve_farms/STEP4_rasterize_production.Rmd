@@ -76,32 +76,32 @@ table(farms_sf$check)
 mapview(farms_sf)
 # some annoying mismatches due to raster resolution. Fix these
 
-CHN:HKG
-CHN:MAC
-ESP:MAR
-ESP:PRT
-HKG:CHN
-HRV:BIH
-HRV:MNE
-HRV:SVN
-IDN:PNG
-IRL:GBR
-JPN:RUS
-KHM:VNM
-MEX:USA
-MYS:BRN
-MYS:THA
-NLD:BEL
-NLD:DEU
-PRK:RUS
-PRT:ESP
-SVN:ITA
-THA:MMR
-THA:MYS
-TWN:CHN
-USA:CAN
-USA:MEX
-VNM:KHM
+# CHN:HKG
+# CHN:MAC
+# ESP:MAR
+# ESP:PRT
+# HKG:CHN
+# HRV:BIH
+# HRV:MNE
+# HRV:SVN
+# IDN:PNG
+# IRL:GBR
+# JPN:RUS
+# KHM:VNM
+# MEX:USA
+# MYS:BRN
+# MYS:THA
+# NLD:BEL
+# NLD:DEU
+# PRK:RUS
+# PRT:ESP
+# SVN:ITA
+# THA:MMR
+# THA:MYS
+# TWN:CHN
+# USA:CAN
+# USA:MEX
+# VNM:KHM
 
 
 farms_sf_correct <- farms_sf %>%

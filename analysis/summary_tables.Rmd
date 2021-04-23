@@ -1,0 +1,127 @@
+---
+title: "Summary information"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "03/06/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+library(tidyverse)
+library(RCurl)
+library(mosaic)
+library(googlesheets4)
+library(janitor)
+
+source(here("_spatial/template_raster.R"))
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+```
+
+
+# Global regions
+
+```{r}
+
+# this file includes ocean regions:
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
+plot(gadm_latlon)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+# read in points and converted to spatial dataframe
+```{r}
+
+data <- read_csv(file.path("marine/output/all_marine_farms.csv")) %>% 
+  st_as_sf(., 
+           coords = c("lon", "lat"),
+           crs = crs(food_raster), 
+           agr = "constant")  
+
+all_farms_to_place <- read_csv(file.path("marine/output/all_points_to_add.csv")) %>%
+  distinct(iso3c, type, estimated)
+
+all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+  map_df(., readRDS) %>% 
+  rename(iso3c = iso3) %>% 
+  left_join(all_farms_to_place) %>%
+  mutate(source = "modeled") %>%
+  rbind(data %>% mutate(source = "real", estimated = 0)) %>%
+  mutate(data_type = case_when(
+    source == "real" ~ "known location", 
+    source == "modeled" & estimated == 0 ~ "modeled location, known number of farms",
+    source == "modeled" & estimated == 1 ~ "modeled location, estimated number of farms"
+  ))
+summary(all_farms)
+
+by_type <- all_farms %>%
+  group_by(type) %>%
+  summarise(n()) %>%
+  st_drop_geometry()
+
+
+by_country_type <- all_farms %>%
+  st_drop_geometry() %>%
+  group_by(iso3c, type) %>%
+  summarise(n())
+
+
+by_data_type_country <- all_farms %>%
+  st_drop_geometry() %>%
+  group_by(iso3c, type, data_type) %>%
+  summarise(n()) %>%
+  ungroup()
+
+known_countries <- by_data_type_country %>%
+  filter(data_type == "known location") %>%
+  distinct(iso3c)
+
+by_data_type <- all_farms %>%
+  st_drop_geometry %>%
+  group_by(type, data_type) %>%
+  summarise(n_obs = n()) %>%
+  mutate(total_obs = sum(n_obs)) %>% 
+  ungroup() %>%
+  mutate(pct = n_obs/total_obs*100)
+
+
+
+sources <- read_csv("analysis/data/mariculture_mapping_sources.csv") %>%
+  clean_names() %>%
+  mutate(type = case_when(species == "Salmonids" ~ "salmon",
+                          species == "Unfed or algae fed shellfish" ~ "bivalve",
+                          species == "Shrimp" ~ "shrimp", 
+                          species == "Tuna" ~ "tuna", 
+                          species == "General Marine Fish" ~ "marine_fish_general", 
+                          species == "Crustaceans" ~ "crustaceans"))
+
+
+## join all farms with sources data 
+all_farms_sources <- all_farms %>%
+  left_join(sources, by = c("iso3c", "type")) %>%
+  mutate(data_source = case_when(
+    data_type == "modeled location, known number of farms" ~ datasource_number_of_farms,
+    data_type == "modeled location, estimated number of farms" ~ "NA", 
+    data_type == "known location" ~ datasource_farm_locations
+  )) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, geometry)
+
+
+test <- all_farms_sources %>%
+  filter(iso3c == "IRN",
+         species == "Shrimp")
+```

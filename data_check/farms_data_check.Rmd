@@ -15,6 +15,7 @@ library(dplyr)
 library(sf)
 library(raster)
 library(mapview)
+library(janitor)
 
 source(here("_spatial/template_raster.R"))
 
@@ -47,11 +48,23 @@ data <- read_csv("marine/output/all_marine_farms.csv") %>%
            crs = crs(food_raster), 
            agr = "constant") 
 
-all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   mutate(source = "modeled") %>% 
   rbind(data %>% mutate(source = "real"))
+
+sources_spreadsheet <- read_csv("analysis/data/mariculture_mapping_sources.csv") %>%
+  clean_names() %>%
+    mutate(type = case_when(species == "Salmonids" ~ "salmon",
+                          species == "Unfed or algae fed shellfish" ~ "bivalve",
+                          species == "Shrimp" ~ "shrimp", 
+                          species == "Tuna" ~ "tuna", 
+                          species == "General Marine Fish" ~ "marine_fish_general", 
+                          species == "Crustaceans" ~ "crustaceans"))
+
+all_farms_sources <- all_farms %>%
+  left_join(sources_spreadsheet, by = c("iso3c", "type"))
 
 
 by_type <- all_farms %>%
@@ -63,9 +76,15 @@ by_type <- all_farms %>%
 by_country_type <- all_farms %>%
   st_drop_geometry() %>%
   group_by(iso3c, type) %>%
-  summarise(n())
+  summarise(n_obs = n()) %>%
+  left_join(sources_spreadsheet, by = c("iso3c", "type")) %>%
+  dplyr::select(iso3c, type, n_obs, number_of_total_farms) %>%
+  mutate(difference = n_obs - number_of_total_farms)
 
 
+canada_salmon <- all_farms_sources %>%
+  dplyr::filter(iso3c == "CAN", 
+                type == "salmon")
 
-
+mapview(canada_salmon)
 ```

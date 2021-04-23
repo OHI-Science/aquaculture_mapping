@@ -456,7 +456,7 @@ From http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/italy/en/
  - We will use these as existing farm points, but need to add the remaining farms that are known about. 
 
 Source:
-NASO aquaculture maps collection , 2010. . Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/
+NASO aquaculture maps collection , 2010. Food and Agriculture Organization of the United Nations. [Accessed January 17, 2020] http://www.fao.org/fishery/naso-maps/selected-aquaculture-sites/
 
 
 Need to add 81 points to existing 9 (a final total of 90 points)
@@ -664,7 +664,7 @@ write_csv(chn_gf, here("marine/marine_fish_general/finfish_farms/data/no_info_1/
  - I beleive this is comprehensive. 
  
 Source:
-National Aquaculture Group, n.d. [Accessed November 12, 2020]. http://www.naqua.com.sa/about-us.php
+National Aquaculture Group, 2020. [Accessed November 12, 2020]. http://www.naqua.com.sa/about-us.php
 
 ```{r}
 
@@ -925,7 +925,7 @@ https://www.martec.co.cr/#aquaculture
 
 
 Source:
-Martec Industries Aquaculture , n.d. . Martec.  https://www.martec.co.cr/#aquaculture
+Martec Industries Aquaculture , 2020. Martec.  https://www.martec.co.cr/#aquaculture
  
 ```{r}
 farms_cri <- data.frame(lat = c(9.423478373794573),

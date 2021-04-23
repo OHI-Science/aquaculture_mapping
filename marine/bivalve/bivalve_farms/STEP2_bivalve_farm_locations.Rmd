@@ -320,7 +320,7 @@ write.csv(AUS_additional, here("marine/bivalve/bivalve_farms/data/subset_known_a
 ```
 
 # South Korea 
-We currently know the exact location of 27 bivalve farms in South Korea, however there is much more production that just 27 farms. However, FAO says there are 5245 shell fish leases in South Korea. WE will place an additional 5218 farms. 
+We currently know the exact location of 27 bivalve farms in South Korea. However, FAO says there are 5245 shell fish leases in South Korea. WE will place an additional 5218 farms. 
 
 
 Need to add 5218 points to existing 27 (a final total of 5245 points)
@@ -356,7 +356,7 @@ write_csv(farms_jpn, here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_
 
 # Peru 
 
-We currently know the exact location of 25 bivalve farms in Peru, however there is much more production that just 25 farms. However, FAO says there are 52 bivalve farms in Peru. We will place an additional 27 farms (for a total of 52 farms). 
+We currently know the exact location of 25 bivalve farms in Peru. However, FAO says there are 52 bivalve farms in Peru. We will place an additional 27 farms (for a total of 52 farms). 
 
  - Need to add 27 points to existing 25 (a final total of 52 points)
    - http://www.fao.org/fishery/countrysector/naso_peru/en
@@ -982,7 +982,6 @@ write_csv(farms_svn, here("marine/bivalve/bivalve_farms/data/known_number_farms_
  - However, I can't find much else information. Due to this, I will allocate the 266 farms equally along the coast of Croatia.
  
   - Allocate 266 farms into the most suitable locations in Croatia (this is done later, along with the rest of the gapfilling.)
- - For now we will flag this so that we can gapfill later. 
  
 Source: 
 Lukin, A., 2014. Spatial Planning For Marine Aquaculture, Croatia, Zadar County Case. Croatian Ministry of Agriculture, Directorate of Fisheries.
@@ -1060,7 +1059,7 @@ I will place the two points at these two lagoons (the production is really small
  - Reao: -18.50754847683744, -136.38467411084235
  
 Source: 
-The aquaculture sectors in French Polynesia , n.d. . Department of Marine Resources Pu Fa’Ahotu Moana. http://www.ressources-marines.gov.pf/aquaculteurs/laquaculture-en-polynesie-francaise/les-filieres-de-laquaculture-en-polynesie-francaise/
+The aquaculture sectors in French Polynesia , 2019. Department of Marine Resources Pu Fa’Ahotu Moana. http://www.ressources-marines.gov.pf/aquaculteurs/laquaculture-en-polynesie-francaise/les-filieres-de-laquaculture-en-polynesie-francaise/
 
 
  - We are treating this information as comprehensive. 

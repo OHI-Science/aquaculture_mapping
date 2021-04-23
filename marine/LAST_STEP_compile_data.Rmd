@@ -26,7 +26,7 @@ salmon_farms <-  read_csv(here("marine/salmon/salmon_farm/output/all_known_salmo
 ## bind together
 
 all_farms <- rbind(bivalve_farms, finfish_farms, shrimp_farms, tuna_farms, salmon_farms)
-
+  
 ## now write to our output folder
 write.csv(all_farms, here("marine/output/all_marine_farms.csv"), row.names = FALSE)
   

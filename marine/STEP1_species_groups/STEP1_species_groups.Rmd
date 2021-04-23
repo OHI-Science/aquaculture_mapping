@@ -207,5 +207,21 @@ test <- fao_1 %>%
   dplyr::filter(aq_group == "shrimps_prawns")
 sum(test$total_tonnes) # 5094133
 
+
+test <- fao_1 %>%
+  dplyr::filter(aq_group == "crustaceans")
+sum(test$total_tonnes) # 5094133
+
+test <- fao_1 %>%
+  dplyr::filter(aq_group == "marine_fish_general")
+sum(test$total_tonnes) # 5094133
+
+test <- fao_1 %>%
+  dplyr::filter(aq_group == "tuna")
+sum(test$total_tonnes) # 5094133
+
+test <- fao_1 %>%
+  dplyr::filter(aq_group == "salmonids")
+sum(test$total_tonnes) # 5094133
 ```
 
