@@ -48,7 +48,7 @@ data <- read_csv("marine/output/all_marine_farms.csv") %>%
            crs = crs(food_raster), 
            agr = "constant") 
 
-all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   mutate(source = "modeled") %>% 
@@ -56,6 +56,7 @@ all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) 
 
 bivalve_farms <- all_farms %>%
   filter(type == "bivalve")
+
 
 ```
 
@@ -78,23 +79,23 @@ mapview(farms_sf)
 
 # CHN:HKG
 # CHN:MAC
+# ESP:FRA
 # ESP:MAR
 # ESP:PRT
 # HKG:CHN
 # HRV:BIH
 # HRV:MNE
 # HRV:SVN
-# IDN:PNG
 # IRL:GBR
 # JPN:RUS
 # KHM:VNM
-# MEX:USA
 # MYS:BRN
 # MYS:THA
 # NLD:BEL
 # NLD:DEU
 # PRK:RUS
 # PRT:ESP
+# RUS:POL
 # SVN:ITA
 # THA:MMR
 # THA:MYS
@@ -126,16 +127,10 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "HRV:MNE", "Croatia", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "HRV:SVN", "HRV", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "HRV:SVN", "Croatia", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "IDN:PNG", "IDN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "IDN:PNG", "Indonesia", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "IRL:GBR", "IRL", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "IRL:GBR", "Ireland", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "JPN:RUS", "JPN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "JPN:RUS", "Japan", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "KHM:VNM", "KHM", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "KHM:VNM", "Cambodia", NAME_0)) %>%   
-  mutate(GID_0 = ifelse(check %in% "MEX:USA", "MEX", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MEX:USA", "Mexico", NAME_0)) %>%   
   mutate(GID_0 = ifelse(check %in% "MYS:BRN", "MYS", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "MYS:BRN", "Malaysia", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "MYS:THA", "MYS", GID_0)) %>%
@@ -148,6 +143,8 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "PRK:RUS", "North Korea", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "PRT:ESP", "PRT", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "PRT:ESP", "Portugal", NAME_0)) %>%  
+  mutate(GID_0 = ifelse(check %in% "RUS:POL", "RUS", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "RUS:POL", "Russia", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "SVN:ITA", "SVN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "SVN:ITA", "Slovenia", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "THA:MMR", "THA", GID_0)) %>%
@@ -213,6 +210,7 @@ farms_prod <- farms_sf_correct %>%
 ```{r}
 
 test <- farms_prod %>%
+  st_drop_geometry() %>%
   group_by(iso3c) %>%
   summarize(total_tonnes = sum(tonnes_per_farm, na.rm=TRUE)) %>%
   left_join(fao) %>%

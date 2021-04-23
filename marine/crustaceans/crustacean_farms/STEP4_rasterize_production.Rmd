@@ -42,14 +42,15 @@ data <- read_csv("marine/output/all_marine_farms.csv") %>%
   st_as_sf(., 
            coords = c("lon", "lat"),
            crs = crs(food_raster), 
-           agr = "constant") 
+           agr = "constant") %>%
+  mutate(source = "real")
 
-all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
-  mutate(source = "modeled") %>% 
+ dplyr::mutate(source = "modeled") %>% 
   #left_join(tonnage_per_farms)
-  rbind(data %>% mutate(source = "real"))
+  rbind(data)
 
 crust_farms <- all_farms %>%
   filter(type == "crustaceans")
@@ -73,6 +74,8 @@ unique(farms_sf$iso3c)
 
 
 # some annoying mismatches due to raster resolution. Fix these
+# CHN:HKG
+# CHN:MAC
 
 unique(farms_sf$NAME_1)
 
@@ -81,11 +84,7 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = as.character(NAME_0)) %>%
   mutate(NAME_1 = as.character(NAME_1)) %>%
   mutate(GID_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "CHN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "China", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "MMR:THA", "MMR", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MMR:THA", "Myanmar", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "VNM:KHM", "VNM", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "VNM:KHM", "Vietnam", NAME_0))
+  mutate(NAME_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "China", NAME_0)) 
 
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
@@ -137,6 +136,7 @@ farms_prod <- farms_sf_correct %>%
 ```{r}
 
 test <- farms_prod %>%
+  st_drop_geometry() %>%
   dplyr::group_by(iso3c) %>%
   dplyr::summarize(total_tonnes = sum(tonnes_per_farm, na.rm=TRUE)) %>%
   left_join(fao, by = "iso3c") %>%

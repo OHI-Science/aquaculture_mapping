@@ -124,6 +124,7 @@ farms_prod <- farms_sf_correct %>%
 farm_production <- farms_prod
 
 test <- farm_production %>%
+  st_drop_geometry() %>%
   dplyr::group_by(iso3c) %>%
   dplyr::summarize(total_tonnes = sum(tonnes_per_farm, na.rm=TRUE)) %>%
   left_join(fao, by = "iso3c") %>%

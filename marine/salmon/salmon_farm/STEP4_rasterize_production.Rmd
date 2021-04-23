@@ -17,6 +17,7 @@ library(dplyr)
 library(sf)
 library(raster)
 library(mapview)
+library(tidyverse)
 
 source(here("_spatial/template_raster.R"))
 
@@ -48,7 +49,7 @@ data <- read_csv("marine/output/all_marine_farms.csv") %>%
            crs = crs(food_raster), 
            agr = "constant") 
 
-all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   mutate(source = "modeled") %>% 
@@ -74,6 +75,12 @@ farms_sf <- salmon_farms %>%
 farms_sf$check <-  paste(farms_sf$iso3c, farms_sf$GID_0, sep=":")
 table(farms_sf$check)
 
+# CAN:USA
+# FIN:ALA
+# FIN:RUS
+# RUS:CHN
+# USA:CAN
+
 mapview(filter(farms_sf, check == "RUS:RUS"))
 mapview(farms_sf)
 # some annoying mismatches due to raster resolution. Fix these
@@ -91,7 +98,9 @@ farms_sf_correct <- farms_sf %>%
   mutate(GID_0 = ifelse(check %in% "FIN:ALA", "FIN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "FIN:ALA", "Finland", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "FIN:RUS", "FIN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "FIN:RUS", "Finland", NAME_0))
+  mutate(NAME_0 = ifelse(check %in% "FIN:RUS", "Finland", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "RUS:CHN", "RUS", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "RUS:CHN", "Russia", NAME_0))
 
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
@@ -143,6 +152,7 @@ farms_prod <- farms_sf_correct %>%
 ```{r}
 
 test <- farms_prod %>%
+  st_drop_geometry() %>%
   group_by(iso3c) %>%
   summarize(total_tonnes = sum(tonnes_per_farm, na.rm=TRUE)) %>%
   left_join(fao) %>%

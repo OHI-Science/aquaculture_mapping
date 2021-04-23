@@ -48,7 +48,7 @@ data <- read_csv("marine/output/all_marine_farms.csv") %>%
            crs = crs(food_raster), 
            agr = "constant") 
 
-all_farms <- list.files("data/temp_data/", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   mutate(source = "modeled") %>% 
@@ -196,6 +196,7 @@ farms_prod <- farms_sf_correct %>%
 ```{r}
 
 test <- farms_prod %>%
+  st_drop_geometry() %>%
   group_by(iso3c) %>%
   summarize(total_tonnes = sum(tonnes_per_farm, na.rm=TRUE)) %>%
   left_join(fao) %>%
