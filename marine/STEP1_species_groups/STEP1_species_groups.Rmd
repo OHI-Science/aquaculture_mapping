@@ -198,7 +198,7 @@ fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
 
 write.csv(fao_1, "marine/STEP1_species_groups/int/tonnes_per_country_group.csv", row.names = FALSE)
 
-
+## Take a look at the data 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "bivalves")
 sum(test$total_tonnes) # 17435623
