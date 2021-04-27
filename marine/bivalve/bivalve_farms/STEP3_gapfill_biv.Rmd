@@ -109,7 +109,7 @@ gapfill_2.5 <- all_number_2.5 %>%
   mutate(num_additional_farms = ceiling(tonnes_remaining/avg_tonnes_per_farm)) %>%
   mutate(num_additional_farms = num_additional_farms + n_existing_farms) %>% 
   dplyr::select(iso3c, type, num_additional_farms, avg_tonnes_per_farm) %>%
-  mutate(estimated = 1) %>%
+  mutate(estimated = ifelse(iso3c == "IND", 0, 1)) %>%
   filter(num_additional_farms != 0)
 
 ## Wrangle those that just need a specific number of points added (data_quality = 4)

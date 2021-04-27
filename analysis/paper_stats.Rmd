@@ -1,0 +1,182 @@
+---
+title: "Summary stats for paper"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "04/26/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+This script takes our final farms dataset and calculates summary statistics that will be used in the paper. 
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+library(tidyverse)
+library(RCurl)
+library(mosaic)
+library(googlesheets4)
+library(janitor)
+
+source(here("_spatial/template_raster.R"))
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+```
+
+
+# Global regions
+
+```{r}
+
+# this file includes ocean regions:
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
+plot(gadm_latlon)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+```
+
+# Read in farms data and convert to sf
+
+```{r}
+all_farms_sf <- read_csv("all_marine_aquaculture_farms_sources.csv") %>%
+    st_as_sf(., 
+           coords = c("X", "Y"),
+           crs = crs(food_raster), 
+           agr = "constant")  
+
+all_farms <- all_farms_sf %>%
+  st_drop_geometry()
+
+```
+
+
+```{r}
+sources <- read_csv("analysis/data/mariculture_mapping_sources.csv") %>%
+  clean_names() %>%
+  mutate(type = case_when(species == "Salmonids" ~ "salmon",
+                          species == "Unfed or algae fed shellfish" ~ "bivalve",
+                          species == "Shrimp" ~ "shrimp", 
+                          species == "Tuna" ~ "tuna", 
+                          species == "General Marine Fish" ~ "marine_fish_general", 
+                          species == "Crustaceans" ~ "crustaceans"))
+
+
+## Numbers by data type
+by_data_type <- all_farms %>%
+  group_by(data_type) %>%
+  summarise(n_obs = n()) %>%
+  mutate(total_obs = sum(n_obs)) %>% 
+  ungroup() %>%
+  mutate(pct = n_obs/total_obs*100)
+
+by_data_type
+# A tibble: 3 x 4
+#   data_type                                   n_obs total_obs   pct
+#   <chr>                                       <int>     <int> <dbl>
+# 1 known location                               9750     95341  10.2
+# 2 modeled location, estimated number of farms 75072     95341  78.7
+# 3 modeled location, known number of farms     10519     95341  11.0
+
+# How many countries have spatial locations information?
+known_countries <- all_farms %>%
+  filter(data_type == "known location") %>%
+  distinct(iso3c)
+
+
+# Some of the world’s largest aquaculture producers had a noticeable paucity of aquaculture location data, particularly China, whose represented 77% of the total estimated points, and only had 15 known location points
+
+chn_data_estimated <- all_farms %>%
+  filter(iso3c == "CHN") %>%
+  filter(data_type == "modeled location, estimated number of farms")
+# 58151 points
+58151/75073 # 0.7745927 = 77%
+
+
+chn_data_known <- all_farms %>%
+  filter(iso3c == "CHN") %>%
+  filter(data_type == "known location") # 15 locations 
+
+# Chile, Norway, Peru, the United States, Canada and Ireland provided a substantial number of known locations (>1000).
+top_known <- all_farms %>%
+  filter(data_type == "known location") %>%
+  group_by(iso3c) %>%
+    summarise(n_obs = n())
+
+
+# Only 5 countries (Cambodia, Mauritius, Myanmar, North Korea, and Russia) had no form of farm data at all, however, these countries only account for 0.5% of marine aquaculture production included.
+
+no_info_at_all <- sources %>%
+  dplyr::filter(known_farms_location == 0, known_farms_no_location == 0) ## only 5 with no information at all
+
+mar_production <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv")
+
+no_info_production <- mar_production %>%
+  filter(country %in% c("Cambodia", "Mauritius", "Myanmar", "Korea, Dem. People's Rep", "Russian Federation"))
+sum(no_info_production$total_tonnes) # 152800.1
+
+sum(mar_production$total_tonnes) # 29623515
+152800.1/29623515
+
+chn_production <- mar_production %>%
+  filter(country == "China")
+sum(chn_production$total_tonnes)
+17696822/29623515
+
+# Per species group, salmon was the most data rich (98% of points had location information, 1.13% of points were known with no location information, 0.87% estimated), followed by Tuna (34% of points had location information, 66% of points were known with no location information, 0% estimated).
+
+
+by_species_data_type <- all_farms %>%
+  group_by(species, data_type) %>%
+  summarise(n_obs = n()) %>%
+  mutate(total_obs = sum(n_obs)) %>% 
+  ungroup() %>%
+  mutate(pct = n_obs/total_obs*100)
+```
+
+Check some of the data
+```{r}
+by_type <- all_farms %>%
+  group_by(species) %>%
+  summarise(n_obs = n())  
+
+
+by_country_type <- all_farms %>%
+  group_by(iso3c, species) %>%
+  summarise(n_obs = n()) %>%
+  left_join(sources) %>%
+  dplyr::select(iso3c, species, n_obs, number_of_total_farms) %>%
+  mutate(difference = n_obs - number_of_total_farms)
+
+
+by_data_type_country <- all_farms %>%
+  group_by(iso3c, species, data_type) %>%
+  summarise(n_obs = n()) %>%
+  ungroup() %>%
+  left_join(sources) %>%
+  dplyr::select(iso3c, species, data_type, n_obs, number_of_total_farms, known_farms_location, known_farms_no_location, estimated_farms)
+
+known <- by_data_type_country %>%
+  filter(data_type == "known location") %>%
+  dplyr::select(iso3c, species, data_type, n_obs, known_farms_location) %>%
+  mutate(difference = n_obs - known_farms_location)
+
+number_known <- by_data_type_country %>% 
+  filter(data_type == "modeled location, known number of farms") %>%
+  dplyr::select(iso3c, species, data_type, n_obs, known_farms_no_location) %>%
+  mutate(difference = n_obs - known_farms_no_location)
+
+estimated <- by_data_type_country %>% 
+  filter(data_type == "modeled location, estimated number of farms") %>%
+  dplyr::select(iso3c, species, data_type, n_obs, estimated_farms) %>%
+  mutate(difference = n_obs - estimated_farms)
+
+```
+

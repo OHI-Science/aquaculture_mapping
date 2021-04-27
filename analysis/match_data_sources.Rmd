@@ -1,0 +1,291 @@
+---
+title: "Match point to sources"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "04/26/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+This script takes the farms dataset produced from prior steps, and matches to our data source spreadsheet, so that each point in the final database has a source associated with it (or an NA, if it was estimated). 
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+library(tidyverse)
+library(RCurl)
+library(mosaic)
+library(googlesheets4)
+library(janitor)
+
+source(here("_spatial/template_raster.R"))
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+```
+
+
+# Global regions
+
+```{r}
+
+# this file includes ocean regions:
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
+plot(gadm_latlon)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+# read in points and convert to spatial dataframe
+```{r}
+
+data <- read_csv(file.path("marine/output/all_marine_farms.csv")) %>% 
+  st_as_sf(., 
+           coords = c("lon", "lat"),
+           crs = crs(food_raster), 
+           agr = "constant")  
+
+all_farms_to_place <- read_csv(file.path("marine/output/all_points_to_add.csv")) %>%
+  distinct(iso3c, type, estimated)
+
+all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
+  map_df(., readRDS) %>% 
+  rename(iso3c = iso3) %>% 
+  left_join(all_farms_to_place) %>%
+  mutate(source = "modeled") %>%
+  mutate(estimated = ifelse(iso3c == "IND" & type == "bivalve", 0, estimated)) %>% # fix india mistake
+  rbind(data %>% mutate(source = "real", estimated = 0)) %>%
+  mutate(data_type = case_when(
+    source == "real" ~ "known location", 
+    source == "modeled" & estimated == 0 ~ "modeled location, known number of farms",
+    source == "modeled" & estimated == 1 ~ "modeled location, estimated number of farms"
+  ))
+summary(all_farms)
+```
+
+# Match to our sources dataset 
+```{r}
+
+# read in our sources spreadsheet (manually uploaded by GC)
+sources <- read_csv("analysis/data/mariculture_mapping_sources.csv") %>%
+  clean_names() %>%
+  mutate(type = case_when(species == "Salmonids" ~ "salmon",
+                          species == "Unfed or algae fed shellfish" ~ "bivalve",
+                          species == "Shrimp" ~ "shrimp", 
+                          species == "Tuna" ~ "tuna", 
+                          species == "General Marine Fish" ~ "marine_fish_general", 
+                          species == "Crustaceans" ~ "crustaceans")) %>%
+  mutate(data_year_number_of_farms = as.character(data_year_number_of_farms))
+
+
+## join all farms with sources data 
+all_farms_sources <- all_farms %>%
+  left_join(sources, by = c("iso3c", "type")) %>%
+  mutate(data_source = case_when(
+    data_type == "modeled location, known number of farms" ~ datasource_number_of_farms,
+    data_type == "modeled location, estimated number of farms" ~ "NA", 
+    data_type == "known location" ~ datasource_farm_locations), 
+  data_year = case_when(
+    data_type == "modeled location, known number of farms" ~ data_year_number_of_farms,
+    data_type == "modeled location, estimated number of farms" ~ "NA", 
+    data_type == "known location" ~ data_year_farm_locations)) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
+
+unique(all_farms_sources$data_year)
+```
+
+
+# Fix instances where a known location has multiple sources
+```{r}
+test <- all_farms_sources %>%
+  filter(iso3c == "AUS", species == "Unfed or algae fed shellfish")
+unique(all_farms_sources$species)
+
+test <- all_farms_sources %>%
+  filter(iso3c == "IND", species == "Unfed or algae fed shellfish")
+
+
+## Have multiple location data sources...  fix these so that each point has only one of the datasources 
+
+# Salmon: CAN, USA
+# Shrimp: USA 
+# Bivalve: AUS, CAN, USA
+# General marine fish: TWN
+
+## add in subregional information
+all_farms_sources_gadm <- all_farms_sources
+all_farms_sources_gadm$reg_id <- raster::extract(gadm_latlon, all_farms_sources) 
+
+all_farms_sources_gadm <- all_farms_sources_gadm %>%
+  left_join(gadm_codes, by="reg_id") %>%
+  dplyr::mutate(NAME_1 = as.character(NAME_1)) 
+
+## Canada Salmon fix: 
+CAN_salmon_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "CAN", 
+               species == "Salmonids") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2", "ds_3", "ds_4"), sep = ";") %>%
+  separate(col = data_year, into = c("dy_1", "dy_2", "dy_3", "dy_4"), sep = ",") %>%
+  mutate(data_source = case_when(
+    NAME_1 == "British Columbia" ~ ds_1, 
+    NAME_1 %in% c("New Brunswick", "Maine") ~ ds_2, 
+    NAME_1 %in% c("Newfoundland and Labrador") ~ ds_4,
+    NAME_1 == "Nova Scotia" ~ ds_3
+    
+  )) %>%
+  mutate(data_year = case_when(
+    NAME_1 == "British Columbia" ~ dy_1, 
+    NAME_1 %in% c("New Brunswick", "Maine") ~ dy_2, 
+    NAME_1 %in% c("Newfoundland and Labrador") ~ dy_4,
+    NAME_1 == "Nova Scotia" ~ dy_3
+    
+  )) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
+
+# check <- CAN_salmon_fix %>%
+#   st_drop_geometry() %>%
+#   group_by(data_source) %>%
+#   summarise(n()) ## numbers are correct
+
+
+## Canada Bivalve fix: 
+CAN_bivalve_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "CAN", 
+               species == "Unfed or algae fed shellfish") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2"), sep = ";") %>%
+  mutate(data_source = case_when(
+    NAME_1 == "British Columbia" ~ ds_1, 
+    NAME_1 == "Nova Scotia" ~ ds_2
+    
+  )) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
+
+# check <- CAN_bivalve_fix %>%
+#   st_drop_geometry() %>%
+#   group_by(data_source) %>%
+#   summarise(n()) ## numbers are correct
+
+
+## USA Salmon fix: 
+USA_salmon_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "USA", 
+               species == "Salmonids") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2"), sep = ";") %>%
+  separate(col = data_year, into = c("dy_1", "dy_2"), sep = ",") %>%
+  mutate(data_source = case_when(
+    NAME_1 %in% c("New Brunswick", "Maine") ~ ds_2, 
+    NAME_1 == "Washington" ~ ds_1
+  )) %>%
+    mutate(data_year = case_when(
+    NAME_1 %in% c("New Brunswick", "Maine") ~ dy_2, 
+    NAME_1 == "Washington" ~ dy_1
+  )) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
+
+# check <- USA_bivalve_fix %>%
+#   st_drop_geometry() %>%
+#   group_by(data_source) %>%
+#   summarise(n()) ## numbers are correct
+
+
+## USA Shrimp fix: 
+USA_shrimp_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "USA", 
+               species == "Shrimp") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2", "ds_3", "ds_4", "ds_5"), sep = ";") %>%
+  separate(col = data_year, into = c("dy_1", "dy_2"), sep = ",") %>%
+  mutate(data_source = case_when(
+    NAME_1 %in% c("Texas") ~ ds_2, 
+    NAME_1 == "Alabama" ~ ds_3, 
+    NAME_1 == "Hawaii" ~ ds_4, 
+    NAME_1 == "Florida" ~ ds_5
+  )) %>%
+    mutate(data_year = case_when(
+    NAME_1 %in% c("Texas") ~ dy_1, 
+    NAME_1 == "Alabama" ~ dy_2, 
+    NAME_1 == "Hawaii" ~ dy_2, 
+    NAME_1 == "Florida" ~ dy_2
+  )) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
+
+
+## USA Bivalve fix: 
+USA_bivalve_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "USA", 
+               species == "Unfed or algae fed shellfish", 
+               data_type == "known location") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2"), sep = ";") %>%
+  mutate(data_source = ifelse(NAME_1 == "Washington"| NAME_1 == "Rhode Island", ds_2, ds_1)) %>% 
+  mutate(data_year = 2018) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
+
+# check <- USA_bivalve_fix %>%
+#   st_drop_geometry() %>%
+#   group_by(data_source) %>%
+#   summarise(n()) ## numbers are correct
+
+## AUS Bivalve fix: 
+AUS_bivalve_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "AUS", 
+               species == "Unfed or algae fed shellfish", 
+               data_type == "known location") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2"), sep = ";") %>%
+  mutate(data_source = ifelse(NAME_1 == "Victoria", ds_1, ds_2)) %>%
+  mutate(data_year = 2021) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
+
+
+## TWN marine fish fix: 
+# read in taiwan sources sheet
+twn_sources <- read_csv(here("marine/marine_fish_general/finfish_farms/data/taiwan_farms_sources.csv"))
+
+twn_sources_sf <- st_as_sf(twn_sources, coords = c("lon", "lat"), 
+                 crs = crs(gadm_latlon), agr = "constant")
+
+## rows 1-40 are lee, rows 41-66 are kuo
+TWN_finfish_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "TWN", 
+               species == "General Marine Fish", 
+               data_type == "known location") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2"), sep = ";") %>% 
+  separate(col = data_year, into = c("dy_1", "dy_2"), sep = ",") %>% 
+  mutate(row = row_number()) %>%
+  mutate(data_source = ifelse(row %in% c(1:40), ds_1, ds_2)) %>%
+  mutate(data_year = ifelse(row %in% c(1:40), dy_1, dy_2)) %>%
+  dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
+
+
+##### Now add these back into total dataset ##### 
+
+all_farms_sources_final <- all_farms_sources %>%
+  filter(iso3c != "CAN"|species != "Salmonids") %>%
+  filter(iso3c != "CAN"|species != "Unfed or algae fed shellfish") %>%
+  filter(iso3c != "USA"|species != "Salmonids") %>%
+  filter(iso3c != "USA"|species != "Unfed or algae fed shellfish"|data_type != "known location") %>%
+  filter(iso3c != "AUS"|species != "Unfed or algae fed shellfish"|data_type != "known location") %>%
+  filter(iso3c != "TWN"|species != "General Marine Fish"|data_type != "known location") %>%
+  filter(iso3c != "USA"|species != "Shrimp") %>%
+  rbind(TWN_finfish_fix, USA_bivalve_fix, USA_salmon_fix, USA_shrimp_fix, CAN_bivalve_fix, CAN_salmon_fix, AUS_bivalve_fix) %>%
+  mutate(data_year = as.numeric(data_year))
+
+summary(all_farms_sources_final)
+unique(all_farms_sources_final$data_year)
+
+
+## Now save this as a csv
+st_write(all_farms_sources_final, "all_marine_aquaculture_farms_sources.csv", layer_options = "GEOMETRY=AS_XY")
+
+## check that it wrote correctly
+
+all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv")
+```
+
+
