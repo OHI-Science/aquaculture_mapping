@@ -187,14 +187,14 @@ fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   dplyr::filter(year == 2017,
                 !is.na(value),
                 !is.na(aq_group)) %>%
-  dplyr::filter(value >= 500) %>%
+  # dplyr::filter(value >= 500) %>%
   group_by(aq_group, country, species, year) %>%
   summarise(tonnes = sum(value)) %>%
   ungroup() %>%
   # dplyr::filter(tonnes >= 500) %>%
-  group_by(country, aq_group, year) %>%
-  summarise(total_tonnes = sum(tonnes)) %>%
-  arrange(aq_group)
+  group_by(country, year) %>%
+  summarise(total_tonnes = sum(tonnes))# %>%
+ # arrange(aq_group)
 
 write.csv(fao_1, "marine/STEP1_species_groups/int/tonnes_per_country_group.csv", row.names = FALSE)
 

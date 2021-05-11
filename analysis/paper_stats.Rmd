@@ -180,3 +180,70 @@ estimated <- by_data_type_country %>%
 
 ```
 
+
+```{r}
+
+all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv")
+
+unique(sort(all_farms$country))
+
+all_known_locations <- all_farms %>%
+  filter(data_type == "known location") 
+
+unique(all_known_locations$country)
+
+## read in each of the comprehensive locations 
+
+farms_folder <- file.path("aquaculture_mapping/marine")
+
+
+bivalve_comp_files <- list.files(here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_4_5"), full=TRUE)
+
+bivalve_comp <- plyr::ldply(bivalve_comp_files, read_csv) %>%
+  mutate(type = "bivalve") %>%
+  dplyr::select(lat, lon, iso3c, data_quality, type)
+
+shrimp_comp_files <- list.files(here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5"), full=TRUE)
+
+shrimp_comp <- plyr::ldply(shrimp_comp_files, read_csv) %>%
+  mutate(type = "shrimp")%>%
+  dplyr::select(lat, lon, iso3c, data_quality, type)
+
+salmon_comp_files <- list.files(here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5"), full=TRUE)
+
+salmon_comp <- plyr::ldply(salmon_comp_files, read_csv) %>%
+  mutate(type = "salmon")%>%
+  dplyr::select(lat, lon, iso3c, data_quality, type)
+
+
+tuna_comp_files <- list.files(here("marine/tuna/tuna_farms/data/known_farm_sites_2_4_5"), full=TRUE)
+
+tuna_comp <- plyr::ldply(tuna_comp_files, read_csv) %>%
+  mutate(type = "tuna")%>%
+  dplyr::select(lat, lon, iso3c, data_quality, type)
+
+finfish_comp_files <- list.files(here("marine/marine_fish_general/finfish_farms/data/known_farm_sites_2_4_5"), full=TRUE)
+
+finfish_comp <- plyr::ldply(finfish_comp_files, read_csv) %>%
+  mutate(type = "finfish")%>%
+  dplyr::select(lat, lon, iso3c, data_quality, type)
+
+crustaceans_comp_files <- list.files(here("marine/crustaceans/crustaceans_farms/data/known_farm_sites_2_4_5"), full=TRUE)
+
+crustaceans_comp <- plyr::ldply(crustaceans_comp_files, read_csv) %>%
+  mutate(type = "crustaceans")%>%
+  dplyr::select(lat, lon, iso3c, data_quality, type)
+
+
+all_comp_farms <- rbind(finfish_comp, bivalve_comp, salmon_comp, tuna_comp, shrimp_comp) %>%
+  filter(data_quality == 5) %>%
+  group_by(iso3c, type) %>%
+  summarise(n_obs = n())
+
+unique(all_comp_farms$iso3c)
+
+## Countries that have comprehensive location data across all their species reported:
+# - ARE (1 type), GRC (2 type), MLT (2 types), NOR (3 types), CYP (1 type), HKG (2 type), BLG (1 type), BLZ (1 type), CAN (2 types), CHL (2 types), DNK (2 types), FIN (1 type), FRO (1 type), GBR (2 types), IRL (2 types), JEY (1 type)
+```
+
+

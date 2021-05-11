@@ -1,0 +1,281 @@
+---
+title: "Figures for paper"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "05/10/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+This script takes our final farms dataset and calculates summary statistics that will be used in the paper. 
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+library(tidyverse)
+library(RCurl)
+library("rnaturalearth")
+library("rnaturalearthdata")
+library(cowplot) 
+library(ggpubr)
+library(RColorBrewer)
+library(OpenStreetMap)
+library(ggspatial)
+
+
+
+source(here("_spatial/template_raster.R"))
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+```
+
+
+# Global regions
+
+```{r}
+
+# this file includes ocean regions:
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
+plot(gadm_latlon)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+```
+
+# Read in farms data and convert to sf
+
+```{r}
+all_farms_sf <- read_csv("../all_marine_aquaculture_farms_sources.csv") %>%
+    st_as_sf(., 
+           coords = c("X", "Y"),
+           crs = crs(food_raster), 
+           agr = "constant")  
+
+all_farms <- all_farms_sf %>%
+  st_drop_geometry()
+
+```
+
+
+
+```{r}
+
+all_farms <- read_csv("../all_marine_aquaculture_farms_sources.csv")
+
+unique(sort(all_farms$country))
+
+all_farms_stat <- all_farms %>%
+  mutate(lon = round(X, 0), 
+         lat = round(Y, 0)) 
+
+lon_stat <- all_farms_stat %>%
+  group_by(lon) %>%
+  summarise(n())
+
+lat_stat <- all_farms_stat %>%
+  group_by(lat) %>%
+  summarise(n())
+
+```
+
+```{r}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+class(world)
+
+# https://stackoverflow.com/questions/8545035/scatterplot-with-marginal-histograms-in-ggplot2
+
+## This one works!
+
+## create first plot
+total_map <- ggplot(data = world) +
+  geom_sf(fill = "white", lwd = 0.1) + 
+  geom_point(data = all_farms, aes(x = X, y = Y, col = data_type), size = 0.1, alpha = 0.7) +
+#  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE, label_axes = list(top = "E", left = "N")) +
+  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +## or could make the latitude distances even i.e. (-72, 72)
+  scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
+  scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+        legend.position = "bottom", 
+        legend.title=element_blank()) +
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9) )) +
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
+    #  geom_vline(xintercept = 135) + # check to make sure it lines up
+  #geom_hline(yintercept = 0) # check to make sure it lines up
+
+total_map
+
+# Create marginal plots
+# Use geom_density/histogram for whatever you plotted on x/y axis 
+plot_x <- axis_canvas(total_map, axis = "x") +
+  geom_histogram(data = all_farms, aes(X, fill = data_type), bins = 360)  +
+  #  geom_vline(xintercept = 135) + # check to make sure it lines up
+  coord_sf(xlim = c(-180, 180), expand = FALSE) +
+  scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
+plot_x
+
+plot_y <- axis_canvas(total_map, axis = "y") +
+  geom_histogramh(data = all_farms, aes(y = Y, fill = data_type), bins = 180) +
+ #  geom_hline(yintercept = 0) + #  check to make sure it lines up
+  coord_sf(ylim = c(-58, 73), expand = FALSE) + 
+  scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
+ # coord_flip() 
+plot_y
+
+# Combine all plots into one
+plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
+plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
+ggdraw(plot_final)
+ggsave("analysis/figs/map_fig.jpg")
+
+
+## zoomed maps
+
+chl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
+  annotation_map_tile(type = "osm", zoomin = 0) + 
+  geom_spatial_point(size = 0.7, alpha = 0.7) + 
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
+  coord_sf(crs = 4326, xlim = c(-75, -72), ylim = c(-46, -44), expand = FALSE) +
+  #coord_sf(crs = 4326) + 
+  theme(legend.position = "bottom", ## put legend on bottom
+        legend.title=element_blank(), 
+        axis.title.x = element_blank(), 
+        axis.title.y = element_blank(),
+        legend.key = element_rect(fill = NA),
+panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+  ggtitle("A")  # + 
+ #  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))
+chl_zoom
+
+## philippines
+phl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
+  annotation_map_tile(type = "osm", zoomin = 0) + 
+  geom_spatial_point(size = 1, alpha = 0.7) + 
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
+  coord_sf(crs = 4326, xlim = c(120.25, 122.5), ylim = c(17, 19), expand = FALSE) +
+  #coord_sf(crs = 4326) + 
+  theme(legend.position = "bottom", 
+        legend.title=element_blank(), 
+        axis.title.x = element_blank(), 
+        axis.title.y = element_blank(),
+panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+  ggtitle("B")
+  #border(linetype = "longdash")
+        #panel.border = element_rect(colour = "black", fill=NA, size=5))
+phl_zoom
+
+
+(chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "bottom") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (phl_zoom + theme(legend.position = "none")) ## save this output in the plot window...
+
+
+```
+
+
+ARCHIVE: Other ways of trying
+```{r}
+
+## all together
+total_map <- ggplot(data = world) +
+  geom_sf(fill = "white", lwd = 0.1) + 
+  geom_point(data = all_farms, aes(x = X, y = Y, col = data_type), size = 0.2) +
+#  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE, label_axes = list(top = "E", left = "N")) +
+  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +## or could make the latitude distances even i.e. (-72, 72)
+  scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
+  scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(), 
+        legend.position = "none") 
+total_map
+
+
+## make longitude histogram
+
+lon_hist <- ggplot(data = all_farms) + 
+  geom_histogram(aes(X, fill = data_type), bins = 360) + 
+  # scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180)) +
+  # scale_y_reverse() +
+   theme_void() + 
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(), 
+        legend.position = "none") # +
+  # geom_vline(xintercept = 135) 
+lon_hist
+
+## make latitude histogram
+lat_hist <- ggplot(data = all_farms) + 
+  geom_histogram(aes(Y, fill = data_type), bins = 180) + 
+  # scale_x_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
+  # xlim(-58, 73) + 
+  coord_flip() +
+   theme_void() + 
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(), 
+        legend.position = "none") # + 
+  # geom_vline(xintercept = 0) 
+
+lat_hist
+
+require(gridExtra)
+library(cowplot)
+library(egg)
+
+
+## using ggExtra
+library(ggExtra)
+ggExtra::ggMarginal(total_map, type = "histogram", groupFill = TRUE, size = 2)
+
+
+## using patchwork
+lon_hist + plot_spacer() + total_map + lat_hist + 
+  plot_layout(ncol = 2, nrow = 2, widths = c(4, 1), heights = c(1, 4))
+
+## using cowplot
+plot_grid(
+  lon_hist
+  , NULL
+  , total_map
+  , lat_hist
+  , ncol = 2
+  , nrow = 2
+  , rel_heights = c(0.2, 1)
+  , rel_widths = c(1, 0.2)
+)
+
+```
+
+```{r}
+## by species group, colored by estimation type
+ggplot(data = world) +
+  geom_sf() + 
+  geom_point(data = all_farms, aes(x = X, y = Y, col = data_type), size = 0.3) +
+  facet_wrap(~species)
+
+## by estimation type
+ggplot(data = world) +
+  geom_sf() + 
+  geom_point(data = all_farms, aes(x = X, y = Y), size = 0.3) +
+  facet_wrap(~data_type)
+
+## by estimation type, colored by species 
+ggplot(data = world) +
+  geom_sf() + 
+  geom_point(data = all_farms, aes(x = X, y = Y, col = species), size = 0.3) +
+  facet_wrap(~data_type)
+```
+
+
+

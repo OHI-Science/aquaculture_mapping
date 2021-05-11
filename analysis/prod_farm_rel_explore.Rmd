@@ -1,0 +1,70 @@
+---
+title: "Explore production and farm trends"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "04/28/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+source("analysis/R/comp_farms_production.R")
+
+## Bivalve
+bivalve <- comp_farms_production("bivalve")
+
+plot_farms_prod(bivalve)
+
+lm_farms_prod(bivalve)
+
+## cambodia has 8300 tonnes of production, plugging into model we get
+8300*8.740e-03 - 4.778e+01 # ~25 farms 
+
+8300/mean(bivalve$tonnes_per_farm) # ~ 30 farms rounding up 
+
+## Salmon
+salmon <- comp_farms_production("salmon")
+
+plot_farms_prod(salmon)
+
+lm_farms_prod(salmon)
+
+## Russia has 13016 tonnes of production, plugging into model we get
+13016*1.060e-03 + 7.318e+01 # ~87 farms 
+
+13016/mean(salmon$tonnes_per_farm) # ~ 15 farms rounding up 
+
+## Shrimp
+shrimp <- comp_farms_production("shrimp")
+
+plot_farms_prod(shrimp)
+
+lm_farms_prod(shrimp)
+
+## Myanmar has 55309.51 tonnes of production
+
+55309.51*3.888e-03 + 2.024e+01 # ~236 farms 
+
+55309.51/mean(shrimp$tonnes_per_farm) # ~ 165 farms rounding up 
+
+
+## mfgeneral
+finfish <- comp_farms_production("finfish")
+
+plot_farms_prod(finfish)
+
+lm_farms_prod(finfish)
+
+## Myanmar has 55309.51 tonnes of production
+
+1419359*2.669e-03 + 4.052e+01 # ~3828.789 farms 
+
+1419359/mean(finfish$tonnes_per_farm) # ~ 1639.569 farms
+```
+
+All of the models prove to be significant. However, they estimate a lot more farms than just using the mean production per farm values... so we are likely being conservative with our current number-of-farm estimations. 
