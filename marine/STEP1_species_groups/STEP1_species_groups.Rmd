@@ -187,21 +187,21 @@ fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   dplyr::filter(year == 2017,
                 !is.na(value),
                 !is.na(aq_group)) %>%
-  # dplyr::filter(value >= 500) %>%
+   dplyr::filter(value >= 500) %>%
   group_by(aq_group, country, species, year) %>%
   summarise(tonnes = sum(value)) %>%
-  ungroup() %>%
+  ungroup() # %>%
   # dplyr::filter(tonnes >= 500) %>%
-  group_by(country, year) %>%
-  summarise(total_tonnes = sum(tonnes))# %>%
- # arrange(aq_group)
+ #  group_by(country, year) %>%
+ #  summarise(total_tonnes = sum(tonnes))# %>%
+ # # arrange(aq_group)
 
 write.csv(fao_1, "marine/STEP1_species_groups/int/tonnes_per_country_group.csv", row.names = FALSE)
 
 ## Take a look at the data 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "bivalves")
-sum(test$total_tonnes) # 17435623
+sum(test$tonnes) # 17435623
 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "shrimps_prawns")
@@ -223,5 +223,45 @@ sum(test$total_tonnes) # 5094133
 test <- fao_1 %>%
   dplyr::filter(aq_group == "salmonids")
 sum(test$total_tonnes) # 5094133
+
+
+aq_groups <- read.csv("marine/STEP1_species_groups/int/marine_groups.csv")
+
+
+fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
+  filter(environment %in% c("Marine", "Brackishwater")) %>%
+  left_join(aq_groups) %>%
+  dplyr::filter(year == 2017,
+                !is.na(value),
+                !is.na(aq_group)) %>%
+  # dplyr::filter(value >= 500) %>%
+  group_by(aq_group, country, species, year) %>%
+  summarise(tonnes = sum(value)) %>%
+  ungroup()  %>%
+  # dplyr::filter(tonnes >= 500) %>%
+  group_by(country, year) %>%
+  summarise(total_tonnes = sum(tonnes))# %>%
+ # arrange(aq_group)
+sum(fao_1$total_tonnes) # 29662247 reported 
+
+
+fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
+  filter(environment %in% c("Marine", "Brackishwater")) %>%
+  left_join(aq_groups) %>%
+  dplyr::filter(year == 2017,
+                !is.na(value),
+                !is.na(aq_group)) %>%
+   dplyr::filter(value < 500) %>%
+  group_by(aq_group, country, species, year) %>%
+  summarise(tonnes = sum(value)) %>%
+  ungroup()  %>%
+  # dplyr::filter(tonnes >= 500) %>%
+  group_by(country, year) %>%
+  summarise(total_tonnes = sum(tonnes))# %>%
+ # arrange(aq_group)
+
+sum(fao_1$total_tonnes) # 38731.97
+
+38731.97/29662247 # we exclude around 0.1% of marine aquaculture
 ```
 

@@ -25,6 +25,8 @@ library(ggpubr)
 library(RColorBrewer)
 library(OpenStreetMap)
 library(ggspatial)
+library(ggplot2)
+library(patchwork)
 
 
 
@@ -43,7 +45,7 @@ path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_location
 gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
 
 gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
-plot(gadm_latlon)
+# plot(gadm_latlon)
 
 gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
   mutate(reg_id = as.numeric(reg_id))
@@ -52,7 +54,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # Read in farms data and convert to sf
 
 ```{r}
-all_farms_sf <- read_csv("../all_marine_aquaculture_farms_sources.csv") %>%
+all_farms_sf <- read_csv("all_marine_aquaculture_farms_sources.csv") %>%
     st_as_sf(., 
            coords = c("X", "Y"),
            crs = crs(food_raster), 
@@ -61,13 +63,22 @@ all_farms_sf <- read_csv("../all_marine_aquaculture_farms_sources.csv") %>%
 all_farms <- all_farms_sf %>%
   st_drop_geometry()
 
+
+test <- all_farms_sf %>%
+  filter(country == "United States of America")
+mapview(test) ## some being placed around great lakes... need to fix that 
+
+
+fao_data <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv") %>%
+  group_by(country) %>%
+  summarise(prod = sum(total_tonnes))
 ```
 
 
 
 ```{r}
 
-all_farms <- read_csv("../all_marine_aquaculture_farms_sources.csv")
+all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv")
 
 unique(sort(all_farms$country))
 
@@ -85,6 +96,8 @@ lat_stat <- all_farms_stat %>%
 
 ```
 
+
+## Make the global map (Figure 1)
 ```{r}
 world <- ne_countries(scale = "medium", returnclass = "sf")
 class(world)
@@ -106,13 +119,15 @@ total_map <- ggplot(data = world) +
           axis.title.y = element_blank(),
         legend.position = "bottom", 
         legend.title=element_blank()) +
-  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9) )) +
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9), nrow=2 )) +
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"), labels = c("known location \n n = 9,750", "modeled location, known number of farms \n n = 10,519", "modeled locations, estimated number of farms \n n = 75,073"))
     #  geom_vline(xintercept = 135) + # check to make sure it lines up
   #geom_hline(yintercept = 0) # check to make sure it lines up
 
 total_map
+
+# guides(colour=guide_legend(nrow=30))
 
 # Create marginal plots
 # Use geom_density/histogram for whatever you plotted on x/y axis 
@@ -125,7 +140,7 @@ plot_x <- axis_canvas(total_map, axis = "x") +
 plot_x
 
 plot_y <- axis_canvas(total_map, axis = "y") +
-  geom_histogramh(data = all_farms, aes(y = Y, fill = data_type), bins = 180) +
+  geom_histogram(data = all_farms, aes(y = Y, fill = data_type), bins = 180, orientation = "y") +
  #  geom_hline(yintercept = 0) + #  check to make sure it lines up
   coord_sf(ylim = c(-58, 73), expand = FALSE) + 
   scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
@@ -139,53 +154,172 @@ plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right")
 ggdraw(plot_final)
 ggsave("analysis/figs/map_fig.jpg")
 
+```
 
+## Make finer resolution maps (Figure 2)
+```{r}
 ## zoomed maps
 
 chl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
   annotation_map_tile(type = "osm", zoomin = 0) + 
-  geom_spatial_point(size = 0.7, alpha = 0.7) + 
+  geom_spatial_point(size = 0.5, alpha = 0.7) + 
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
-  coord_sf(crs = 4326, xlim = c(-75, -72), ylim = c(-46, -44), expand = FALSE) +
-  #coord_sf(crs = 4326) + 
+  coord_sf(crs = 4326, xlim = c(-75, -72.25), ylim = c(-46, -44), expand = FALSE) + # - really good
+  # coord_sf(crs = 4326, xlim = c(-75, -72.5), ylim = c(-46, -44), expand = FALSE) +
   theme(legend.position = "bottom", ## put legend on bottom
         legend.title=element_blank(), 
         axis.title.x = element_blank(), 
         axis.title.y = element_blank(),
         legend.key = element_rect(fill = NA),
+        axis.text.x = element_text(angle = 60, hjust = 1),
 panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("A")  # + 
  #  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))
 chl_zoom
 
-## philippines
-phl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
+
+## China - near 
+chn_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
   annotation_map_tile(type = "osm", zoomin = 0) + 
-  geom_spatial_point(size = 1, alpha = 0.7) + 
+  geom_spatial_point(size = 0.5, alpha = 0.7) + 
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
-  coord_sf(crs = 4326, xlim = c(120.25, 122.5), ylim = c(17, 19), expand = FALSE) +
+#   coord_sf(crs = 4326, xlim = c(120.5, 123), ylim = c(28.5, 30.5), expand = FALSE) + # near Ningbo, in Zhejiang province, near shanghai
+  coord_sf(crs = 4326, xlim = c(121.5, 122.75), ylim = c(29.5, 30.5), expand = FALSE) + # part of Zhejiang province
   #coord_sf(crs = 4326) + 
   theme(legend.position = "bottom", 
         legend.title=element_blank(), 
         axis.title.x = element_blank(), 
         axis.title.y = element_blank(),
+        axis.text.x = element_text(angle = 60, hjust = 1),
+        legend.key = element_rect(fill = NA),
+panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+  ggtitle("D")
+  #border(linetype = "longdash")
+        #panel.border = element_rect(colour = "black", fill=NA, size=5))
+chn_zoom 
+
+
+## Ecuador - Near Guayaquil
+ecu_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
+  annotation_map_tile(type = "osm", zoomin = 0) + 
+  geom_spatial_point(size = 0.5, alpha = 0.7) + 
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
+  coord_sf(crs = 4326, xlim = c(-80.5, -79.5), ylim = c(-3.2, -2.2), expand = FALSE) + # part of Guayas province 
+  #coord_sf(crs = 4326) + 
+  theme(legend.position = "bottom", 
+        legend.title=element_blank(), 
+        axis.title.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(angle = 60, hjust = 1),
 panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("B")
   #border(linetype = "longdash")
         #panel.border = element_rect(colour = "black", fill=NA, size=5))
-phl_zoom
+ecu_zoom
 
 
-(chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "bottom") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (phl_zoom + theme(legend.position = "none")) ## save this output in the plot window...
+## Norway
+nor_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
+  annotation_map_tile(type = "osm", zoomin = 0) + 
+  geom_spatial_point(size = 0.5, alpha = 0.7) + 
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
+  # coord_sf(crs = 4326, xlim = c(5, 15), ylim = c(55, 60), expand = FALSE) + ## kattegat and skattergat... not too many farms
+    coord_sf(crs = 4326, xlim = c(4, 10), ylim = c(58.5, 61.5), expand = FALSE) +
+  theme(legend.position = "bottom", 
+        legend.title=element_blank(), 
+        axis.title.x = element_blank(), 
+        axis.title.y = element_blank(),
+        legend.key = element_rect(fill = NA),
+        axis.text.x = element_text(angle = 60, hjust = 1),
+panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+  ggtitle("C")
+  #border(linetype = "longdash")
+        #panel.border = element_rect(colour = "black", fill=NA, size=5))
+nor_zoom
+
+
+
+(chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "bottom") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (ecu_zoom + theme(legend.position = "none")) + (nor_zoom + theme(legend.position = "none")) + (chn_zoom + theme(legend.position = "none")) ## save this output in the plot window...
+
+plot1 <- (chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "none") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (ecu_zoom + theme(legend.position = "none")) 
+
+plot1 
+ggsave("analysis/figs/chl_ecu_zoom.jpg")
+
+
+plot2 <- (nor_zoom +  plot_layout(guides = "collect") & theme(legend.position = "bottom") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (chn_zoom + theme(legend.position = "none")) ## save this output in the plot window...
+
+plot2
+ggsave("analysis/figs/nor_chn_zoom.jpg")
+
+## we saved both of those images separately. Then we export them to google drawings, and combine together. Once combined, reupload to figs folder as "zoom_fig_final.jpg"
+
 
 
 ```
 
 
-ARCHIVE: Other ways of trying
+ARCHIVE: Other ways of trying to visualize
 ```{r}
+
+## philippines
+# phl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
+#   annotation_map_tile(type = "osm", zoomin = 0) + 
+#   geom_spatial_point(size = 1, alpha = 0.7) + 
+#   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+#                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
+#   coord_sf(crs = 4326, xlim = c(120.25, 122.5), ylim = c(17, 19), expand = FALSE) +
+#   #coord_sf(crs = 4326) + 
+#   theme(legend.position = "bottom", 
+#         legend.title=element_blank(), 
+#         axis.title.x = element_blank(), 
+#         axis.title.y = element_blank(),
+# panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+#   ggtitle("B")
+#   #border(linetype = "longdash")
+#         #panel.border = element_rect(colour = "black", fill=NA, size=5))
+# phl_zoom
+
+## California - bay area 
+# cal_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
+#   annotation_map_tile(type = "osm", zoomin = 0) + 
+#   geom_spatial_point(size = 1, alpha = 0.7) + 
+#   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+#                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
+#   coord_sf(crs = 4326, xlim = c(-123, -121), ylim = c(37, 39), expand = FALSE) +
+#   #coord_sf(crs = 4326) + 
+#   theme(legend.position = "bottom", 
+#         legend.title=element_blank(), 
+#         axis.title.x = element_blank(), 
+#         axis.title.y = element_blank(),
+# panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+#   ggtitle("B")
+#   #border(linetype = "longdash")
+#         #panel.border = element_rect(colour = "black", fill=NA, size=5))
+# cal_zoom
+
+## New Zealand
+# nzl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
+#   annotation_map_tile(type = "osm", zoomin = 0) + 
+#   geom_spatial_point(size = 0.5, alpha = 0.7) + 
+#   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+#                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
+#   # coord_sf(crs = 4326, ylim = c(-48, -34), xlim = c(165, 180), expand = FALSE) + ## all of new zealand
+#    coord_sf(crs = 4326, ylim = c(-41, -34), xlim = c(172, 180), expand = FALSE) + ## north island
+#   theme(legend.position = "bottom", 
+#         legend.title=element_blank(), 
+#         axis.title.x = element_blank(), 
+#         axis.title.y = element_blank(),
+#         axis.text.x = element_text(angle = 60, hjust = 1),
+# panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+#   ggtitle("D")
+#   #border(linetype = "longdash")
+#         #panel.border = element_rect(colour = "black", fill=NA, size=5))
+# nzl_zoom
 
 ## all together
 total_map <- ggplot(data = world) +
@@ -257,25 +391,7 @@ plot_grid(
 
 ```
 
-```{r}
-## by species group, colored by estimation type
-ggplot(data = world) +
-  geom_sf() + 
-  geom_point(data = all_farms, aes(x = X, y = Y, col = data_type), size = 0.3) +
-  facet_wrap(~species)
 
-## by estimation type
-ggplot(data = world) +
-  geom_sf() + 
-  geom_point(data = all_farms, aes(x = X, y = Y), size = 0.3) +
-  facet_wrap(~data_type)
-
-## by estimation type, colored by species 
-ggplot(data = world) +
-  geom_sf() + 
-  geom_point(data = all_farms, aes(x = X, y = Y, col = species), size = 0.3) +
-  facet_wrap(~data_type)
-```
 
 
 
