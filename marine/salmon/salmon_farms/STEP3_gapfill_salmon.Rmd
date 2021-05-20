@@ -11,17 +11,17 @@ Read in all the relevant farm datasets
 
 ```{r}
 
-farm_files <- list.files(here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5"), full=TRUE)
+farm_files <- list.files(here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5"), full=TRUE)
 all_known_farms = plyr::ldply(farm_files, read_csv) %>%
   mutate(type = "salmon")
 
-number_files <- list.files(here("marine/salmon/salmon_farm/data/known_number_farms_3"), full=TRUE)
+number_files <- list.files(here("marine/salmon/salmon_farms/data/known_number_farms_3"), full=TRUE)
 all_number_3 = plyr::ldply(number_files, read_csv)
 
-subset_farms_files <- list.files(here("marine/salmon/salmon_farm/data/subset_known_add_points_4"), full=TRUE)
+subset_farms_files <- list.files(here("marine/salmon/salmon_farms/data/subset_known_add_points_4"), full=TRUE)
 subset_add_4 = plyr::ldply(subset_farms_files, read_csv)
 
-no_info_files <- list.files(here("marine/salmon/salmon_farm/data/no_info_1"), full=TRUE)
+no_info_files <- list.files(here("marine/salmon/salmon_farms/data/no_info_1"), full=TRUE)
 no_info_1 = plyr::ldply(no_info_files, read_csv)
 
 subset_gapfill_2 <- all_known_farms %>%
@@ -30,7 +30,7 @@ subset_gapfill_2 <- all_known_farms %>%
 
 Read in relevant production data
 ```{r}
-salmon_tonnes <- read_csv(here::here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
+salmon_tonnes <- read_csv(here::here("marine/salmon/salmon_farms/data/fao_mariculture_salmon.csv")) %>%
   mutate(type = "salmon") %>%
   filter(year == 2017)
 ```
@@ -66,6 +66,10 @@ tonnes_per_farm <- comprehensive_farms_total %>%
 
 avg_global_salmon_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)
 avg_global_salmon_tonnes_per_farm # 927.156
+
+
+med_global_salmon_tonnes_per_farm = median(tonnes_per_farm$tonnes_per_farm)
+med_global_salmon_tonnes_per_farm # 520.5484
 ```
 
 Now let's gapfill those that are data quality = 2 and data quality = 1

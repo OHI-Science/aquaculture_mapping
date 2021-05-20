@@ -69,6 +69,9 @@ tonnes_per_farm <- comprehensive_farms_total %>%
 
 avg_global_bivalve_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)
 avg_global_bivalve_tonnes_per_farm # 283.4135
+
+med_global_bivalve_tonnes_per_farm <- median(tonnes_per_farm$tonnes_per_farm)
+med_global_bivalve_tonnes_per_farm # 134.3808
 ```
 
 Now let's gapfill those that are data quality = 2 and data quality = 1, and data quality = 2.5
