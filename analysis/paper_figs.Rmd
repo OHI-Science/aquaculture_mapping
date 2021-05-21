@@ -63,7 +63,6 @@ all_farms_sf <- read_csv("all_marine_aquaculture_farms_sources.csv") %>%
 all_farms <- all_farms_sf %>%
   st_drop_geometry()
 
-
 test <- all_farms_sf %>%
   filter(country == "United States of America")
 mapview(test) ## some being placed around great lakes... need to fix that 

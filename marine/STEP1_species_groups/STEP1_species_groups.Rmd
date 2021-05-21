@@ -74,6 +74,16 @@ data.frame(fw)
 write.csv(fw, "marine/STEP1_species_groups/int/fw_spp.csv", row.names = FALSE)
 
 
+test <- fao %>%
+  filter(year == 2017) %>%
+  left_join(mar_sp_list, by = c("species" = "FAO_name")) %>%
+  mutate(environment2 = ifelse(Taxon_code == "AL", "seaweed", environment)) %>%
+  mutate(environment = ifelse(is.na(environment2), environment, environment2)) %>%
+  group_by(environment, year) %>%
+  summarise(prod = sum(value, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(total = sum(prod)) %>%
+  mutate(pct = prod/total)
 ```
 
 
@@ -112,6 +122,8 @@ fao_marine_clean <- fao_marine %>%
                 Taxon_code != "AL",
                 species != "Red oyas",
                 species != "Jellyfishes nei") ## delete freshwater, catfish species, tilapia, river species, seaweeds, jellyfish..
+
+
 ```
 
 Classify species into aquaculture groups 
