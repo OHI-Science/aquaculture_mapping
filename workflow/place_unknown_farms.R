@@ -18,13 +18,19 @@ eez_sf <- st_read("/home/shares/food-systems/Global_datasets/EEZ/eez_v10.shp")
 coastline <- readRDS("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/outline.rds")
 
 
+inverted_land <- land_mask
+inverted_land[is.na(inverted_land[])] <- .5
+inverted_land[inverted_land[]==1] <- NA
+inverted_land[inverted_land[]==.5] <- 1
+
 blank_raster <- food_raster
 blank_raster[] <- 1
 
 the_crs <- crs(fake_raster, asText = TRUE)
 
 ports_raw <- st_read("/home/shares/clean-seafood/raw_data/ports_data/Commercial_ports.shp") %>% 
-  st_transform(the_crs)
+  st_transform(the_crs) #%>% 
+  #filter(HARB_SIZE_ != "L")
 
 # consider removing "L" HARB_SIZE_ points
 
@@ -54,6 +60,11 @@ rclmat <- matrix(m, ncol=3, byrow=TRUE)
 arctic_raster <- reclassify(arctic_raster, c(66,Inf, NA, 0,66,1))
 
 arctic_fixed <- resample(arctic_raster, blank_raster, method = "ngb")
+
+arctic_fixed <- inverted_land + arctic_fixed
+arctic_fixed[arctic_fixed[]==2] <- 1
+
+## add land mask
 
 for (i in 1:length(unique(need_national_allocation$iso3c))) {
   
@@ -122,8 +133,8 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
   
   dis_to_port_rast <- distanceFromPoints(this_raster_area, these_ports)
   port_test_rast <- dis_to_port_rast
-  port_test_rast[port_test_rast >35000 ] <- NA
-  suitability_rast <- port_test_rast+arctic_fixed
+  port_test_rast[port_test_rast >35000 ] <- NA # acceptable distance to port
+  suitability_rast <- port_test_rast+arctic_fixed # add in land mask
   
 
   this_coast_meters <- st_transform(this_simplified_coast, crs = "+proj=moll") %>% ## transform to a crs that can buffer in meters 
@@ -150,8 +161,9 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
       type = this_type_vector
     )
   
-  if (nrow(this_farm_points) != the_farm_number) stop
+  if (nrow(this_farm_points) != the_farm_number) break
   
+  #UNCOMMENT WHEN SAVING! 
   write_rds(this_farm_points, paste0("data/temp_data/temp_marine_final/temp_farms_", i, ".rds"))
   print(paste0(this_iso3, " has been saved"))
   
