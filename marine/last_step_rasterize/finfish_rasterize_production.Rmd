@@ -43,17 +43,9 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-data <- read_csv("marine/output/all_marine_farms.csv") %>% 
-  st_as_sf(., 
-           coords = c("lon", "lat"),
-           crs = crs(food_raster), 
-           agr = "constant") 
 
-all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
-  map_df(., readRDS) %>% 
-  rename(iso3c = iso3) %>% 
-  mutate(source = "modeled") %>% 
-  rbind(data %>% mutate(source = "real"))
+all_farms <- readRDS("data/all_modeled_marine_farms.rds")
+
 
 finfish_farms <- all_farms %>%
   filter(type == "marine_fish_general")
@@ -77,7 +69,7 @@ table(farms_sf$check)
 mapview(farms_sf)
 # some annoying mismatches due to raster resolution. Fix these
 
-# ALB:MNE
+
 # CHN:HKG
 # CHN:MAC
 # CYP:XAD
@@ -86,26 +78,16 @@ mapview(farms_sf)
 # GRC:ALB
 # GRC:TUR
 # HKG:CHN
-# HRV:SVN
-# IDN:PNG
-# IDN:TLS
-# ISR:EGY
-# ITA:FRA
-# MYS:SGP
-# MYS:THA
+# MYS:IDN 
 # PRT:ESP
 # SGP:MYS
-# TUR:BGR
 # TUR:GRC
-# TWN:CHN
 
 
 farms_sf_correct <- farms_sf %>%
   mutate(GID_0 = as.character(GID_0)) %>%
   mutate(NAME_0 = as.character(NAME_0)) %>%
   mutate(NAME_1 = as.character(NAME_1)) %>%
-  mutate(GID_0 = ifelse(check %in% "ALB:MNE", "ALB", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "ALB:MNE", "Albania", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CHN:HKG", "CHN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:HKG", "China", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CHN:MAC", "CHN", GID_0)) %>%
@@ -122,30 +104,14 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "GRC:TUR", "Greece", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "HKG:CHN", "HKG", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "HKG:CHN", "Hong Kong", NAME_0)) %>%   
-  mutate(GID_0 = ifelse(check %in% "HRV:SVN", "HRV", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "HRV:SVN", "Croatia", NAME_0)) %>%    
-  mutate(GID_0 = ifelse(check %in% "IDN:PNG", "IDN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "IDN:PNG", "Indonesia", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "IDN:TLS", "IDN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "IDN:TLS", "Indonesia", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "ISR:EGY", "ISR", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "ISR:EGY", "Israel", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "ITA:FRA", "ITA", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "ITA:FRA", "Italy", NAME_0)) %>%   
-  mutate(GID_0 = ifelse(check %in% "MYS:SGP", "MYS", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MYS:SGP", "Malaysia", NAME_0)) %>%   
-  mutate(GID_0 = ifelse(check %in% "MYS:THA", "MYS", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MYS:THA", "Malaysia", NAME_0)) %>% 
+  mutate(GID_0 = ifelse(check %in% "MYS:IDN", "MYS", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MYS:IDN", "Malaysia", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "PRT:ESP", "PRT", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "PRT:ESP", "Portugal", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "SGP:MYS", "SGP", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "SGP:MYS", "Singapore", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "TUR:BGR", "TUR", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "TUR:BGR", "Turkey", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "TUR:GRC", "TUR", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "TUR:GRC", "Turkey", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "TWN:CHN", "TWN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "TWN:CHN", "Taiwan", NAME_0))   
+  mutate(NAME_0 = ifelse(check %in% "TUR:GRC", "Turkey", NAME_0)) 
   
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
@@ -194,7 +160,7 @@ farms_sf_prod <- st_as_sf(farms_prod)
 mapview(farms_sf_prod)
 
 ## write the production data so that we can use it for the nutrient layer. 
-st_write(farms_sf_prod, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/marine_fish_general/prod_data_by_cell_iso3c.shp")
+st_write(farms_sf_prod, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/marine_fish_general/prod_data_by_cell_iso3c.shp", delete_dsn = TRUE)
 
 ```
 

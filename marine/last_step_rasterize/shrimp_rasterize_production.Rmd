@@ -42,17 +42,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-data <- read_csv("marine/output/all_marine_farms.csv") %>% 
-  st_as_sf(., 
-           coords = c("lon", "lat"),
-           crs = crs(food_raster), 
-           agr = "constant") 
-
-all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
-  map_df(., readRDS) %>% 
-  rename(iso3c = iso3) %>% 
-  mutate(source = "modeled") %>% 
-  rbind(data %>% mutate(source = "real"))
+all_farms <- readRDS("data/all_modeled_marine_farms.rds")
 
 shrimp_farms <- all_farms %>%
   filter(type == "shrimp")
@@ -78,27 +68,20 @@ mapview(farms_sf)
 
 # CHN:HKG
 # CHN:MAC
-# CRI:NIC
 # CRI:PAN
-# ECU:COL
-# GTM:HND
-# GTM:MEX
 # HND:NIC
 # HND:SLV
-# IDN:PNG
-# IDN:TLS
-# IRN:IRQ
-# MEX:GTM
+
+
+
 # MEX:USA
-# MYS:BRN
-# MYS:SGP
-# MYS:THA
-# PER:ECU
+# MMR:THA
+# MYS:IDN
+# NIC:CRI
 # SAU:KWT
-# SLV:HND
 # THA:MMR
 # THA:MYS
-# VNM:KHM
+
 
 
 farms_sf_correct <- farms_sf %>%
@@ -109,50 +92,26 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:HKG", "China", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CHN:MAC", "CHN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:MAC", "China", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "CRI:NIC", "CRI", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "CRI:NIC", "Costa Rica", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CRI:PAN", "CRI", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CRI:PAN", "Costa Rica", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "ECU:COL", "ECU", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "ECU:COL", "Ecuador", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "GTM:HND", "GTM", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "GTM:HND", "Guatemala", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "GTM:MEX", "GTM", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "GTM:MEX", "Guatemala", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "HND:NIC", "HND", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "HND:NIC", "Honduras", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "HND:SLV", "HND", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "HND:SLV", "Honduras", NAME_0)) %>%   
-  mutate(GID_0 = ifelse(check %in% "IDN:PNG", "IDN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "IDN:PNG", "Indonesia", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "IDN:TLS", "IDN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "IDN:TLS", "Indonesia", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "IRN:IRQ", "IRN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "IRN:IRQ", "Iran", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "MEX:GTM", "MEX", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MEX:GTM", "Mexico", NAME_0)) %>%   
+  mutate(GID_0 = ifelse(check %in% "NIC:CRI", "NIC", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "NIC:CRI", "Nicaragua", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "MEX:USA", "MEX", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "MEX:USA", "Mexico", NAME_0)) %>%   
   mutate(GID_0 = ifelse(check %in% "MMR:THA", "MMR", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "MMR:THA", "Myanmar", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "MYS:BRN", "MYS", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MYS:BRN", "Malaysia", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "MYS:SGP", "MYS", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MYS:SGP", "Malaysia", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "MYS:THA", "MYS", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MYS:THA", "Malaysia", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "PER:ECU", "PER", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "PER:ECU", "Peru", NAME_0)) %>% 
+  mutate(GID_0 = ifelse(check %in% "MYS:IDN", "MYS", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MYS:IDN", "Malaysia", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "SAU:KWT", "SAU", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "SAU:KWT", "Saudi Arabia", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "SLV:HND", "SLV", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "SLV:HND", "El Salvador", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "THA:MMR", "THA", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "THA:MMR", "Thailand", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "THA:MYS", "THA", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "THA:MYS", "Thailand", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "VNM:KHM", "VNM", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "VNM:KHM", "Vietnam", NAME_0)) 
+  mutate(NAME_0 = ifelse(check %in% "THA:MYS", "Thailand", NAME_0)) 
   
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)

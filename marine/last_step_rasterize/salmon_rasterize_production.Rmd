@@ -43,18 +43,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-data <- read_csv("marine/output/all_marine_farms.csv") %>% 
-  st_as_sf(., 
-           coords = c("lon", "lat"),
-           crs = crs(food_raster), 
-           agr = "constant") 
-
-all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
-  map_df(., readRDS) %>% 
-  rename(iso3c = iso3) %>% 
-  mutate(source = "modeled") %>% 
-  #left_join(tonnage_per_farms)
-  rbind(data %>% mutate(source = "real"))
+all_farms <- readRDS("data/all_modeled_marine_farms.rds")
 
 salmon_farms <- all_farms %>%
   filter(type == "salmon")
@@ -78,7 +67,6 @@ table(farms_sf$check)
 # CAN:USA
 # FIN:ALA
 # FIN:RUS
-# RUS:CHN
 # USA:CAN
 
 mapview(filter(farms_sf, check == "RUS:RUS"))
@@ -98,9 +86,7 @@ farms_sf_correct <- farms_sf %>%
   mutate(GID_0 = ifelse(check %in% "FIN:ALA", "FIN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "FIN:ALA", "Finland", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "FIN:RUS", "FIN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "FIN:RUS", "Finland", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "RUS:CHN", "RUS", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "RUS:CHN", "Russia", NAME_0))
+  mutate(NAME_0 = ifelse(check %in% "FIN:RUS", "Finland", NAME_0)) 
 
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
@@ -115,7 +101,7 @@ mapview(farms_sf_correct) # this all looks reasonable, no crazy points
 # FAO salmon production data per country
 ```{r}
 
-fao <- read.csv(here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv")) %>%
+fao <- read.csv(here("marine/salmon/salmon_farms/data/fao_mariculture_salmon.csv")) %>%
   dplyr::filter(year == 2017) %>%
   dplyr::select(iso3c, fao_tonnes_production)
 

@@ -38,19 +38,22 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-data <- read_csv("marine/output/all_marine_farms.csv") %>% 
-  st_as_sf(., 
-           coords = c("lon", "lat"),
-           crs = crs(food_raster), 
-           agr = "constant") %>%
-  mutate(source = "real")
+# data <- read_csv("marine/output/all_marine_farms.csv") %>% 
+#   st_as_sf(., 
+#            coords = c("lon", "lat"),
+#            crs = crs(food_raster), 
+#            agr = "constant") %>%
+#   mutate(source = "real")
 
-all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
-  map_df(., readRDS) %>% 
-  rename(iso3c = iso3) %>% 
- dplyr::mutate(source = "modeled") %>% 
-  #left_join(tonnage_per_farms)
-  rbind(data)
+
+all_farms <- readRDS("data/all_modeled_marine_farms.rds")
+
+# all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
+#   map_df(., readRDS) %>% 
+#   rename(iso3c = iso3) %>% 
+#  dplyr::mutate(source = "modeled") %>% 
+#   #left_join(tonnage_per_farms)
+#   rbind(data)
 
 crust_farms <- all_farms %>%
   filter(type == "crustaceans")
@@ -76,6 +79,7 @@ unique(farms_sf$iso3c)
 # some annoying mismatches due to raster resolution. Fix these
 # CHN:HKG
 # CHN:MAC
+# MMR:THA
 
 unique(farms_sf$NAME_1)
 
@@ -84,7 +88,9 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = as.character(NAME_0)) %>%
   mutate(NAME_1 = as.character(NAME_1)) %>%
   mutate(GID_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "CHN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "China", NAME_0)) 
+  mutate(NAME_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "China", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% c("MMR:THA"), "MMR", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% c("MMR:THA"), "Myanmar", NAME_0))
 
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
@@ -96,7 +102,7 @@ table(farms_sf_correct$check)
 # FAO crustacean production data per country
 ```{r}
 
-fao <- read.csv(here::here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
+fao <- read.csv(here::here("marine/crustaceans/crustaceans_farms/data/fao_mariculture_crustaceans.csv")) %>%
   dplyr::filter(year == 2017) %>%
   dplyr::select(iso3c, fao_tonnes_production)
 
