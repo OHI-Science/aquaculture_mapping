@@ -37,7 +37,7 @@ path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_location
 gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
 
 gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
-plot(gadm_latlon)
+# plot(gadm_latlon)
 
 gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
   mutate(reg_id = as.numeric(reg_id))
@@ -56,19 +56,21 @@ data <- read_csv(file.path("marine/output/all_marine_farms.csv")) %>%
 all_farms_to_place <- read_csv(file.path("marine/output/all_points_to_add.csv")) %>%
   distinct(iso3c, type, estimated)
 
-all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
-  map_df(., readRDS) %>% 
-  rename(iso3c = iso3) %>% 
+all_farms <- readRDS("data/all_modeled_marine_farms.rds") %>%
   left_join(all_farms_to_place) %>%
-  mutate(source = "modeled") %>%
-  mutate(estimated = ifelse(iso3c == "IND" & type == "bivalve", 0, estimated)) %>% # fix india mistake
-  rbind(data %>% mutate(source = "real", estimated = 0)) %>%
-  mutate(data_type = case_when(
+    mutate(data_type = case_when(
     source == "real" ~ "known location", 
     source == "modeled" & estimated == 0 ~ "modeled location, known number of farms",
     source == "modeled" & estimated == 1 ~ "modeled location, estimated number of farms"
   ))
+
 summary(all_farms)
+
+test <- all_farms %>%
+  st_drop_geometry() %>%
+  group_by(data_type) %>% 
+  summarise(n()) ## perfect!! 
+
 ```
 
 # Match to our sources dataset 
@@ -190,7 +192,7 @@ USA_salmon_fix <- all_farms_sources_gadm %>%
   )) %>%
   dplyr::select(iso3c, country, species, data_type, details, data_source, data_year, geometry)
 
-# check <- USA_bivalve_fix %>%
+# check <- USA_salmon_fix %>%
 #   st_drop_geometry() %>%
 #   group_by(data_source) %>%
 #   summarise(n()) ## numbers are correct
@@ -278,6 +280,8 @@ all_farms_sources_final <- all_farms_sources %>%
 
 summary(all_farms_sources_final)
 unique(all_farms_sources_final$data_year)
+unique(sort(all_farms_sources$country))
+unique(sort(all_farms_sources$iso3c)) ## 73 countries - perfect! 
 
 
 ## Now save this as a csv

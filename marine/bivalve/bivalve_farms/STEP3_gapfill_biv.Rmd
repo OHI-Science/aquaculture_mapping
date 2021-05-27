@@ -5,6 +5,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(here)
+library(dplyr)
+library(tidyverse)
 ```
 
 Read in all the relevant farm datasets 
@@ -66,6 +70,9 @@ comprehensive_farms_total <- comprehensive_farms %>%
 tonnes_per_farm <- comprehensive_farms_total %>%
   left_join(bivalve_tonnes) %>%
   mutate(tonnes_per_farm = fao_tonnes_production/n_farms)
+
+write.csv(tonnes_per_farm, "output/bivalve_comp_tonnes_per_farm.csv", row.names = FALSE)
+
 
 avg_global_bivalve_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)
 avg_global_bivalve_tonnes_per_farm # 283.4135

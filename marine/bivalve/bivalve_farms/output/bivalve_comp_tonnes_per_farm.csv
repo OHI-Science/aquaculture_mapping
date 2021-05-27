@@ -1,0 +1,28 @@
+"iso3c","type","n_farms","country","year","fao_tonnes_production","tonnes_per_farm"
+"AUS","bivalve",69,"Australia",2017,16616.71,240.821884057971
+"BGR","bivalve",44,"Bulgaria",2017,3291.58,74.8086363636364
+"BRA","bivalve",27,"Brazil",2017,20900,774.074074074074
+"CAN","bivalve",175,"Canada",2017,39611,226.348571428571
+"CHL","bivalve",1870,"Chile",2017,347147.98,185.640631016043
+"DEU","bivalve",11,"Germany",2017,16856,1532.36363636364
+"DNK","bivalve",42,"Denmark",2017,2414,57.4761904761905
+"FRA","bivalve",245,"France",2017,137048,559.379591836735
+"GBR","bivalve",358,"United Kingdom",2017,18472.08,51.5979888268156
+"GGY","bivalve",7,"Guernsey",2017,656.1,93.7285714285714
+"GRC","bivalve",174,"Greece",2017,19155.8,110.090804597701
+"HKG","bivalve",1,"China, Hong Kong SAR",2017,625,625
+"HRV","bivalve",266,"Croatia",2017,919.76,3.45774436090226
+"IRL","bivalve",913,"Ireland",2017,26161.9,28.654874041621
+"ITA","bivalve",133,"Italy",2017,100200,753.383458646617
+"JEY","bivalve",5,"Jersey",2017,656.1,131.22
+"KOR","bivalve",5245,"Korea, Republic of",2017,453634,86.4888465204957
+"NLD","bivalve",82,"Netherlands",2017,46250,564.024390243902
+"NOR","bivalve",157,"Norway",2017,2382.87,15.1775159235669
+"NZL","bivalve",910,"New Zealand",2017,101550,111.593406593407
+"PER","bivalve",52,"Peru",2017,11926.98,229.365
+"PHL","bivalve",556,"Philippines",2017,42153,75.8147482014388
+"PRT","bivalve",30,"Portugal",2017,6379.33,212.644333333333
+"PYF","bivalve",2,"French Polynesia",2017,1200,600
+"SVN","bivalve",20,"Slovenia",2017,641.4,32.07
+"USA","bivalve",1203,"United States of America",2017,171497,142.557772236076
+"ZAF","bivalve",25,"South Africa",2017,3359.52,134.3808

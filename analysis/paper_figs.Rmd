@@ -65,7 +65,16 @@ all_farms <- all_farms_sf %>%
 
 test <- all_farms_sf %>%
   filter(country == "United States of America")
-mapview(test) ## some being placed around great lakes... need to fix that 
+mapview(test) 
+
+test <- all_farms_sf %>%
+  filter(iso3c == "HRV")
+mapview(test) ## one weird MFG from ASC
+
+test <- all_farms_sf %>%
+  filter(iso3c == "TUR")
+mapview(test) ## one weird MFG from ASC.. i think these are fine. Justifiable since it is from the ASC...
+
 
 
 fao_data <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv") %>%
@@ -262,6 +271,190 @@ ggsave("analysis/figs/nor_chn_zoom.jpg")
 ```
 
 
+
+## Radial bar chart of estimation type per country
+
+```{r}
+library(tidyverse)
+library(viridis)
+library(hrbrthemes)
+library(RColorBrewer)
+library(colorspace)
+
+rank_rgn <- all_farms %>%
+  mutate(country = ifelse(country == "United Kingdom (Scotland) ", "United Kingdom", country)) %>%
+  group_by(country) %>%
+  summarise(num_farms_total = n()) %>%
+  ungroup() %>%
+  arrange(num_farms_total)
+
+
+## Stuff for both plots
+# i think that this would look better with each stressor having its own color that is paired with ocean/land
+# 
+# pick 4 distinct colors and then create a pair with one being more brown or green and the other being more blue
+
+source_name <- data.frame(source = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
+
+type_1 <- "forestgreen"
+type_1 <- lighten(type_1, amount = -0.05)
+type_2 <- "orange1"
+type_2 <- lighten(type_2, amount = -0.05)
+type_3 <- "red3"
+type_3 <- lighten(type_3, amount = -0.05)
+
+gc_palette <- c(type_1, type_2, type_3)
+scales::show_col(gc_palette, n = 3)
+
+pal_df <- as_tibble(gc_palette) %>% 
+  rename(fill_value = value) %>% 
+  mutate(source = case_when(fill_value == type_1 ~ "known location",
+                            fill_value == type_2 ~ "modeled location, known number of farms",
+                            fill_value == type_3 ~ "modeled location, estimated number of farms")) 
+
+## circle plot 
+
+
+cutoff_value <-  1000 
+
+by_country <- all_farms %>%
+  mutate(country = ifelse(country == "United Kingdom (Scotland) ", "United Kingdom", country)) %>%
+  group_by(country, data_type) %>%
+  summarise(num_farms = n()) %>%
+  ungroup() %>%
+  group_by(country) %>%
+  mutate(num_farms_total = sum(num_farms)) %>%
+  ungroup() %>%
+  arrange(num_farms_total) %>%
+  filter(num_farms_total < cutoff_value) 
+
+
+
+
+##grab the highest country to highlight red and id where the circle ends and then side bar chart begins
+highest_country <- by_country[dim(by_country)[1], "country"]
+farms_highest_country <- filter(by_country, country %in% highest_country$country) #used below
+
+
+# adjust the rank_rgn-adjust dataframe to match above
+rank_rgn_adj <- rank_rgn %>%
+  filter(country %in% by_country$country) 
+
+
+# add empty space to create space in the circleplot for axes
+ empty_bar <- 5
+ to_add <- data.frame(matrix(NA, empty_bar, ncol(rank_rgn_adj)) )
+ colnames(to_add) = colnames(rank_rgn_adj)
+ to_add$country <- as.character(1:empty_bar)
+ rank_rgn_adj  <- rbind(to_add, rank_rgn_adj)
+ 
+ # some code to orient the country labels
+sequence_length = length(unique(rank_rgn_adj$country))
+first_sequence = c(1:(sequence_length%/%2)) 
+second_sequence = c((sequence_length%/%2+1):sequence_length) 
+first_angles = c(90 - 180/length(first_sequence) * first_sequence)
+second_angles = c(-90 - 180/length(second_sequence) * second_sequence)
+rank_rgn_adj$angle <- c(first_angles, second_angles)
+rank_rgn_adj$hjust <- c(rep(0, length(first_sequence)), 
+                    rep(1, length(second_sequence)))
+
+# color for region labels
+rank_rgn_adj <- rank_rgn_adj %>%
+  mutate(country = factor(country, unique(country))) %>%
+  mutate(color = "black") %>%
+  mutate(color = ifelse(is.na(num_farms_total), "white", color)) %>%
+  mutate(color = ifelse(country %in% highest_country$country, "red", color))
+
+## make the plot
+
+circle_theme <- theme(axis.line=element_blank(),
+                      axis.text.y=element_blank(),
+                      axis.ticks=element_blank(),
+                      axis.title.x=element_blank(),
+                      axis.title.y=element_blank(),
+                      legend.position="none",
+                      panel.background=element_blank(),
+                      panel.border=element_blank(),
+                      panel.grid.major=element_blank(),
+                      panel.grid.minor=element_blank(),
+                      plot.background=element_blank(),
+                      axis.text.x = element_blank())
+
+
+color_order <- c(type_1, type_2, type_3)
+
+pressures_adj_circle_plot <- by_country %>% 
+  mutate(prop_of_global_stacked = abs(num_farms)) %>% 
+  left_join(pal_df, by = c("data_type" = "source")) %>% 
+  mutate(fill_value = factor(fill_value, levels = color_order))
+
+ 
+
+ ggplot(data=pressures_adj_circle_plot, aes(x=country, y=prop_of_global_stacked, fill = fill_value)) + 
+  
+  geom_bar(stat="identity") +
+  
+  # ## this adjust the inner circle size (ymin) and outer circle size (ymax), which can be expanded to include names
+   geom_errorbar(aes(
+       x     = 1,
+        ymin = -0.01,   # ymin  = -0.03, this is for when ocean bars stack inwards -0.01 for when not
+       ymax  = 0.035),
+       alpha = 0) +
+      # Country name text placement
+     geom_text(
+       data = rank_rgn_adj,
+       aes(x     = country,
+           y     = max(by_country$num_farms_total, na.rm=TRUE),
+           label = country,
+           angle = angle,
+           hjust = hjust),
+       inherit.aes = FALSE,
+       fontface = "bold",
+       alpha = 0.9,
+       size = 4,
+       color = rank_rgn_adj$color) +
+    # 
+   # georegion names
+    # geom_text(
+    #   data=rgn_shift,
+    #   aes(y = 0.02, x = name_x, label = georegion),
+    #   # aes(x=name_x,
+    #   #     y=name_y,
+    #   #     label=georegion),
+    #   inherit.aes=FALSE, size=7) +
+  #  
+  # # # Scale bar circles
+  # ## This adds the 0 line
+      geom_segment(
+        x = 0, 
+         y = 0, 
+         xend = dim(rank_rgn_adj)[1]+1, 
+         yend = 0, 
+         fill = NULL,
+        alpha = 1, color = "white", size = 0.1) + #color = "black for internal
+  #    
+  #  # Scale bar annotation, this adds the y-axis numbers
+      annotate("text",
+        x     = c(3, 3, 3),
+        y     = c(0, 0.0175, 0.035),
+        label = c(0, 0.0175, 0.035),
+        color = "darkgray", angle = -4, size = 4) +
+  #     
+  scale_color_identity() +
+   scale_fill_identity() +
+   # scale_fill_manual(values= rev(myPalette), c("Land: Disturbance", "Land: GHG", "Land: Water", "Land: Nutrient",
+   #                                    "Ocean: Disturbance", "Ocean: GHG", "Ocean: Water", "Ocean: Nutrient")) +
+  coord_polar() +
+ circle_theme
+
+
+
+```
+
+
+
+
+
 ARCHIVE: Other ways of trying to visualize
 ```{r}
 
@@ -391,6 +584,35 @@ plot_grid(
 ```
 
 
+```{r}
+
+test_data <- all_farms %>%
+  filter(data_type != "known location")
+
+## create first plot
+total_map <- ggplot(data = world) +
+  geom_sf(fill = "white", lwd = 0.1) + 
+  geom_point(data = test_data, aes(x = X, y = Y, col = data_type), size = 0.1, alpha = 0.7) +
+#  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE, label_axes = list(top = "E", left = "N")) +
+  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +## or could make the latitude distances even i.e. (-72, 72)
+  scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
+  scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+        legend.position = "bottom", 
+        legend.title=element_blank()) +
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9), nrow=2 )) +
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"), labels = c("known location \n n = 9,750", "modeled location, known number of farms \n n = 10,519", "modeled locations, estimated number of farms \n n = 75,073"))
+    #  geom_vline(xintercept = 135) + # check to make sure it lines up
+  #geom_hline(yintercept = 0) # check to make sure it lines up
+
+total_map
+
+ggsave("analysis/figs/map_fig_test.jpg")
+
+```
 
 
 

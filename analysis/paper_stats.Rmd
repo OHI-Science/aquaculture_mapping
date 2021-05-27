@@ -21,6 +21,7 @@ library(RCurl)
 library(mosaic)
 library(googlesheets4)
 library(janitor)
+library(countrycode)
 
 source(here("_spatial/template_raster.R"))
 
@@ -29,32 +30,19 @@ path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_location
 ```
 
 
-# Global regions
+
+# Read in farms data
 
 ```{r}
 
-# this file includes ocean regions:
-gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv")
 
-gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
-plot(gadm_latlon)
+all_farms_sf <- all_farms %>%
+  st_as_sf(coords =c("X", "Y")) 
 
-gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
-  mutate(reg_id = as.numeric(reg_id))
-```
-
-# Read in farms data and convert to sf
-
-```{r}
-all_farms_sf <- read_csv("all_marine_aquaculture_farms_sources.csv") %>%
-    st_as_sf(., 
-           coords = c("X", "Y"),
-           crs = crs(food_raster), 
-           agr = "constant")  
-
-all_farms <- all_farms_sf %>%
-  st_drop_geometry()
-
+# test <- all_farms_sf %>%
+#   filter(iso3c == "USA")
+# mapview(test)
 ```
 
 
@@ -104,7 +92,7 @@ chn_data_known <- all_farms %>%
   filter(iso3c == "CHN") %>%
   filter(data_type == "known location") # 15 locations 
 
-# Chile, Norway, Peru, the United States, Canada and Ireland provided a substantial number of known locations (>1000).
+# Chile, Norway, and Ireland provided a substantial number of known locations (>1000).
 top_known <- all_farms %>%
   filter(data_type == "known location") %>%
   group_by(iso3c) %>%
@@ -139,9 +127,181 @@ by_species_data_type <- all_farms %>%
   mutate(total_obs = sum(n_obs)) %>% 
   ungroup() %>%
   mutate(pct = n_obs/total_obs*100)
+
+
+
+## How much mariculture production was included in our assessment? 
+
+fao <- read_csv("data/fao_aquaculture_clean.csv")
+mar_sp_list <- read_csv("https://raw.githubusercontent.com/OHI-Science/ohiprep_v2020/gh-pages/globalprep/mar/v2020/raw/species_list.csv")
+
+fw <- fao %>%
+  dplyr::filter(environment == "Freshwater") %>%
+  group_by(species) %>%
+  summarize(total = sum(value)) %>%
+  ungroup() %>%
+  arrange(total)
+
+data.frame(fw)
+
+test <- fao %>%
+  filter(year == 2017) %>%
+  left_join(mar_sp_list, by = c("species" = "FAO_name")) %>%
+  mutate(environment2 = ifelse(Taxon_code == "AL", "seaweed", environment)) %>%
+  mutate(environment = ifelse(is.na(environment2), environment, environment2)) %>%
+  group_by(environment, year) %>%
+  summarise(prod = sum(value, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(total = sum(prod)) %>%
+  mutate(pct = prod/total)
+
+## total marine animal production is: 8090542 + 22920871 = 31011413
+
+## we include: 29623515
+prod_total <- read_csv("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/production_extracted_final.csv")
+
+sum(prod_total$total_tonnes) # 29623515
+
+29623515/31011413 # 0.9552456
 ```
 
-Check some of the data
+
+Countries with comprehensive farm locations 
+```{r}
+
+all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv")
+
+unique(sort(all_farms$country))
+
+country_spp_combos <- all_farms %>%
+  distinct(country, species)
+
+
+## read in each of the comprehensive locations 
+
+bivalve_comp <- read_csv("marine/bivalve/bivalve_farms/output/bivalve_comp_tonnes_per_farm.csv")
+
+
+shrimp_comp <- read_csv("marine/shrimp/shrimp_farms/output/shrimp_comp_tonnes_per_farm.csv")
+
+
+
+salmon_comp <- read_csv("marine/salmon/salmon_farms/output/salmon_comp_tonnes_per_farm.csv")
+
+tuna_comp <- read_csv("marine/tuna/tuna_farms/output/tuna_comp_tonnes_per_farm.csv")
+
+finfish_comp <- read_csv("marine/marine_fish_general/finfish_farms/output/finfish_comp_tonnes_per_farm.csv")
+
+
+
+all_comp_farms <- rbind(finfish_comp, bivalve_comp, salmon_comp, tuna_comp, shrimp_comp) %>%
+    mutate(Species = case_when(
+      type == "salmon" ~ "Salmonids", 
+      type == "bivalve" ~ "Unfed or algae fed shellfish",
+      type == "marine_fish_general" ~ "General Marine Fish", 
+      type == "shrimp" ~ "Shrimp", 
+      type == "tuna" ~ "Tuna"
+    )) %>%
+  mutate(tonnes_per_farm = round(tonnes_per_farm, 2)) %>%
+  dplyr::select("Country" = "country", Species, "Number of farms" = "n_farms", "Tonnes of production" = "fao_tonnes_production", "Tonnes per farm" = "tonnes_per_farm") %>%
+  arrange(Country) 
+
+unique(all_comp_farms$Country)
+
+write.csv(all_comp_farms, "analysis/output/all_comp_farms.csv", row.names = FALSE)
+
+
+comp_across_all <- all_comp_farms %>%
+  full_join(country_spp_combos, by = c("Country" = "country", "Species" = "species")) %>%
+  mutate(Country = case_when(
+    Country == "Iran" ~ "Iran (Islamic Rep. of)", 
+    Country == "Hong Kong " ~ "China, Hong Kong SAR",
+    TRUE ~ Country
+  )) %>%
+  filter(Country %in% all_comp_farms$Country) %>%
+  group_by(Country) %>%
+  summarise(n_obs = sum(`Number of farms`), 
+            n_species = n(),
+            tonnes = sum(`Tonnes of production`)) %>%
+  filter(!is.na(n_obs)) 
+
+sum(comp_across_all$tonnes) # account for 4328484 tonnes of production 
+
+4328484/29623515 # these account for ~15% of production tonnage
+
+## these are the countries that are comprehensive across all species groups they report
+cat(comp_across_all$Country, sep = ", ")
+
+# tuna_spp <- read_csv("marine/tuna/tuna_farms/data/fao_mariculture_tuna_taxa_production.csv")
+```
+
+
+Score the different taxa maps for the global food paper: 
+
+
+Score | Spatial Extent | Spatial Resolution | Temporal specificity | System specificity | System comprehensiveness
+-- | -- | -- | -- | -- | --
+5 | Represents entire spatial extent of the food system. | <= 5 arc minutes | Data is specific to 2017 | The data is reported to the level of our specific food type (e.g. cow mixed milk) | Data represents all foods within a system
+4 | Need to gapfill regions with relatively little production (e.g. Aland islands) | sub-national or raster with cells larger than 5-arc minutes | Data range includes 2017 and is likely to represent 2017 | Generalized to animal type, but not both rearing system or product (e.g. cows mixed) | Data represents majority of foods within a system
+3 | Need to gapfill countries with considerable production (e.g. Philippines) | National | Data range doesn't include 2017 and is likely to represent 2017. | Generalized to animal type, but not rearing system or product (e.g. cows) | Data represents half of foods within a system
+2 | Need to gapfill whole continents/georegions | Georegions | Data range includes 2017 and is unlikely to represent 2017 | Generalized to multiple animal types (e.g. cattle/ungulates) | Data represents minority of foods within a system
+1 | Generalized globally using site-level data. | Global/generalized | Data is older than 2017 and is unlikely to represent 2017 | Data is generalized across major food system (e.g. all reared animals) | Data represents minimum of foods within a system
+NA | Spatial extent is not relevant | Spatial resolution of the data is not relevant | Age of data isn't relevant | Data is not specific to a food system | Data is not specific to a food system
+
+
+**Salmonids farms map quality**
+ - Spatial extent: 4
+ - Spatial resolution: 5
+ - Temporal specificity: 4
+ - System specificity: 2
+ - System comprehensiveness: 4
+ 
+ 
+**Tuna farms map quality**
+ - Spatial extent: 5
+ - Spatial resolution: 5
+ - Temporal specificity: 4
+ - System specificity: 3
+ - System comprehensiveness: 5
+ 
+ 
+**Shrimp farms map quality**
+ - Spatial extent: 2
+ - Spatial resolution: 5
+ - Temporal specificity: 4
+ - System specificity: 2
+ - System comprehensiveness: 4
+ 
+ 
+**General marine fish farms map quality**
+ - Spatial extent: 2
+ - Spatial resolution: 5
+ - Temporal specificity: 4
+ - System specificity: 1
+ - System comprehensiveness: 4
+ 
+ 
+**Unfed or algae fed shellfish farms map quality**
+ - Spatial extent: 2
+ - Spatial resolution: 5
+ - Temporal specificity: 4
+ - System specificity: 2
+ - System comprehensiveness: 4
+ 
+ 
+**Other crustaceans farms map quality**
+ - Spatial extent: 1
+ - Spatial resolution: 1
+ - Temporal specificity: NA
+ - System specificity: 1
+ - System comprehensiveness: 4
+ 
+ 
+ 
+
+
+
+Some random exploring
 ```{r}
 by_type <- all_farms %>%
   group_by(species) %>%
@@ -179,71 +339,3 @@ estimated <- by_data_type_country %>%
   mutate(difference = n_obs - estimated_farms)
 
 ```
-
-
-```{r}
-
-all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv")
-
-unique(sort(all_farms$country))
-
-all_known_locations <- all_farms %>%
-  filter(data_type == "known location") 
-
-unique(all_known_locations$country)
-
-## read in each of the comprehensive locations 
-
-farms_folder <- file.path("aquaculture_mapping/marine")
-
-
-bivalve_comp_files <- list.files(here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_4_5"), full=TRUE)
-
-bivalve_comp <- plyr::ldply(bivalve_comp_files, read_csv) %>%
-  mutate(type = "bivalve") %>%
-  dplyr::select(lat, lon, iso3c, data_quality, type)
-
-shrimp_comp_files <- list.files(here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5"), full=TRUE)
-
-shrimp_comp <- plyr::ldply(shrimp_comp_files, read_csv) %>%
-  mutate(type = "shrimp")%>%
-  dplyr::select(lat, lon, iso3c, data_quality, type)
-
-salmon_comp_files <- list.files(here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5"), full=TRUE)
-
-salmon_comp <- plyr::ldply(salmon_comp_files, read_csv) %>%
-  mutate(type = "salmon")%>%
-  dplyr::select(lat, lon, iso3c, data_quality, type)
-
-
-tuna_comp_files <- list.files(here("marine/tuna/tuna_farms/data/known_farm_sites_2_4_5"), full=TRUE)
-
-tuna_comp <- plyr::ldply(tuna_comp_files, read_csv) %>%
-  mutate(type = "tuna")%>%
-  dplyr::select(lat, lon, iso3c, data_quality, type)
-
-finfish_comp_files <- list.files(here("marine/marine_fish_general/finfish_farms/data/known_farm_sites_2_4_5"), full=TRUE)
-
-finfish_comp <- plyr::ldply(finfish_comp_files, read_csv) %>%
-  mutate(type = "finfish")%>%
-  dplyr::select(lat, lon, iso3c, data_quality, type)
-
-crustaceans_comp_files <- list.files(here("marine/crustaceans/crustaceans_farms/data/known_farm_sites_2_4_5"), full=TRUE)
-
-crustaceans_comp <- plyr::ldply(crustaceans_comp_files, read_csv) %>%
-  mutate(type = "crustaceans")%>%
-  dplyr::select(lat, lon, iso3c, data_quality, type)
-
-
-all_comp_farms <- rbind(finfish_comp, bivalve_comp, salmon_comp, tuna_comp, shrimp_comp) %>%
-  filter(data_quality == 5) %>%
-  group_by(iso3c, type) %>%
-  summarise(n_obs = n())
-
-unique(all_comp_farms$iso3c)
-
-## Countries that have comprehensive location data across all their species reported:
-# - ARE (1 type), GRC (2 type), MLT (2 types), NOR (3 types), CYP (1 type), HKG (2 type), BLG (1 type), BLZ (1 type), CAN (2 types), CHL (2 types), DNK (2 types), FIN (1 type), FRO (1 type), GBR (2 types), IRL (2 types), JEY (1 type)
-```
-
-

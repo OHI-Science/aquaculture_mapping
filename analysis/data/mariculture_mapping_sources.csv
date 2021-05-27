@@ -22,7 +22,7 @@ Norway,NOR,Salmonids,Fiskeridirektoratet 2019 ,Fiskeridirektoratet 2019 ,NA,Go
 Russian Federation,RUS,Salmonids,NA,NA,NA,"There was no available information on the number of farms or locations of farms in Russia. We estimated a number of farms based on a global tonnes per farm, and placed 15 salmon farms along the Russian coast using our suitability layer.",NA,NA,15,0,0,15
 Sweden,SWE,Salmonids,HELCOM HOLAS II Dataset: Finfish mariculture 2017,HELCOM HOLAS II Dataset: Finfish mariculture 2017,NA,Governmental lease data used to identify 22 commercial salmon farms (may include inactive sites).,2017,NA,22,22,0,0
 Turkey,TUR,Salmonids,"National Aquaculture Sector Overview, FAO Fisheries Division. Turkey, 2005",NA,"National Aquaculture Sector Overview, FAO Fisheries Division. Turkey, 2005","21 farms were allocated based on FAO documentation, and placed using our suitability layer.",NA,2009,21,0,21,0
-United Kingdom (Scotland) ,GBR,Salmonids,Scotland’s aquaculture 2020 ,Scotland’s aquaculture 2020 ,NA,"Scotland appears to be the only salmon aquaculture in UK, see: emodnet.eu/geoviewer/#!/. Because of this, we used governmental lease data used to identify 119 commercial salmon farms (may include inactive sites).",2020,NA,119,119,0,0
+United Kingdom,GBR,Salmonids,Scotland’s aquaculture 2020 ,Scotland’s aquaculture 2020 ,NA,"Scotland appears to be the only salmon aquaculture in UK, see: emodnet.eu/geoviewer/#!/. Because of this, we used governmental lease data used to identify 119 commercial salmon farms (may include inactive sites).",2020,NA,119,119,0,0
 United States of America,USA,Salmonids,"Puget Sound: Our Sound, Our Salmon 2017; 
 
 Northeast: Northeast Regional Ocean Council 2018
@@ -54,7 +54,7 @@ Indonesia,IDN,Shrimp,Aquaculture Stewardship Council Data Mapping Study ,Aquacu
 Iran,IRN,Shrimp,"NASO aquaculture maps collection, FAO 2010;
 
 Sadek et al., 2002","NASO aquaculture maps collection, FAO 2010;","Sadek et al., 2002","Map provides 14 points for a subset of total shrimp farms in Iran (may include inactive farms). This data is not comprehensive, Sadek et al. 2002 suggests there are 205 shrimp farms in Iran. Because of this 191 more farms were added based on Sadek et al. 2002, and placed using our suitability layer.",2010,2002,205,14,191,0
-Japan ,JPN,Shrimp,NA,NA,NA,"There was no available information on the number of farms or locations of farms in Japan. We estimated a number of farms based on a global tonnes per farm, and placed 5 shrimp farms along the Japanese coast using our suitability layer.",NA,NA,5,0,0,5
+Japan,JPN,Shrimp,NA,NA,NA,"There was no available information on the number of farms or locations of farms in Japan. We estimated a number of farms based on a global tonnes per farm, and placed 5 shrimp farms along the Japanese coast using our suitability layer.",NA,NA,5,0,0,5
 Madagascar,MDG,Shrimp,"Aquaculture Stewardship Council Data Mapping Study; 
 National Aquaculture Sector Overview, FAO Fisheries Division. Madagascar, 2005",Aquaculture Stewardship Council Data Mapping Study ,"National Aquaculture Sector Overview, FAO Fisheries Division. Madagascar, 2005","Map provides points for 2 ASC certified farms (may include inactive farms). This data is not comprehensive, FAO documentation suggests there are 6 shrimp farms in Madagascar. Because of this 4 more farms were added based on FAO documentation, and placed using our suitability layer.",2021,2005,6,2,4,0
 Malaysia,MYS,Shrimp,Department of Fisheries Malaysia 2014,Department of Fisheries Malaysia 2014,NA,"Map provides 11 points for industrial shrimp farming in Malaysia. This data is not comprehensive. Because of this 126 more farms were estimated using our gapfilling technique, and placed using our suitability layer.",2014,NA,137,11,0,126
@@ -73,7 +73,7 @@ Saudi Fish Company ",NA,"The 2 farm locations that are mapped are the Saudi Fis
 Sri Lanka,LKA,Shrimp,"National Aquaculture Sector Overview. Sri Lanka, 2004",NA,"National Aquaculture Sector Overview. Sri Lanka, 2004","130 farms were allocated based on FAO documentation, and placed using our suitability layer.",NA,2002,130,0,130,0
 Taiwan,TWN,Shrimp,NA,NA,NA,"There was no available information on the number of farms or locations of farms in Taiwan. We estimated a number of farms based on a global tonnes per farm, and placed 15 shrimp farms along the coast using our suitability layer.",NA,NA,15,0,0,15
 Thailand,THA,Shrimp,Aquaculture Stewardship Council Data Mapping Study ,Aquaculture Stewardship Council Data Mapping Study ,NA,"Map provides points for 18 ASC certified farms (may include inactive farms). This data is not comprehensive. Because of this 1050 more farms were estimated using our gapfilling technique, and placed using our suitability layer.",2021,NA,1068,18,0,1050
-United States of America ,USA,Shrimp,"Monterey Bay Aquarium Seafood Watch Report on Whiteleg Shrimp Farming in the United States, 2014;
+United States of America,USA,Shrimp,"Monterey Bay Aquarium Seafood Watch Report on Whiteleg Shrimp Farming in the United States, 2014;
 Texas: Texas Aquaculture Locations;
 Alabama: Shrimp companies found on Google maps;
 Hawaii: Shrimp companies found on Google maps;

@@ -123,6 +123,7 @@ ASC_data <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_dat
 
 ASC_finfish <- ASC_data %>%
   dplyr::filter(aq_grop == "marine_fish_general")
+mapview(ASC_finfish)
 
 unique(ASC_finfish$crt_cnt)
 

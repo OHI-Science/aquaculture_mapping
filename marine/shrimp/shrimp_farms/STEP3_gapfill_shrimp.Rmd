@@ -67,6 +67,8 @@ tonnes_per_farm <- comprehensive_farms_total %>%
   left_join(shrimp_tonnes) %>%
   mutate(tonnes_per_farm = fao_tonnes_production/n_farms)
 
+write.csv(tonnes_per_farm, "output/shrimp_comp_tonnes_per_farm.csv", row.names = FALSE)
+
 avg_global_shrimp_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)
 avg_global_shrimp_tonnes_per_farm # 336.5783
 
