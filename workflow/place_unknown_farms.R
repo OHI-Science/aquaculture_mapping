@@ -149,7 +149,8 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
     st_union()%>% 
     sf::st_as_sf()
   
-  this_suitable_coast <- st_intersection(this_coast_meters, this_cell_polygons) %>% 
+  this_suitable_coast <- st_intersection(this_coast_meters, this_cell_polygons) %>%
+    st_collection_extract("LINESTRING") %>% 
     as_Spatial()
   
   # regularly sample points along line
@@ -165,7 +166,7 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
   
   #UNCOMMENT WHEN SAVING! 
   write_rds(this_farm_points, paste0("data/temp_data/temp_marine_final/temp_farms_", i, ".rds"))
-  print(paste0(this_iso3, " has been saved"))
+  print(paste0(i, " - ",this_iso3, " has been saved"))
   
 }
 
@@ -204,7 +205,7 @@ testing %>%
   right_join(need_national_allocation)
 
 
-write_rds(all_farms, "/data/all_modeled_marine_farms.rds")
+write_rds(all_farms, "data/all_modeled_marine_farms.rds")
 
 
 
