@@ -62,7 +62,8 @@ all_farms <- readRDS("data/all_modeled_marine_farms.rds") %>%
     source == "real" ~ "known location", 
     source == "modeled" & estimated == 0 ~ "modeled location, known number of farms",
     source == "modeled" & estimated == 1 ~ "modeled location, estimated number of farms"
-  ))
+  )) %>%
+  mutate(estimated = ifelse(is.na(estimated), 0, estimated))
 
 summary(all_farms)
 
@@ -70,6 +71,9 @@ test <- all_farms %>%
   st_drop_geometry() %>%
   group_by(data_type) %>% 
   summarise(n()) ## perfect!! 
+
+test <- all_farms %>%
+  dplyr::filter(is.na(estimated))
 
 ```
 
@@ -285,7 +289,7 @@ unique(sort(all_farms_sources$iso3c)) ## 73 countries - perfect!
 
 
 ## Now save this as a csv
-st_write(all_farms_sources_final, "all_marine_aquaculture_farms_sources.csv", layer_options = "GEOMETRY=AS_XY")
+st_write(all_farms_sources_final, "all_marine_aquaculture_farms_sources.csv", layer_options = "GEOMETRY=AS_XY", delete_dsn = TRUE)
 
 ## check that it wrote correctly
 

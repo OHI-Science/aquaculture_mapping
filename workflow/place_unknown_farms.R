@@ -28,12 +28,23 @@ blank_raster[] <- 1
 
 the_crs <- crs(fake_raster, asText = TRUE)
 
-ports_raw <- st_read("/home/shares/clean-seafood/raw_data/ports_data/Commercial_ports.shp") %>% 
-  st_transform(the_crs) #%>% 
-  #filter(HARB_SIZE_ != "L")
+# ports_raw <- st_read("/home/shares/clean-seafood/raw_data/ports_data/Commercial_ports.shp") %>% 
+#   st_transform(the_crs) #%>% 
+#   #filter(HARB_SIZE_ != "L")
+
+ports_raw <- st_read("/home/shares/food-systems/Food_footprint/_raw_data/world_port_index/Commercial_ports.shp") %>%
+  st_transform(the_crs) %>%
+  filter(HARB_SIZE_ != "L")
 
 # consider removing "L" HARB_SIZE_ points
 
+# test <- ports_raw %>%
+#   filter(HARB_SIZE_ == "L")
+# mapview(test)
+# 
+# test2 <- ports_raw %>%
+#   filter(HARB_SIZE_ != "L")
+# mapview(test2)
 
 data <- read_csv("marine/output/all_marine_farms.csv") %>% 
   st_as_sf(., 
@@ -66,8 +77,9 @@ arctic_fixed[arctic_fixed[]==2] <- 1
 
 ## add land mask
 
-for (i in 1:length(unique(need_national_allocation$iso3c))) {
+for (i in 42:length(unique(need_national_allocation$iso3c))) {
   
+  # i = 1
   ## 1.a get country shape file
   this_iso3 <- unique(need_national_allocation$iso3c)[i]
   
@@ -165,13 +177,13 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
   if (nrow(this_farm_points) != the_farm_number) break
   
   #UNCOMMENT WHEN SAVING! 
-  write_rds(this_farm_points, paste0("data/temp_data/temp_marine_final/temp_farms_", i, ".rds"))
+  write_rds(this_farm_points, paste0("data/temp_data/temp_no_L_ports/temp_farms_", i, ".rds"))
   print(paste0(i, " - ",this_iso3, " has been saved"))
   
 }
 
 
-all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_no_L_ports", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   mutate(source = "modeled") %>% 

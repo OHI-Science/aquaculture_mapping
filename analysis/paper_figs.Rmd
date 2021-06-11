@@ -166,6 +166,18 @@ ggsave("analysis/figs/map_fig.jpg")
 
 ## Make finer resolution maps (Figure 2)
 ```{r}
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+library(tidyverse)
+library(ggpubr)
+library(RColorBrewer)
+library(ggspatial)
+library(ggplot2)
+library(patchwork)
+
+
 ## zoomed maps
 
 chl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
@@ -251,7 +263,7 @@ nor_zoom
 
 
 
-(chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "bottom") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (ecu_zoom + theme(legend.position = "none")) + (nor_zoom + theme(legend.position = "none")) + (chn_zoom + theme(legend.position = "none")) ## save this output in the plot window...
+# (chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "bottom") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (ecu_zoom + theme(legend.position = "none")) + (nor_zoom + theme(legend.position = "none")) + (chn_zoom + theme(legend.position = "none")) ## save this output in the plot window...
 
 plot1 <- (chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "none") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (ecu_zoom + theme(legend.position = "none")) 
 
