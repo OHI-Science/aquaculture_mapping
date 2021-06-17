@@ -43,6 +43,8 @@ all_farms_sf <- all_farms %>%
 # test <- all_farms_sf %>%
 #   filter(iso3c == "USA")
 # mapview(test)
+
+
 ```
 
 
@@ -79,13 +81,13 @@ known_countries <- all_farms %>%
   distinct(iso3c)
 
 
-# Some of the world’s largest aquaculture producers had a noticeable paucity of aquaculture location data, particularly China, whose represented 77% of the total estimated points, and only had 15 known location points
+# Some of the world’s largest aquaculture producers had a noticeable paucity of aquaculture location data, particularly China, whose represented 77% of all points, and only had 15 known location points
 
 chn_data_estimated <- all_farms %>%
-  filter(iso3c == "CHN") %>%
-  filter(data_type == "modeled location, estimated number of farms")
-# 58151 points
-58151/75073 # 0.7745927 = 77%
+  filter(iso3c == "CHN") #%>%
+  #filter(data_type == "modeled location, estimated number of farms")
+# 58166 points
+58151/95342 # 0.6099201 = 61%
 
 
 chn_data_known <- all_farms %>%
