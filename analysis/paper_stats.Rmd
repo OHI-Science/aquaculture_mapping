@@ -35,7 +35,7 @@ path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_location
 
 ```{r}
 
-all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv")
+all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv")
 
 all_farms_sf <- all_farms %>%
   st_as_sf(coords =c("X", "Y")) 
@@ -132,7 +132,7 @@ by_species_data_type <- all_farms %>%
 
 
 
-## How much mariculture production was included in our assessment? 
+## How much fish and invertebrate mariculture production was included in our assessment? 
 
 fao <- read_csv("data/fao_aquaculture_clean.csv")
 mar_sp_list <- read_csv("https://raw.githubusercontent.com/OHI-Science/ohiprep_v2020/gh-pages/globalprep/mar/v2020/raw/species_list.csv")
@@ -151,13 +151,14 @@ test <- fao %>%
   left_join(mar_sp_list, by = c("species" = "FAO_name")) %>%
   mutate(environment2 = ifelse(Taxon_code == "AL", "seaweed", environment)) %>%
   mutate(environment = ifelse(is.na(environment2), environment, environment2)) %>%
+  filter(environment != "Freshwater") %>%
   group_by(environment, year) %>%
   summarise(prod = sum(value, na.rm = TRUE)) %>%
   ungroup() %>%
   mutate(total = sum(prod)) %>%
   mutate(pct = prod/total)
 
-## total marine animal production is: 8090542 + 22920871 = 31011413
+## total fish and invertebrate mariculture production included is: 8090542 + 22920871 = 31011413
 
 ## we include: 29623515
 prod_total <- read_csv("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/production_extracted_final.csv")
@@ -168,15 +169,27 @@ sum(prod_total$total_tonnes) # 29623515
 ```
 
 
+```{r}
+prod_per_farm <- read_csv("marine/output/all_points_to_add.csv") %>%
+  distinct(type,avg_tonnes_per_farm)
+
+production_by_grouping <- all_farms %>%
+  group_by(iso3c, species_group, data_type) %>%
+  summarise(n_obs = n())
+
+
+```
+
+
 Countries with comprehensive farm locations 
 ```{r}
 
-all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv")
+all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv")
 
 unique(sort(all_farms$country))
 
 country_spp_combos <- all_farms %>%
-  distinct(country, species)
+  distinct(country, species_group)
 
 
 ## read in each of the comprehensive locations 
@@ -198,23 +211,28 @@ finfish_comp <- read_csv("marine/marine_fish_general/finfish_farms/output/finfis
 
 all_comp_farms <- rbind(finfish_comp, bivalve_comp, salmon_comp, tuna_comp, shrimp_comp) %>%
     mutate(Species = case_when(
-      type == "salmon" ~ "Salmonids", 
-      type == "bivalve" ~ "Unfed or algae fed shellfish",
-      type == "marine_fish_general" ~ "General Marine Fish", 
-      type == "shrimp" ~ "Shrimp", 
-      type == "tuna" ~ "Tuna"
+      type == "salmon" ~ "Salmonidae fish", 
+      type == "bivalve" ~ "Unfed or algae fed bivalve molluscs",
+      type == "marine_fish_general" ~ "General marine fish", 
+      type == "shrimp" ~ "Shrimps and prawns", 
+      type == "tuna" ~ "Bluefin tuna"
     )) %>%
   mutate(tonnes_per_farm = round(tonnes_per_farm, 2)) %>%
   dplyr::select("Country" = "country", Species, "Number of farms" = "n_farms", "Tonnes of production" = "fao_tonnes_production", "Tonnes per farm" = "tonnes_per_farm") %>%
   arrange(Country) 
 
-unique(all_comp_farms$Country)
+ unique(all_comp_farms$Country)
 
 write.csv(all_comp_farms, "analysis/output/all_comp_farms.csv", row.names = FALSE)
 
 
+sum(all_comp_farms$`Tonnes of production`) # 4963244
+
+4963244/29623515 # 0.1675441 = ~17%
+
+
 comp_across_all <- all_comp_farms %>%
-  full_join(country_spp_combos, by = c("Country" = "country", "Species" = "species")) %>%
+  full_join(country_spp_combos, by = c("Country" = "country", "Species" = "species_group")) %>%
   mutate(Country = case_when(
     Country == "Iran" ~ "Iran (Islamic Rep. of)", 
     Country == "Hong Kong " ~ "China, Hong Kong SAR",
@@ -227,14 +245,14 @@ comp_across_all <- all_comp_farms %>%
             tonnes = sum(`Tonnes of production`)) %>%
   filter(!is.na(n_obs)) 
 
-sum(comp_across_all$tonnes) # account for 4328484 tonnes of production 
+sum(comp_across_all$tonnes, na.rm = TRUE) # account for 4328484 tonnes of production 
 
-4328484/29623515 # these account for ~15% of production tonnage
+4328484/29623515 # these account for ~15% of included production tonnage
 
 ## these are the countries that are comprehensive across all species groups they report
 cat(comp_across_all$Country, sep = ", ")
 
-# tuna_spp <- read_csv("marine/tuna/tuna_farms/data/fao_mariculture_tuna_taxa_production.csv")
+
 ```
 
 

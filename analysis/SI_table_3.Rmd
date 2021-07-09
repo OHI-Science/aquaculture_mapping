@@ -1,0 +1,34 @@
+---
+title: "SI tables"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "04/26/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+This script takes our final farms dataset and creates the . 
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+library(tidyverse)
+library(RCurl)
+library(mosaic)
+library(googlesheets4)
+library(janitor)
+library(countrycode)
+
+source(here("_spatial/template_raster.R"))
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+```
+
+
+
+

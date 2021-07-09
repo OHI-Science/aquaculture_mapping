@@ -79,6 +79,7 @@ test <- fao %>%
   left_join(mar_sp_list, by = c("species" = "FAO_name")) %>%
   mutate(environment2 = ifelse(Taxon_code == "AL", "seaweed", environment)) %>%
   mutate(environment = ifelse(is.na(environment2), environment, environment2)) %>%
+  filter(environment != "Freshwater") %>%
   group_by(environment, year) %>%
   summarise(prod = sum(value, na.rm = TRUE)) %>%
   ungroup() %>%

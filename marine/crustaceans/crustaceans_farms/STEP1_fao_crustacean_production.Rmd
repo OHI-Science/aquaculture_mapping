@@ -53,7 +53,11 @@ fao_crustaceans_taxa_prod <- fao %>%
   group_by(country, iso3c, species, year) %>%
   dplyr::filter(year == 2017) %>%
   summarize(fao_tonnes_production = sum(value)) %>%
-  arrange(country, iso3c, species, year) 
+  arrange(country, iso3c, species, year) %>%
+  ungroup() %>%
+  mutate(total = sum(fao_tonnes_production)) %>%
+  mutate(perc = fao_tonnes_production/total)
+  
   
 write.csv(fao_crustaceans_taxa_prod, here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans_taxa_production.csv"), row.names=FALSE)
 

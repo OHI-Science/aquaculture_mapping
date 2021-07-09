@@ -1,0 +1,39 @@
+---
+title: "Validation Testing"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "07/08/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+This script tests our validation set of points against our actual known points. 
+
+```{r}
+
+library(here)
+library(dplyr)
+library(sf)
+library(raster)
+library(mapview)
+library(tidyverse)
+library(RCurl)
+library("rnaturalearth")
+library("rnaturalearthdata")
+library(cowplot) 
+library(ggpubr)
+library(RColorBrewer)
+library(OpenStreetMap)
+library(ggspatial)
+library(ggplot2)
+library(patchwork)
+
+
+
+source(here("_spatial/template_raster.R"))
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+```
+

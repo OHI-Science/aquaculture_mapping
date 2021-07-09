@@ -1,0 +1,119 @@
+---
+title: "Calculate average distance to ports from known mariculture locations"
+author: "Gage Clawson"
+date: "06/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(sf)
+library(spatialEco)
+library(tidyverse)
+library(raster)
+library(rgeos)
+library(rmapshaper)
+library(mapview)
+
+# load in crs, coastlines, eez, masks, country shapes, ports, depth, and rasters
+source("../_spatial/template_raster.R")
+
+```
+
+
+Read in all known farms 
+
+```{r}
+data <- read_csv("../marine/output/all_marine_farms.csv") %>% 
+  st_as_sf(., 
+           coords = c("lon", "lat"),
+           crs = crs(food_raster), 
+           agr = "constant") 
+```
+
+
+Read in ports dataset 
+```{r}
+the_crs <- crs(fake_raster, asText = TRUE)
+
+ports_raw <- st_read("/home/shares/food-systems/Food_footprint/_raw_data/world_port_index/Commercial_ports.shp") %>%
+  st_transform(the_crs) %>%
+  filter(HARB_SIZE_ != "L") # remove L ports
+```
+
+
+Calculate the distance from each known location to the closest port
+
+```{r}
+# st_nearest_points
+
+# st_distance 
+
+test_data <- data[1:3, ]
+
+dist_ports <- as.data.frame(st_distance(ports_raw, test_data))
+
+min(dist_ports$V1)
+min(dist_ports$V2)
+min(dist_ports$V3)
+
+mapview(test_data)
+
+test_df_final <- dist_ports %>%
+  pivot_longer(cols = c(V1, V2, V3)) %>%
+  group_by(name) %>%
+  summarise(min_dist = min(value))
+
+
+## ok so that works... i just to calculate the distance from each point in the whole known location dataset, and find the min of each column
+
+
+dist_ports <- as.data.frame(st_distance(ports_raw, data)) ## calculate distance to each port from each known mariculture location
+
+write.csv(dist_ports, "int/distance_to_ports_raw.csv")
+
+write.csv(dist_ports, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/distance_from_known_to_ports_raw.csv", row.names = FALSE)
+
+dist_ports <- read_csv("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/distance_from_known_to_ports_raw.csv")
+
+
+dist_ports_final <- dist_ports %>%
+  pivot_longer(cols = everything()) %>%
+  group_by(name) %>%
+  summarise(closest_port_km = as.numeric(min(value)*0.001)) %>%
+  ungroup()
+
+## add in species group identifier
+
+data_df <- data %>%
+  mutate(row_num = row_number()) %>%
+  mutate(name = paste("V", row_num, sep =""))
+
+spp_group_dist <- dist_ports_final %>%
+  ungroup() %>%
+  left_join(data_df) # %>%
+  # filter(closest_port_km >= 1)
+
+ 
+mean(spp_group_dist$closest_port_km) # 31.30463 km
+sd(spp_group_dist$closest_port_km) # 32.333 km
+range(spp_group_dist$closest_port_km) #  0.1312871 to 531.2067646
+median(spp_group_dist$closest_port_km) # 18.85009 km
+
+summary(spp_group_dist)
+
+
+spp_group_dist_final <- spp_group_dist %>%
+  group_by(type) %>%
+  summarise(dist_port = mean(closest_port)) %>%
+  ungroup()
+  
+
+
+```
+
+

@@ -54,7 +54,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # Read in farms data and convert to sf
 
 ```{r}
-all_farms_sf <- read_csv("all_marine_aquaculture_farms_sources.csv") %>%
+all_farms_sf <- read_csv("all_marine_aquaculture_farms_sources_31km.csv") %>%
     st_as_sf(., 
            coords = c("X", "Y"),
            crs = crs(food_raster), 
@@ -75,18 +75,13 @@ test <- all_farms_sf %>%
   filter(iso3c == "TUR")
 mapview(test) ## one weird MFG from ASC.. i think these are fine. Justifiable since it is from the ASC...
 
-
-
-fao_data <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv") %>%
-  group_by(country) %>%
-  summarise(prod = sum(total_tonnes))
 ```
 
 
 
 ```{r}
 
-all_farms <- read_csv("all_marine_aquaculture_farms_sources.csv") %>% 
+all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv") %>% 
   mutate(data_type_plot = case_when(
     data_type == "modeled location, known number of farms" ~ "Modeled location, known number of farms",
     data_type == "modeled location, estimated number of farms" ~ "Modeled location, estimated number of farms", 
@@ -131,16 +126,14 @@ total_map <- ggplot(data = world) +
   theme(axis.title.x = element_blank(),
           axis.title.y = element_blank(),
         legend.position = "bottom", 
-        legend.title=element_blank()) +
+        legend.title=element_blank(),
+        text=element_text(family="Times New Roman")) +
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9), nrow=2 )) +
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"), labels = c("Known location \n n = 9,750", "Modeled location, known number of farms \n n = 10,519", "Modeled locations, estimated number of farms \n n = 75,073"))
-    #  geom_vline(xintercept = 135) + # check to make sure it lines up
-  #geom_hline(yintercept = 0) # check to make sure it lines up
 
 total_map
 
-# guides(colour=guide_legend(nrow=30))
 
 # Create marginal plots
 # Use geom_density/histogram for whatever you plotted on x/y axis 
@@ -165,7 +158,7 @@ plot_y
 plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
 plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
 ggdraw(plot_final)
-ggsave("analysis/figs/map_fig.jpg")
+ggsave("analysis/figs/map_fig_18km.jpg")
 
 ```
 
@@ -198,7 +191,8 @@ chl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
         axis.title.y = element_blank(),
         legend.key = element_rect(fill = NA),
         axis.text.x = element_text(angle = 60, hjust = 1),
-panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+        text=element_text(family="Times New Roman"),
+panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("A")  # + 
  #  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))
 chl_zoom
@@ -219,7 +213,8 @@ chn_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
         axis.title.y = element_blank(),
         axis.text.x = element_text(angle = 60, hjust = 1),
         legend.key = element_rect(fill = NA),
-panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+        text=element_text(family="Times New Roman"),
+panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("D")
   #border(linetype = "longdash")
         #panel.border = element_rect(colour = "black", fill=NA, size=5))
@@ -239,7 +234,8 @@ ecu_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
         axis.title.x = element_blank(), 
         axis.title.y = element_blank(),
         axis.text.x = element_text(angle = 60, hjust = 1),
-panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+        text=element_text(family="Times New Roman"),
+panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("B")
   #border(linetype = "longdash")
         #panel.border = element_rect(colour = "black", fill=NA, size=5))
@@ -260,7 +256,8 @@ nor_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
         axis.title.y = element_blank(),
         legend.key = element_rect(fill = NA),
         axis.text.x = element_text(angle = 60, hjust = 1),
-panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+        text=element_text(family="Times New Roman"),
+panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("C")
   #border(linetype = "longdash")
         #panel.border = element_rect(colour = "black", fill=NA, size=5))
@@ -281,7 +278,8 @@ usa_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
         axis.title.y = element_blank(),
         legend.key = element_rect(fill = NA),
         axis.text.x = element_text(angle = 60, hjust = 1),
-panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
+        text=element_text(family="Times New Roman"),
+panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("C")
   #border(linetype = "longdash")
         #panel.border = element_rect(colour = "black", fill=NA, size=5))
@@ -311,16 +309,16 @@ usa_zoom
 plot1 <- (chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "none") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (ecu_zoom + theme(legend.position = "none"))
 
 plot1
-ggsave("analysis/figs/chl_ecu_zoom.jpg")
+ggsave("analysis/figs/chl_ecu_zoom_31km.jpg")
 
 
 plot2 <- (usa_zoom +  plot_layout(guides = "collect") & theme(legend.position = "bottom") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (chn_zoom + theme(legend.position = "none")) ## save this output in the plot window...
 
 plot2
-ggsave("analysis/figs/usa_chn_zoom.jpg")
+ggsave("analysis/figs/usa_chn_zoom_31km.jpg")
 
 
-## we saved both of those images separately. Then we export them to google drawings, and combine together. Once combined, reupload to figs folder as "zoom_fig_final.jpg"
+## we saved both of those images separately. Then we export them to google drawings, and combine together. Once combined, reupload to figs folder 
 
 ```
 

@@ -73,32 +73,20 @@ fao_finfish <- fao %>%
 write.csv(fao_finfish, here("marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish.csv"), row.names=FALSE)
 
 
-## Explore some of the data:         
-explore <- read_csv(here("marine/marine_fish_general/finfish_farms/data/fao_mariculture_finfish.csv")) %>%
-   filter(year==2017) %>%
-   arrange(-fao_tonnes_production) %>%
-   mutate(percent = round(fao_tonnes_production/sum(fao_tonnes_production)*100,2))
 
-sum(explore$fao_tonnes_production) # 3901214
-unique(explore$country) # 37 countries
+## look at all groups 
 
-## explore ASC and emod data
-
-emod_countries <- explore %>%
-  dplyr::filter(country %in% c("Cyprus", "Greece", "Malta", "Norway", "Spain"))
-sum(emod_countries$percent)
-sum(emod_countries$fao_tonnes_production)
-
-
-## ASC Countries
- # "Turkey", "Croatia", "Greece", "Albania", "Spain", "Japan", "Australia", "Mexico", "Panama", "United States of America", "Viet Nam", "Thailand"
-
-asc_countries <- explore %>%
-  dplyr::filter(country %in% c( "Turkey", "Croatia", "Albania", "Japan", "Australia", "Mexico", "Panama", "United States of America", "Viet Nam", "Thailand"))
-sum(asc_countries$percent)
-sum(asc_countries$fao_tonnes_production)
-
-unique(sort(asc_countries$country))
+all_groups_included <- aquaculture_groups %>%
+  filter(!is.na(value)) %>%
+  arrange(-value, country) %>%
+  filter(value < 500) %>%  # countries with less do not appear to be stable producers at this point
+  group_by(year, iso3c, aq_group) %>%
+  summarize(fao_tonnes_production = sum(value)) %>%
+  arrange(iso3c, aq_group) %>%
+  #filter(year == 2017) %>%
+  ungroup()
+  #mutate(total_prod = sum(fao_tonnes_production)) %>%
+  #mutate(prop_prod = fao_tonnes_production/total_prod)
 
 
 ```
