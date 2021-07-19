@@ -129,7 +129,7 @@ total_map <- ggplot(data = world) +
         text=element_text(family="Times New Roman")) +
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9), nrow=2 )) +
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), labels = c("Known locations \n n = 9,750", "Modeled locations, known number of farms \n n = 10,519", "Modeled locations, estimated number of farms \n n = 75,073"))
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), labels = c("Known locations \n N = 9,750", "Modeled locations, known number of farms \n N = 10,519", "Modeled locations, estimated number of farms \n N = 75,073"))
 
 total_map
 
