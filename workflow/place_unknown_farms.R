@@ -177,7 +177,6 @@ for (i in 36:length(unique(need_national_allocation$iso3c))) {
     st_as_sf() %>% 
     st_union()%>% 
     sf::st_as_sf()
-
   
   this_suitable_coast <- st_intersection(this_coast_meters, this_cell_polygons) %>%
    st_collection_extract("LINESTRING") %>%  # comment this out for <= 200m

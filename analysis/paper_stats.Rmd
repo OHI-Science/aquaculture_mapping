@@ -40,11 +40,6 @@ all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv")
 all_farms_sf <- all_farms %>%
   st_as_sf(coords =c("X", "Y")) 
 
-# test <- all_farms_sf %>%
-#   filter(iso3c == "USA")
-# mapview(test)
-
-
 ```
 
 
@@ -53,9 +48,9 @@ sources <- read_csv("analysis/data/mariculture_mapping_sources.csv") %>%
   clean_names() %>%
   mutate(type = case_when(species == "Salmonids" ~ "salmon",
                           species == "Unfed or algae fed shellfish" ~ "bivalve",
-                          species == "Shrimp" ~ "shrimp", 
-                          species == "Tuna" ~ "tuna", 
-                          species == "General Marine Fish" ~ "marine_fish_general", 
+                          species == "Shrimp" ~ "shrimp",
+                          species == "Tuna" ~ "tuna",
+                          species == "General Marine Fish" ~ "marine_fish_general",
                           species == "Crustaceans" ~ "crustaceans"))
 
 
@@ -72,7 +67,7 @@ by_data_type
 #   data_type                                   n_obs total_obs   pct
 #   <chr>                                       <int>     <int> <dbl>
 # 1 known location                               9750     95341  10.2
-# 2 modeled location, estimated number of farms 75072     95341  78.7
+# 2 modeled location, estimated number of farms 75073     95341  78.7
 # 3 modeled location, known number of farms     10519     95341  11.0
 
 # How many countries have spatial locations information?
@@ -81,13 +76,12 @@ known_countries <- all_farms %>%
   distinct(iso3c)
 
 
-# Some of the world’s largest aquaculture producers had a noticeable paucity of aquaculture location data, particularly China, whose represented 77% of all points, and only had 15 known location points
+# China represented 61% of all farms (N=58,166), but only 15 had known locations.
 
 chn_data_estimated <- all_farms %>%
-  filter(iso3c == "CHN") #%>%
-  #filter(data_type == "modeled location, estimated number of farms")
+  filter(iso3c == "CHN") 
 # 58166 points
-58151/95342 # 0.6099201 = 61%
+58166/95342 # 0.6099201 = 61%
 
 
 chn_data_known <- all_farms %>%
@@ -103,28 +97,35 @@ top_known <- all_farms %>%
 
 # Only 5 countries (Cambodia, Mauritius, Myanmar, North Korea, and Russia) had no form of farm data at all, however, these countries only account for 0.5% of marine aquaculture production included.
 
-no_info_at_all <- sources %>%
-  dplyr::filter(known_farms_location == 0, known_farms_no_location == 0) ## only 5 with no information at all
+no_info <- all_farms %>%
+  group_by(iso3c) %>%
+  mutate(check = all(data_type_2 == "F")) %>%
+  filter(check == TRUE) 
+unique(no_info$country)
+
+# [1] "Cambodia"                              "Myanmar"                              
+# [3] "Mauritius"                             "Democratic People’s Republic of Korea"
+# [5] "Russian Federation" 
+
 
 mar_production <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv")
 
-no_info_production <- mar_production %>%
-  filter(country %in% c("Cambodia", "Mauritius", "Myanmar", "Korea, Dem. People's Rep", "Russian Federation"))
-sum(no_info_production$total_tonnes) # 152800.1
+sum(no_info$tonnes_per_farm) # 155205.1
 
 sum(mar_production$total_tonnes) # 29623515
-152800.1/29623515
+
+155205.1/29623515 # 0.005239253
 
 chn_production <- mar_production %>%
   filter(country == "China")
 sum(chn_production$total_tonnes)
-17696822/29623515
+17696822/29623515 # 0.597391
 
 # Per species group, salmon was the most data rich (98% of points had location information, 1.13% of points were known with no location information, 0.87% estimated), followed by Tuna (34% of points had location information, 66% of points were known with no location information, 0% estimated).
 
 
 by_species_data_type <- all_farms %>%
-  group_by(species, data_type) %>%
+  group_by(species_group, data_type) %>%
   summarise(n_obs = n()) %>%
   mutate(total_obs = sum(n_obs)) %>% 
   ungroup() %>%
@@ -158,7 +159,7 @@ test <- fao %>%
   mutate(total = sum(prod)) %>%
   mutate(pct = prod/total)
 
-## total fish and invertebrate mariculture production included is: 8090542 + 22920871 = 31011413
+## total fish and invertebrate mariculture production is: 8090542 + 22920871 = 31011413
 
 ## we include: 29623515
 prod_total <- read_csv("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/production_extracted_final.csv")
@@ -169,91 +170,84 @@ sum(prod_total$total_tonnes) # 29623515
 ```
 
 
-```{r}
-prod_per_farm <- read_csv("marine/output/all_points_to_add.csv") %>%
-  distinct(type,avg_tonnes_per_farm)
-
-production_by_grouping <- all_farms %>%
-  group_by(iso3c, species_group, data_type) %>%
-  summarise(n_obs = n())
-
-
-```
-
-
 Countries with comprehensive farm locations 
+
+However, 16 countries (representing 10% of fish and invertebrate mariculture production) had comprehensive farm locations across all taxa (i.e. no estimation or interpolation required, Table S3)
 ```{r}
 
-all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv")
+all_comp <- all_farms %>%
+  group_by(iso3c) %>%
+  mutate(check = all(data_type_2 == "A")) %>%
+  filter(check == TRUE) 
 
-unique(sort(all_farms$country))
+sort(unique(all_comp$country))
 
-country_spp_combos <- all_farms %>%
-  distinct(country, species_group)
+print(unique(all_comp$country))
 
+cat(paste(sort(unique(all_comp$country)), collapse= "', '"))
 
-## read in each of the comprehensive locations 
+# Belize, Bulgaria, Canada, Chile, Cyprus, Denmark, Faroe Islands, Finland, French Polynesia, Greece, Hong Kong , Ireland, Jersey, Malta, Norway, United Arab Emirates, United Kingdom
 
-bivalve_comp <- read_csv("marine/bivalve/bivalve_farms/output/bivalve_comp_tonnes_per_farm.csv")
+## how much production do they account for? 
 
+mar_production <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv")
 
-shrimp_comp <- read_csv("marine/shrimp/shrimp_farms/output/shrimp_comp_tonnes_per_farm.csv")
+comp_prod <- mar_production %>%
+  filter(country %in% c('Belize', 'Bulgaria', 'Canada', 'Chile', 'Cyprus', 'Denmark', 'Faroe Islands', 'Finland', 'French Polynesia', 'Greece', 'China, Hong Kong SAR', 'Ireland', 'Jersey', 'Malta', 'Norway', 'United Arab Emirates', 'United Kingdom'))
 
+sum(comp_prod$total_tonnes) # 3203584
 
+3203584/31011413 # 0.1033034 ~ 10%
 
-salmon_comp <- read_csv("marine/salmon/salmon_farms/output/salmon_comp_tonnes_per_farm.csv")
+```
 
-tuna_comp <- read_csv("marine/tuna/tuna_farms/output/tuna_comp_tonnes_per_farm.csv")
+Countries with comprehensive "number of farm" information
 
-finfish_comp <- read_csv("marine/marine_fish_general/finfish_farms/output/finfish_comp_tonnes_per_farm.csv")
+"Thirty-six of the countries in the table have comprehensive “number of farm” data across all types of mariculture they produce (data types A, B, or C), accounting for 12% of the global fish and invertebrate mariculture production (Albania, Belize, Bulgaria, Canada, Chile, Colombia, Croatia, Cyprus, Denmark, El Salvador, Faroe Islands, Finland, French Polynesia, Germany, Greece, Guatemala, Guernsey, Hong Kong, Ireland, Italy, Jersey, Madagascar, Malta, Netherlands, New Zealand, Norway, Peru, Portugal, Singapore, Slovenia, South Africa, Sri Lanka, Tunisia, Turkey, United Arab Emirates, United Kingdom)."
 
+```{r}
 
+all_comp <- all_farms %>%
+  group_by(iso3c) %>%
+  mutate(check = all(data_type_2 %in% c("A", "B", "C"))) %>%
+  filter(check == TRUE)
+sort(unique(all_comp$country))
 
-all_comp_farms <- rbind(finfish_comp, bivalve_comp, salmon_comp, tuna_comp, shrimp_comp) %>%
-    mutate(Species = case_when(
-      type == "salmon" ~ "Salmonidae fish", 
-      type == "bivalve" ~ "Unfed or algae fed bivalve molluscs",
-      type == "marine_fish_general" ~ "General marine fish", 
-      type == "shrimp" ~ "Shrimps and prawns", 
-      type == "tuna" ~ "Bluefin tuna"
-    )) %>%
-  mutate(tonnes_per_farm = round(tonnes_per_farm, 2)) %>%
-  dplyr::select("Country" = "country", Species, "Number of farms" = "n_farms", "Tonnes of production" = "fao_tonnes_production", "Tonnes per farm" = "tonnes_per_farm") %>%
-  arrange(Country) 
+cat(paste(sort(unique(all_comp$country)), collapse= "', '"))
 
- unique(all_comp_farms$Country)
+# Albania', 'Belize', 'Bulgaria', 'Canada', 'Chile', 'Colombia', 'Croatia', 'Cyprus', 'Denmark', 'El Salvador ', 'Faroe Islands', 'Finland', 'French Polynesia', 'Germany', 'Greece', 'Guatemala', 'Guernsey', 'Hong Kong ', 'Ireland', 'Italy', 'Jersey', 'Madagascar', 'Malta', 'Netherlands', 'New Zealand', 'Norway', 'Peru', 'Portugal', 'Singapore', 'Slovenia', 'South Africa', 'Sri Lanka', 'Tunisia', 'Turkey', 'United Arab Emirates', 'United Kingdom
 
-write.csv(all_comp_farms, "analysis/output/all_comp_farms.csv", row.names = FALSE)
+## how much production do they account for? 
 
+mar_production <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv")
 
-sum(all_comp_farms$`Tonnes of production`) # 4963244
+comp_prod <- mar_production %>%
+  filter(country %in% c('Albania', 'Belize', 'Bulgaria', 'Canada', 'Chile', 'Colombia', 'Croatia', 'Cyprus', 'Denmark', 'El Salvador ', 'Faroe Islands', 'Finland', 'French Polynesia', 'Germany', 'Greece', 'Guatemala', 'Guernsey', 'Hong Kong ', 'Ireland', 'Italy', 'Jersey', 'Madagascar', 'Malta', 'Netherlands', 'New Zealand', 'Norway', 'Peru', 'Portugal', 'Singapore', 'Slovenia', 'South Africa', 'Sri Lanka', 'Tunisia', 'Turkey', 'United Arab Emirates', 'United Kingdom'))
 
-4963244/29623515 # 0.1675441 = ~17%
+sum(comp_prod$total_tonnes) # 3788091
 
-
-comp_across_all <- all_comp_farms %>%
-  full_join(country_spp_combos, by = c("Country" = "country", "Species" = "species_group")) %>%
-  mutate(Country = case_when(
-    Country == "Iran" ~ "Iran (Islamic Rep. of)", 
-    Country == "Hong Kong " ~ "China, Hong Kong SAR",
-    TRUE ~ Country
-  )) %>%
-  filter(Country %in% all_comp_farms$Country) %>%
-  group_by(Country) %>%
-  summarise(n_obs = sum(`Number of farms`), 
-            n_species = n(),
-            tonnes = sum(`Tonnes of production`)) %>%
-  filter(!is.na(n_obs)) 
-
-sum(comp_across_all$tonnes, na.rm = TRUE) # account for 4328484 tonnes of production 
-
-4328484/29623515 # these account for ~15% of included production tonnage
-
-## these are the countries that are comprehensive across all species groups they report
-cat(comp_across_all$Country, sep = ", ")
+3788091/31011413 # 0.1221515 ~ 10%
 
 
 ```
+
+
+Using the country/species grouping combinations with presumed comprehensive farm count data (N=74, 17% of production included, data type A/B/C, see Table S3)
+```{r}
+
+test <- all_farms %>%
+  filter(data_type_2 %in% c("A", "B", "C")) %>%
+  group_by(country, species_group) 
+
+cat(paste(sort(unique(test$country)), collapse= "', '"))
+
+sum(test$tonnes_per_farm)
+ 
+4963244/29623515 # 0.1675441 ~ 17%
+
+```
+
+
 
 
 Score the different taxa maps for the global food paper: 
@@ -316,46 +310,3 @@ NA | Spatial extent is not relevant | Spatial resolution of the data is not rele
  - System specificity: 1
  - System comprehensiveness: 4
  
- 
- 
-
-
-
-Some random exploring
-```{r}
-by_type <- all_farms %>%
-  group_by(species) %>%
-  summarise(n_obs = n())  
-
-
-by_country_type <- all_farms %>%
-  group_by(iso3c, species) %>%
-  summarise(n_obs = n()) %>%
-  left_join(sources) %>%
-  dplyr::select(iso3c, species, n_obs, number_of_total_farms) %>%
-  mutate(difference = n_obs - number_of_total_farms)
-
-
-by_data_type_country <- all_farms %>%
-  group_by(iso3c, species, data_type) %>%
-  summarise(n_obs = n()) %>%
-  ungroup() %>%
-  left_join(sources) %>%
-  dplyr::select(iso3c, species, data_type, n_obs, number_of_total_farms, known_farms_location, known_farms_no_location, estimated_farms)
-
-known <- by_data_type_country %>%
-  filter(data_type == "known location") %>%
-  dplyr::select(iso3c, species, data_type, n_obs, known_farms_location) %>%
-  mutate(difference = n_obs - known_farms_location)
-
-number_known <- by_data_type_country %>% 
-  filter(data_type == "modeled location, known number of farms") %>%
-  dplyr::select(iso3c, species, data_type, n_obs, known_farms_no_location) %>%
-  mutate(difference = n_obs - known_farms_no_location)
-
-estimated <- by_data_type_country %>% 
-  filter(data_type == "modeled location, estimated number of farms") %>%
-  dplyr::select(iso3c, species, data_type, n_obs, estimated_farms) %>%
-  mutate(difference = n_obs - estimated_farms)
-
-```

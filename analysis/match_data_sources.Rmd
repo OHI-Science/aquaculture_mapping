@@ -59,9 +59,9 @@ all_farms_to_place <- read_csv(file.path("marine/output/all_points_to_add.csv"))
 all_farms <- readRDS("data/all_modeled_marine_farms_31km.rds") %>%
   left_join(all_farms_to_place) %>%
     mutate(data_type = case_when(
-    source == "real" ~ "known location", 
-    source == "modeled" & estimated == 0 ~ "modeled location, known number of farms",
-    source == "modeled" & estimated == 1 ~ "modeled location, estimated number of farms"
+    source == "real" ~ "known locations", 
+    source == "modeled" & estimated == 0 ~ "modeled locations, known number of farms",
+    source == "modeled" & estimated == 1 ~ "modeled locations, estimated number of farms"
   )) %>%
   mutate(estimated = ifelse(is.na(estimated), 0, estimated))
 
@@ -103,7 +103,7 @@ mutate(species_group = case_when(species == "Salmonids" ~ "Salmonidae fish",
     known_farms_location > 0 & known_farms_no_location == 0 & estimated_farms > 0 ~ "D",
     known_farms_location == 0 & known_farms_no_location == 0 & estimated_farms > 0 ~ "F",
   )) %>%
-  mutate(data_type_2 = ifelse(str_detect(details, "Although"), "E", data_type_2)) %>%
+  mutate(data_type_2 = ifelse(str_detect(details, "Although"), "D", data_type_2)) %>%
   mutate(data_type_2 = ifelse(iso3c == "IND" & species == "Unfed or algae fed shellfish", "E", data_type_2)) ## fix some mismatches
 
 
@@ -135,10 +135,10 @@ sources_prod <- sources %>%
   left_join(all_prod, by = c("iso3c", "type")) %>%
   left_join(spp_prod_per_farm) %>% 
   mutate(tonnes_per_farm = case_when(
+        str_detect(details, "Although") ~ fao_tonnes_production/number_of_total_farms,
     data_type_2 %in% c("A", "B", "C") ~ fao_tonnes_production/number_of_total_farms,
     data_type_2 %in% c("D", "F") ~ spp_prod_per_farm,
-    data_type_2 %in% c("E") ~ fao_tonnes_production/number_of_total_farms
-  )) %>%
+    data_type_2 %in% c("E") ~ fao_tonnes_production/number_of_total_farms  )) %>%
   dplyr::select(-country.y, -spp_prod_per_farm) %>%
   rename("country" = "country.x")
 
@@ -155,13 +155,13 @@ write.csv(sources_prod_SI_table, "analysis/tables/SI_table_3.csv", row.names = F
 all_farms_sources <- all_farms %>%
   left_join(sources_prod, by = c("iso3c", "type")) %>%
   mutate(data_source = case_when(
-    data_type == "modeled location, known number of farms" ~ datasource_number_of_farms,
-    data_type == "modeled location, estimated number of farms" ~ "NA", 
-    data_type == "known location" ~ datasource_farm_locations), 
+    data_type == "modeled locations, known number of farms" ~ datasource_number_of_farms,
+    data_type == "modeled locations, estimated number of farms" ~ "NA", 
+    data_type == "known locations" ~ datasource_farm_locations), 
   data_year = case_when(
-    data_type == "modeled location, known number of farms" ~ data_year_number_of_farms,
-    data_type == "modeled location, estimated number of farms" ~ "NA", 
-    data_type == "known location" ~ data_year_farm_locations)) %>%
+    data_type == "modeled locations, known number of farms" ~ data_year_number_of_farms,
+    data_type == "modeled locations, estimated number of farms" ~ "NA", 
+    data_type == "known locations" ~ data_year_farm_locations)) %>%
   dplyr::select(iso3c, country, species_group, species, data_type, data_type_2, details, data_source, data_year, tonnes_per_farm, geometry) 
 
 unique(all_farms_sources$data_year)
@@ -357,6 +357,9 @@ st_write(all_farms_sources_final, "all_marine_aquaculture_farms_sources_31km.csv
 ## check that it wrote correctly
 
 all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv")
+
+test <- all_farms %>%
+  filter(iso3c == "IND", str_detect(species_group, "bivalve"))
 ```
 
 

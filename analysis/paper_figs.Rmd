@@ -83,9 +83,9 @@ mapview(test) ## one weird MFG from ASC.. i think these are fine. Justifiable si
 
 all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv") %>% 
   mutate(data_type_plot = case_when(
-    data_type == "modeled location, known number of farms" ~ "Modeled location, known number of farms",
-    data_type == "modeled location, estimated number of farms" ~ "Modeled location, estimated number of farms", 
-    data_type == "known location" ~ "Known location"
+    data_type == "modeled locations, known number of farms" ~ "Modeled locations, known number of farms",
+    data_type == "modeled locations, estimated number of farms" ~ "Modeled locations, estimated number of farms", 
+    data_type == "known locations" ~ "Known locations"
   ))
 
 unique(sort(all_farms$country))
@@ -118,8 +118,7 @@ class(world)
 total_map <- ggplot(data = world) +
   geom_sf(fill = "white", lwd = 0.1) + 
   geom_point(data = all_farms, aes(x = X, y = Y, col = data_type), size = 0.1, alpha = 0.7) +
-#  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE, label_axes = list(top = "E", left = "N")) +
-  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +## or could make the latitude distances even i.e. (-72, 72)
+  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +
   scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
   scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
   theme_bw() + 
@@ -130,7 +129,7 @@ total_map <- ggplot(data = world) +
         text=element_text(family="Times New Roman")) +
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9), nrow=2 )) +
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"), labels = c("Known location \n n = 9,750", "Modeled location, known number of farms \n n = 10,519", "Modeled locations, estimated number of farms \n n = 75,073"))
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), labels = c("Known locations \n n = 9,750", "Modeled locations, known number of farms \n n = 10,519", "Modeled locations, estimated number of farms \n n = 75,073"))
 
 total_map
 
@@ -139,10 +138,9 @@ total_map
 # Use geom_density/histogram for whatever you plotted on x/y axis 
 plot_x <- axis_canvas(total_map, axis = "x") +
   geom_histogram(data = all_farms, aes(X, fill = data_type), bins = 360)  +
-  #  geom_vline(xintercept = 135) + # check to make sure it lines up
   coord_sf(xlim = c(-180, 180), expand = FALSE) +
   scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"))
 plot_x
 
 plot_y <- axis_canvas(total_map, axis = "y") +
@@ -150,15 +148,15 @@ plot_y <- axis_canvas(total_map, axis = "y") +
  #  geom_hline(yintercept = 0) + #  check to make sure it lines up
   coord_sf(ylim = c(-58, 73), expand = FALSE) + 
   scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
- # coord_flip() 
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"))
+
 plot_y
 
 # Combine all plots into one
 plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
 plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
 ggdraw(plot_final)
-ggsave("analysis/figs/map_fig_18km.jpg")
+ggsave("analysis/figs/map_fig_31km.jpg")
 
 ```
 
@@ -182,9 +180,8 @@ chl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
   annotation_map_tile(type = "osm", zoomin = 0) + 
   geom_spatial_point(size = 0.5, alpha = 0.7) + 
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("Known location", "Modeled location, known number of farms", "Modeled location, estimated number of farms")) +
+                    breaks = c("Known locations", "Modeled locations, known number of farms", "Modeled locations, estimated number of farms")) +
   coord_sf(crs = 4326, xlim = c(-75, -72.25), ylim = c(-46, -44), expand = FALSE) + # - really good
-  # coord_sf(crs = 4326, xlim = c(-75, -72.5), ylim = c(-46, -44), expand = FALSE) +
   theme(legend.position = "bottom", ## put legend on bottom
         legend.title=element_blank(), 
         axis.title.x = element_blank(), 
@@ -203,10 +200,8 @@ chn_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
   annotation_map_tile(type = "osm", zoomin = 0) + 
   geom_spatial_point(size = 0.5, alpha = 0.7) + 
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("Known location", "Modeled location, known number of farms", "Modeled location, estimated number of farms")) +
-#   coord_sf(crs = 4326, xlim = c(120.5, 123), ylim = c(28.5, 30.5), expand = FALSE) + # near Ningbo, in Zhejiang province, near shanghai
+                    breaks = c("Known locations", "Modeled locations, known number of farms", "Modeled locations, estimated number of farms")) +
   coord_sf(crs = 4326, xlim = c(121.5, 122.75), ylim = c(29.5, 30.5), expand = FALSE) + # part of Zhejiang province
-  #coord_sf(crs = 4326) + 
   theme(legend.position = "bottom", 
         legend.title=element_blank(), 
         axis.title.x = element_blank(), 
@@ -216,8 +211,6 @@ chn_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
         text=element_text(family="Times New Roman"),
 panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("D")
-  #border(linetype = "longdash")
-        #panel.border = element_rect(colour = "black", fill=NA, size=5))
 chn_zoom 
 
 
@@ -226,9 +219,8 @@ ecu_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
   annotation_map_tile(type = "osm", zoomin = 0) + 
   geom_spatial_point(size = 0.5, alpha = 0.7) + 
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("Known location", "Modeled location, known number of farms", "Modeled location, estimated number of farms")) +
+                    breaks = c("Known locations", "Modeled locations, known number of farms", "Modeled locations, estimated number of farms")) +
   coord_sf(crs = 4326, xlim = c(-80.5, -79.5), ylim = c(-3.2, -2.2), expand = FALSE) + # part of Guayas province 
-  #coord_sf(crs = 4326) + 
   theme(legend.position = "bottom", 
         legend.title=element_blank(), 
         axis.title.x = element_blank(), 
@@ -237,31 +229,26 @@ ecu_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
         text=element_text(family="Times New Roman"),
 panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("B")
-  #border(linetype = "longdash")
-        #panel.border = element_rect(colour = "black", fill=NA, size=5))
 ecu_zoom
 
 
-## Norway
-nor_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
-  annotation_map_tile(type = "osm", zoomin = 0) + 
-  geom_spatial_point(size = 0.5, alpha = 0.7) + 
-  scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("Known location", "Modeled location, known number of farms", "Modeled location, estimated number of farms")) +
-  # coord_sf(crs = 4326, xlim = c(5, 15), ylim = c(55, 60), expand = FALSE) + ## kattegat and skattergat... not too many farms
-    coord_sf(crs = 4326, xlim = c(4, 10), ylim = c(58.5, 61.5), expand = FALSE) +
-  theme(legend.position = "bottom", 
-        legend.title=element_blank(), 
-        axis.title.x = element_blank(), 
-        axis.title.y = element_blank(),
-        legend.key = element_rect(fill = NA),
-        axis.text.x = element_text(angle = 60, hjust = 1),
-        text=element_text(family="Times New Roman"),
-panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
-  ggtitle("C")
-  #border(linetype = "longdash")
-        #panel.border = element_rect(colour = "black", fill=NA, size=5))
-nor_zoom
+# ## Norway
+# nor_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
+#   annotation_map_tile(type = "osm", zoomin = 0) + 
+#   geom_spatial_point(size = 0.5, alpha = 0.7) + 
+#   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
+#                     breaks = c("Known location", "Modeled location, known number of farms", "Modeled location, estimated number of farms")) +
+#     coord_sf(crs = 4326, xlim = c(4, 10), ylim = c(58.5, 61.5), expand = FALSE) +
+#   theme(legend.position = "bottom", 
+#         legend.title=element_blank(), 
+#         axis.title.x = element_blank(), 
+#         axis.title.y = element_blank(),
+#         legend.key = element_rect(fill = NA),
+#         axis.text.x = element_text(angle = 60, hjust = 1),
+#         text=element_text(family="Times New Roman"),
+# panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
+#   ggtitle("C")
+# nor_zoom
 
 
 ## USA NE 
@@ -269,8 +256,7 @@ usa_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
   annotation_map_tile(type = "osm", zoomin = 0) + 
   geom_spatial_point(size = 0.5, alpha = 0.7) + 
   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("Known location", "Modeled location, known number of farms", "Modeled location, estimated number of farms")) +
-  # coord_sf(crs = 4326, xlim = c(5, 15), ylim = c(55, 60), expand = FALSE) + ## kattegat and skattergat... not too many farms
+                    breaks = c("Known locations", "Modeled locations, known number of farms", "Modeled locations, estimated number of farms")) +
     coord_sf(crs = 4326, xlim = c(-123.5, -122), ylim = c(47, 48), expand = FALSE) +
   theme(legend.position = "bottom", 
         legend.title=element_blank(), 
@@ -281,26 +267,8 @@ usa_zoom <- ggplot(all_farms, aes(X,Y, col = data_type_plot)) +
         text=element_text(family="Times New Roman"),
 panel.border = element_rect(colour = "grey69", fill=NA, size=3, linetype = "longdash")) +
   ggtitle("C")
-  #border(linetype = "longdash")
-        #panel.border = element_rect(colour = "black", fill=NA, size=5))
+
 usa_zoom
-
-
-
-
-## Plot with norway instead of USA
-# plot1 <- (chl_zoom + plot_layout(guides = "collect") & theme(legend.position = "none") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (ecu_zoom + theme(legend.position = "none"))
-# 
-# plot1
-# ggsave("analysis/figs/chl_ecu_zoom.jpg")
-# 
-# 
-# plot2 <- (nor_zoom +  plot_layout(guides = "collect") & theme(legend.position = "bottom") & guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9, fill = NA)))) + (chn_zoom + theme(legend.position = "none")) ## save this output in the plot window...
-# 
-# plot2
-# ggsave("analysis/figs/nor_chn_zoom.jpg")
-
-## we saved both of those images separately. Then we export them to google drawings, and combine together. Once combined, reupload to figs folder as "zoom_fig_final_nor.jpg"
 
 
 ## Plot with USA instead of norway
@@ -321,350 +289,3 @@ ggsave("analysis/figs/usa_chn_zoom_31km.jpg")
 ## we saved both of those images separately. Then we export them to google drawings, and combine together. Once combined, reupload to figs folder 
 
 ```
-
-
-
-ARCHIVE: Radial bar chart of estimation type per country
-
-```{r}
-library(tidyverse)
-library(viridis)
-library(hrbrthemes)
-library(RColorBrewer)
-library(colorspace)
-
-rank_rgn <- all_farms %>%
-  mutate(country = ifelse(country == "United Kingdom (Scotland) ", "United Kingdom", country)) %>%
-  group_by(country) %>%
-  summarise(num_farms_total = n()) %>%
-  ungroup() %>%
-  arrange(num_farms_total)
-
-
-## Stuff for both plots
-# i think that this would look better with each stressor having its own color that is paired with ocean/land
-# 
-# pick 4 distinct colors and then create a pair with one being more brown or green and the other being more blue
-
-source_name <- data.frame(source = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
-
-type_1 <- "forestgreen"
-type_1 <- lighten(type_1, amount = -0.05)
-type_2 <- "orange1"
-type_2 <- lighten(type_2, amount = -0.05)
-type_3 <- "red3"
-type_3 <- lighten(type_3, amount = -0.05)
-
-gc_palette <- c(type_1, type_2, type_3)
-scales::show_col(gc_palette, n = 3)
-
-pal_df <- as_tibble(gc_palette) %>% 
-  rename(fill_value = value) %>% 
-  mutate(source = case_when(fill_value == type_1 ~ "known location",
-                            fill_value == type_2 ~ "modeled location, known number of farms",
-                            fill_value == type_3 ~ "modeled location, estimated number of farms")) 
-
-## circle plot 
-
-
-cutoff_value <-  1000 
-
-by_country <- all_farms %>%
-  mutate(country = ifelse(country == "United Kingdom (Scotland) ", "United Kingdom", country)) %>%
-  group_by(country, data_type) %>%
-  summarise(num_farms = n()) %>%
-  ungroup() %>%
-  group_by(country) %>%
-  mutate(num_farms_total = sum(num_farms)) %>%
-  ungroup() %>%
-  arrange(num_farms_total) %>%
-  filter(num_farms_total < cutoff_value) 
-
-
-
-
-##grab the highest country to highlight red and id where the circle ends and then side bar chart begins
-highest_country <- by_country[dim(by_country)[1], "country"]
-farms_highest_country <- filter(by_country, country %in% highest_country$country) #used below
-
-
-# adjust the rank_rgn-adjust dataframe to match above
-rank_rgn_adj <- rank_rgn %>%
-  filter(country %in% by_country$country) 
-
-
-# add empty space to create space in the circleplot for axes
- empty_bar <- 5
- to_add <- data.frame(matrix(NA, empty_bar, ncol(rank_rgn_adj)) )
- colnames(to_add) = colnames(rank_rgn_adj)
- to_add$country <- as.character(1:empty_bar)
- rank_rgn_adj  <- rbind(to_add, rank_rgn_adj)
- 
- # some code to orient the country labels
-sequence_length = length(unique(rank_rgn_adj$country))
-first_sequence = c(1:(sequence_length%/%2)) 
-second_sequence = c((sequence_length%/%2+1):sequence_length) 
-first_angles = c(90 - 180/length(first_sequence) * first_sequence)
-second_angles = c(-90 - 180/length(second_sequence) * second_sequence)
-rank_rgn_adj$angle <- c(first_angles, second_angles)
-rank_rgn_adj$hjust <- c(rep(0, length(first_sequence)), 
-                    rep(1, length(second_sequence)))
-
-# color for region labels
-rank_rgn_adj <- rank_rgn_adj %>%
-  mutate(country = factor(country, unique(country))) %>%
-  mutate(color = "black") %>%
-  mutate(color = ifelse(is.na(num_farms_total), "white", color)) %>%
-  mutate(color = ifelse(country %in% highest_country$country, "red", color))
-
-## make the plot
-
-circle_theme <- theme(axis.line=element_blank(),
-                      axis.text.y=element_blank(),
-                      axis.ticks=element_blank(),
-                      axis.title.x=element_blank(),
-                      axis.title.y=element_blank(),
-                      legend.position="none",
-                      panel.background=element_blank(),
-                      panel.border=element_blank(),
-                      panel.grid.major=element_blank(),
-                      panel.grid.minor=element_blank(),
-                      plot.background=element_blank(),
-                      axis.text.x = element_blank())
-
-
-color_order <- c(type_1, type_2, type_3)
-
-pressures_adj_circle_plot <- by_country %>% 
-  mutate(prop_of_global_stacked = abs(num_farms)) %>% 
-  left_join(pal_df, by = c("data_type" = "source")) %>% 
-  mutate(fill_value = factor(fill_value, levels = color_order))
-
- 
-
- ggplot(data=pressures_adj_circle_plot, aes(x=country, y=prop_of_global_stacked, fill = fill_value)) + 
-  
-  geom_bar(stat="identity") +
-  
-  # ## this adjust the inner circle size (ymin) and outer circle size (ymax), which can be expanded to include names
-   geom_errorbar(aes(
-       x     = 1,
-        ymin = -0.01,   # ymin  = -0.03, this is for when ocean bars stack inwards -0.01 for when not
-       ymax  = 0.035),
-       alpha = 0) +
-      # Country name text placement
-     geom_text(
-       data = rank_rgn_adj,
-       aes(x     = country,
-           y     = max(by_country$num_farms_total, na.rm=TRUE),
-           label = country,
-           angle = angle,
-           hjust = hjust),
-       inherit.aes = FALSE,
-       fontface = "bold",
-       alpha = 0.9,
-       size = 4,
-       color = rank_rgn_adj$color) +
-    # 
-   # georegion names
-    # geom_text(
-    #   data=rgn_shift,
-    #   aes(y = 0.02, x = name_x, label = georegion),
-    #   # aes(x=name_x,
-    #   #     y=name_y,
-    #   #     label=georegion),
-    #   inherit.aes=FALSE, size=7) +
-  #  
-  # # # Scale bar circles
-  # ## This adds the 0 line
-      geom_segment(
-        x = 0, 
-         y = 0, 
-         xend = dim(rank_rgn_adj)[1]+1, 
-         yend = 0, 
-         fill = NULL,
-        alpha = 1, color = "white", size = 0.1) + #color = "black for internal
-  #    
-  #  # Scale bar annotation, this adds the y-axis numbers
-      annotate("text",
-        x     = c(3, 3, 3),
-        y     = c(0, 0.0175, 0.035),
-        label = c(0, 0.0175, 0.035),
-        color = "darkgray", angle = -4, size = 4) +
-  #     
-  scale_color_identity() +
-   scale_fill_identity() +
-   # scale_fill_manual(values= rev(myPalette), c("Land: Disturbance", "Land: GHG", "Land: Water", "Land: Nutrient",
-   #                                    "Ocean: Disturbance", "Ocean: GHG", "Ocean: Water", "Ocean: Nutrient")) +
-  coord_polar() +
- circle_theme
-
-
-
-```
-
-
-
-
-
-ARCHIVE: Other ways of trying to visualize
-```{r}
-
-## philippines
-# phl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
-#   annotation_map_tile(type = "osm", zoomin = 0) + 
-#   geom_spatial_point(size = 1, alpha = 0.7) + 
-#   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-#                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
-#   coord_sf(crs = 4326, xlim = c(120.25, 122.5), ylim = c(17, 19), expand = FALSE) +
-#   #coord_sf(crs = 4326) + 
-#   theme(legend.position = "bottom", 
-#         legend.title=element_blank(), 
-#         axis.title.x = element_blank(), 
-#         axis.title.y = element_blank(),
-# panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
-#   ggtitle("B")
-#   #border(linetype = "longdash")
-#         #panel.border = element_rect(colour = "black", fill=NA, size=5))
-# phl_zoom
-
-## California - bay area 
-# cal_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
-#   annotation_map_tile(type = "osm", zoomin = 0) + 
-#   geom_spatial_point(size = 1, alpha = 0.7) + 
-#   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-#                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
-#   coord_sf(crs = 4326, xlim = c(-123, -121), ylim = c(37, 39), expand = FALSE) +
-#   #coord_sf(crs = 4326) + 
-#   theme(legend.position = "bottom", 
-#         legend.title=element_blank(), 
-#         axis.title.x = element_blank(), 
-#         axis.title.y = element_blank(),
-# panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
-#   ggtitle("B")
-#   #border(linetype = "longdash")
-#         #panel.border = element_rect(colour = "black", fill=NA, size=5))
-# cal_zoom
-
-## New Zealand
-# nzl_zoom <- ggplot(all_farms, aes(X,Y, col = data_type)) +
-#   annotation_map_tile(type = "osm", zoomin = 0) + 
-#   geom_spatial_point(size = 0.5, alpha = 0.7) + 
-#   scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-#                     breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms")) +
-#   # coord_sf(crs = 4326, ylim = c(-48, -34), xlim = c(165, 180), expand = FALSE) + ## all of new zealand
-#    coord_sf(crs = 4326, ylim = c(-41, -34), xlim = c(172, 180), expand = FALSE) + ## north island
-#   theme(legend.position = "bottom", 
-#         legend.title=element_blank(), 
-#         axis.title.x = element_blank(), 
-#         axis.title.y = element_blank(),
-#         axis.text.x = element_text(angle = 60, hjust = 1),
-# panel.border = element_rect(colour = "black", fill=NA, size=3, linetype = "longdash")) +
-#   ggtitle("D")
-#   #border(linetype = "longdash")
-#         #panel.border = element_rect(colour = "black", fill=NA, size=5))
-# nzl_zoom
-
-## all together
-total_map <- ggplot(data = world) +
-  geom_sf(fill = "white", lwd = 0.1) + 
-  geom_point(data = all_farms, aes(x = X, y = Y, col = data_type), size = 0.2) +
-#  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE, label_axes = list(top = "E", left = "N")) +
-  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +## or could make the latitude distances even i.e. (-72, 72)
-  scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
-  scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
-  theme_bw() + 
-  theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank(), 
-        legend.position = "none") 
-total_map
-
-
-## make longitude histogram
-
-lon_hist <- ggplot(data = all_farms) + 
-  geom_histogram(aes(X, fill = data_type), bins = 360) + 
-  # scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180)) +
-  # scale_y_reverse() +
-   theme_void() + 
-    theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank(), 
-        legend.position = "none") # +
-  # geom_vline(xintercept = 135) 
-lon_hist
-
-## make latitude histogram
-lat_hist <- ggplot(data = all_farms) + 
-  geom_histogram(aes(Y, fill = data_type), bins = 180) + 
-  # scale_x_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
-  # xlim(-58, 73) + 
-  coord_flip() +
-   theme_void() + 
-    theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank(), 
-        legend.position = "none") # + 
-  # geom_vline(xintercept = 0) 
-
-lat_hist
-
-require(gridExtra)
-library(cowplot)
-library(egg)
-
-
-## using ggExtra
-library(ggExtra)
-ggExtra::ggMarginal(total_map, type = "histogram", groupFill = TRUE, size = 2)
-
-
-## using patchwork
-lon_hist + plot_spacer() + total_map + lat_hist + 
-  plot_layout(ncol = 2, nrow = 2, widths = c(4, 1), heights = c(1, 4))
-
-## using cowplot
-plot_grid(
-  lon_hist
-  , NULL
-  , total_map
-  , lat_hist
-  , ncol = 2
-  , nrow = 2
-  , rel_heights = c(0.2, 1)
-  , rel_widths = c(1, 0.2)
-)
-
-```
-
-
-```{r}
-
-test_data <- all_farms %>%
-  filter(data_type != "known location")
-
-## create first plot
-total_map <- ggplot(data = world) +
-  geom_sf(fill = "white", lwd = 0.1) + 
-  geom_point(data = test_data, aes(x = X, y = Y, col = data_type), size = 0.1, alpha = 0.7) +
-#  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE, label_axes = list(top = "E", left = "N")) +
-  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +## or could make the latitude distances even i.e. (-72, 72)
-  scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
-  scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
-  theme_bw() + 
-  theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-        legend.position = "bottom", 
-        legend.title=element_blank()) +
-  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9), nrow=2 )) +
-  scale_color_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"), labels = c("known location \n n = 9,750", "modeled location, known number of farms \n n = 10,519", "modeled locations, estimated number of farms \n n = 75,073"))
-    #  geom_vline(xintercept = 135) + # check to make sure it lines up
-  #geom_hline(yintercept = 0) # check to make sure it lines up
-
-total_map
-
-ggsave("analysis/figs/map_fig_test.jpg")
-
-```
-
-
-

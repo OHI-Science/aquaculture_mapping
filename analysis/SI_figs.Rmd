@@ -65,7 +65,12 @@ all_farms <- all_farms_sf %>%
 
 test <- all_farms_sf %>%
   filter(country == "United States of America")
-mapview(test) 
+mapview(test, zcol = "data_type_2") 
+
+
+test <- all_farms_sf %>%
+  filter(iso3c == "MEX")
+mapview(test, zcol = "data_type_2") 
 
 test <- all_farms_sf %>%
   filter(iso3c == "HRV")
@@ -110,7 +115,7 @@ class(world)
 ## This one works!
 
 
-for(i in c(1, 2,3, 6)){
+for(i in 1:6){
 
  # i = 4
   
@@ -119,27 +124,49 @@ for(i in c(1, 2,3, 6)){
   all_farms_i <- all_farms %>%
     filter(species_group == spp_group)
   
-  count_green_df <- all_farms_i %>%
+  
+    count_type_df <- all_farms_i %>%
+    group_by(species_group) %>%
+    summarise(n=n()) 
+  
+  count_type <- count_type_df$n
+  
+    count_green_df <- all_farms_i %>%
     group_by(data_type) %>%
     summarise(n = n()) %>%
-    filter(data_type == "known location")
+    filter(data_type == "known locations")
   
   count_green <- count_green_df$n
+  
+    
+if(is.empty(count_green) == TRUE){
+    count_green = 0
+  }
     
   count_yellow_df <-  all_farms_i %>%
     group_by(data_type) %>%
     summarise(n = n()) %>%
-    filter(data_type == "modeled location, known number of farms")
+    filter(data_type == "modeled locations, known number of farms")
   
   count_yellow <- count_yellow_df$n
+  
+    
+if(is.empty(count_yellow) == TRUE){
+    count_yellow = 0
+  }
     
     
   count_red_df <- all_farms_i %>%
     group_by(data_type) %>%
     summarise(n = n()) %>%
-    filter(data_type == "modeled location, estimated number of farms")
+    filter(data_type == "modeled locations, estimated number of farms") 
   
   count_red  <- count_red_df$n
+  
+if(is.empty(count_red) == TRUE){
+    count_red = 0
+  }
+    
     
     
   
@@ -147,8 +174,7 @@ for(i in c(1, 2,3, 6)){
 total_map <- ggplot(data = world) +
   geom_sf(fill = "white", lwd = 0.1) + 
   geom_point(data = all_farms_i, aes(x = X, y = Y, col = data_type), size = 0.1, alpha = 0.7) +
-#  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE, label_axes = list(top = "E", left = "N")) +
-  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +## or could make the latitude distances even i.e. (-72, 72)
+  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +
   scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
   scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
   theme_bw() + 
@@ -156,15 +182,130 @@ total_map <- ggplot(data = world) +
           axis.title.y = element_blank(),
         legend.position = "bottom", 
         legend.title=element_blank(),
-        text=element_text(family="Times New Roman")) +
-  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9), nrow=2 )) +
+        text=element_text(family="Times New Roman"), 
+        legend.justification='left',
+        legend.direction='horizontal') +
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9), nrow = ifelse(spp_group %in% c("Bluefin tuna", "Non-shrimp crustaceans"), 1, 2))) +
   scale_color_manual(values = c("forestgreen", "orange1", "red3"),
-                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"), labels = c(sprintf("Known location \n n = %s", count_green), sprintf("Modeled location, known number of farms \n n = %s", count_yellow), sprintf("Modeled locations, estimated number of farms \n n = %s", count_red))) +
-  # scale_color_manual(values = c("forestgreen", "orange1"),
-  #                   breaks = c("known location", "modeled location, known number of farms"), labels = c(sprintf("Known location \n n = %s", count_green), sprintf("Modeled location, known number of farms \n n = %s", count_yellow))) + 
-    # scale_color_manual(values = c("red3"),
-    #                 breaks = c("modeled location, estimated number of farms"), labels = c(sprintf("Modeled locations, estimated number of farms \n n = %s", count_red))) +
-  labs(title = sprintf("Supplmentary Figure %s: %s farms", i, spp_group))
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), labels = c(sprintf("Known locations \n N = %s", count_green), sprintf("Modeled locations, known number of farms \n N = %s", count_yellow), sprintf("Modeled locations, estimated number of farms \n N = %s", count_red)), drop = FALSE) +
+  labs(caption = sprintf("%s: N = %s", spp_group, count_type))
+  
+
+
+# total_map
+
+
+# Create marginal plots
+# Use geom_density/histogram for whatever you plotted on x/y axis 
+plot_x <- axis_canvas(total_map, axis = "x") +
+  geom_histogram(data = all_farms_i, aes(X, fill = data_type), bins = 360)  +
+  coord_sf(xlim = c(-180, 180), expand = FALSE) +
+  scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
+
+plot_y <- axis_canvas(total_map, axis = "y") +
+  geom_histogram(data = all_farms_i, aes(y = Y, fill = data_type), bins = 180, orientation = "y") +
+  coord_sf(ylim = c(-58, 73), expand = FALSE) + 
+  scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
+ # coord_flip() 
+
+
+# Combine all plots into one
+plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
+plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
+ggdraw(plot_final)
+
+ggsave(sprintf("analysis/si_figs/supp_map_fig_%s.jpg", spp_group))
+}
+
+```
+
+
+## Make the global map by data type 2 (A,B,C,D,E,F) (Supplementary Figures 7-12)
+
+
+```{r}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+class(world)
+
+# https://stackoverflow.com/questions/8545035/scatterplot-with-marginal-histograms-in-ggplot2
+
+## This one works!
+
+
+for(i in c(1:6)){
+
+ # i = 1
+  
+  data_type_2_id <- unique(all_farms$data_type_2)[i]
+  
+  all_farms_i <- all_farms %>%
+    filter(data_type_2 == data_type_2_id)
+  
+  count_type_df <- all_farms_i %>%
+    group_by(data_type_2) %>%
+    summarise(n=n()) 
+  
+  count_type <- count_type_df$n
+  
+    count_green_df <- all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "known locations")
+  
+  count_green <- count_green_df$n
+  
+    
+if(is.empty(count_green) == TRUE){
+    count_green = 0
+  }
+    
+  count_yellow_df <-  all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "modeled locations, known number of farms")
+  
+  count_yellow <- count_yellow_df$n
+  
+    
+if(is.empty(count_yellow) == TRUE){
+    count_yellow = 0
+  }
+    
+    
+  count_red_df <- all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "modeled locations, estimated number of farms") 
+  
+  count_red  <- count_red_df$n
+  
+if(is.empty(count_red) == TRUE){
+    count_red = 0
+  }
+    
+    
+  
+## create first plot
+total_map <- ggplot(data = world) +
+  geom_sf(fill = "white", lwd = 0.1) + 
+  geom_point(data = all_farms_i, aes(x = X, y = Y, col = data_type), size = 0.1, alpha = 0.7) +
+  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +
+  scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
+  scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+        legend.position = "bottom", 
+        legend.title=element_blank(),
+        text=element_text(family="Times New Roman"), 
+        legend.justification='left',
+        legend.direction='horizontal') +
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9) )) +
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"),
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), labels = c(sprintf("Known locations \n N = %s", count_green), sprintf("Modeled locations, known number of farms \n N = %s", count_yellow), sprintf("Modeled locations, estimated number of farms \n N = %s", count_red)), drop = FALSE) +
+  labs(caption = sprintf("Data type %s: N = %s", data_type_2_id, count_type))
   
 
 
@@ -178,7 +319,7 @@ plot_x <- axis_canvas(total_map, axis = "x") +
   #  geom_vline(xintercept = 135) + # check to make sure it lines up
   coord_sf(xlim = c(-180, 180), expand = FALSE) +
   scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
 plot_x
 
 plot_y <- axis_canvas(total_map, axis = "y") +
@@ -186,7 +327,7 @@ plot_y <- axis_canvas(total_map, axis = "y") +
  #  geom_hline(yintercept = 0) + #  check to make sure it lines up
   coord_sf(ylim = c(-58, 73), expand = FALSE) + 
   scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
-                    breaks = c("known location", "modeled location, known number of farms", "modeled location, estimated number of farms"))
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
  # coord_flip() 
 plot_y
 
@@ -195,11 +336,219 @@ plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
 plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
 ggdraw(plot_final)
 
-ggsave(sprintf("analysis/figs/supp_map_fig_%s.jpg", spp_group))
+ggsave(sprintf("analysis/si_figs/supp_map_fig_%s.jpg", data_type_2_id))
 
 }
 
 ```
 
 
+## Make maps for diagram 
 
+First map: 
+ - All data type A, and known locations from data type C and D
+ 
+ Second map: 
+ - Unknown locations from B, C, D, E, & F
+    - All F
+    - All E
+    - All B
+    - Unknown C
+    - Unknown D
+    
+
+**First diagram map**
+```{r}
+  
+  all_farms_i <- all_farms %>%
+    filter(data_type_2 %in% c("A", "C", "D")) %>%
+  filter(data_type == "known locations")
+  
+  
+    count_green_df <- all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "known locations")
+  
+  count_green <- count_green_df$n
+  
+    
+if(is.empty(count_green) == TRUE){
+    count_green = 0
+  }
+    
+  count_yellow_df <-  all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "modeled locations, known number of farms")
+  
+  count_yellow <- count_yellow_df$n
+  
+    
+if(is.empty(count_yellow) == TRUE){
+    count_yellow = 0
+  }
+    
+    
+  count_red_df <- all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "modeled locations, estimated number of farms") 
+  
+  count_red  <- count_red_df$n
+  
+if(is.empty(count_red) == TRUE){
+    count_red = 0
+  }
+    
+    
+  
+## create first plot
+total_map <- ggplot(data = world) +
+  geom_sf(fill = "white", lwd = 0.1) + 
+  geom_point(data = all_farms_i, aes(x = X, y = Y, col = data_type), size = 0.1, alpha = 0.7) +
+  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +
+  scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
+  scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+        legend.position = "bottom", 
+        legend.title=element_blank(),
+        text=element_text(family="Times New Roman"),
+        legend.justification='left',
+        legend.direction='horizontal') +
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9))) +
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"),
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), labels = c(sprintf("Known locations \n N = %s", count_green), sprintf("Modeled locations, known number of farms \n N = %s", count_yellow), sprintf("Modeled locations, estimated number of farms \n N = %s", count_red)), drop = FALSE)
+  
+
+
+total_map
+
+
+# Create marginal plots
+# Use geom_density/histogram for whatever you plotted on x/y axis 
+plot_x <- axis_canvas(total_map, axis = "x") +
+  geom_histogram(data = all_farms_i, aes(X, fill = data_type), bins = 360)  +
+  #  geom_vline(xintercept = 135) + # check to make sure it lines up
+  coord_sf(xlim = c(-180, 180), expand = FALSE) +
+  scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
+
+
+plot_y <- axis_canvas(total_map, axis = "y") +
+  geom_histogram(data = all_farms_i, aes(y = Y, fill = data_type), bins = 180, orientation = "y") +
+ #  geom_hline(yintercept = 0) + #  check to make sure it lines up
+  coord_sf(ylim = c(-58, 73), expand = FALSE) + 
+  scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
+ # coord_flip() 
+
+
+# Combine all plots into one
+plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
+plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
+ggdraw(plot_final)
+
+ggsave("analysis/si_figs/workflow_fig_1.jpg")
+
+```
+
+**Second diagram map**
+```{r}
+  
+  all_farms_i <- all_farms %>%
+    filter(data_type_2 %in% c("B", "C", "D", "E", "F")) %>%
+  filter(data_type != "known locations")
+  
+  
+    count_green_df <- all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "known locations")
+  
+  count_green <- count_green_df$n
+  
+    
+if(is.empty(count_green) == TRUE){
+    count_green = 0
+  }
+    
+  count_yellow_df <-  all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "modeled locations, known number of farms")
+  
+  count_yellow <- count_yellow_df$n
+  
+    
+if(is.empty(count_yellow) == TRUE){
+    count_yellow = 0
+  }
+    
+    
+  count_red_df <- all_farms_i %>%
+    group_by(data_type) %>%
+    summarise(n = n()) %>%
+    filter(data_type == "modeled locations, estimated number of farms") 
+  
+  count_red  <- count_red_df$n
+  
+if(is.empty(count_red) == TRUE){
+    count_red = 0
+  }
+    
+    
+  
+## create first plot
+total_map <- ggplot(data = world) +
+  geom_sf(fill = "white", lwd = 0.1) + 
+  geom_point(data = all_farms_i, aes(x = X, y = Y, col = data_type), size = 0.1, alpha = 0.7) +
+  coord_sf(xlim = c(-180, 180), ylim = c(-58, 73), expand = FALSE) +
+  scale_x_continuous(breaks = c(-180, -135, -90, -45, 0, 45, 90, 135, 180), position = "top") +
+  scale_y_continuous(breaks = c(-90, -45, 0, 45, 90)) + 
+  theme_bw() + 
+  theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+        legend.position = "bottom", 
+        legend.title=element_blank(),
+        text=element_text(family="Times New Roman"),
+        legend.justification='left',
+        legend.direction='horizontal') +
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.9))) +
+  scale_color_manual(values = c("forestgreen", "orange1", "red3"),
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), labels = c(sprintf("Known locations \n N = %s", count_green), sprintf("Modeled locations, known number of farms \n N = %s", count_yellow), sprintf("Modeled locations, estimated number of farms \n N = %s", count_red)), drop = FALSE)
+  
+
+
+total_map
+
+
+# Create marginal plots
+# Use geom_density/histogram for whatever you plotted on x/y axis 
+plot_x <- axis_canvas(total_map, axis = "x") +
+  geom_histogram(data = all_farms_i, aes(X, fill = data_type), bins = 360)  +
+  #  geom_vline(xintercept = 135) + # check to make sure it lines up
+  coord_sf(xlim = c(-180, 180), expand = FALSE) +
+  scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
+
+
+plot_y <- axis_canvas(total_map, axis = "y") +
+  geom_histogram(data = all_farms_i, aes(y = Y, fill = data_type), bins = 180, orientation = "y") +
+ #  geom_hline(yintercept = 0) + #  check to make sure it lines up
+  coord_sf(ylim = c(-58, 73), expand = FALSE) + 
+  scale_fill_manual(values = c("forestgreen", "orange1", "red3"), 
+                    breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
+ # coord_flip() 
+
+
+# Combine all plots into one
+plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
+plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
+ggdraw(plot_final)
+
+ggsave("analysis/si_figs/workflow_fig_2.jpg")
+
+```

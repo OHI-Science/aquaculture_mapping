@@ -231,9 +231,8 @@ for (i in 1:length(unique(need_validation_allocation$iso3c))) {
 all_farms <- list.files("data/temp_data/temp_validation", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
-  dplyr::mutate(source = "modeled") %>% 
-  rbind(data %>% dplyr::mutate(source = "real")) %>% 
-  left_join(tonnage_per_farms)
+  dplyr::mutate(source = "modeled validation") %>% 
+  rbind(data %>% dplyr::mutate(source = "real")) 
 
 n_placed_known <- all_farms %>% 
   st_set_geometry(NULL) %>% 
