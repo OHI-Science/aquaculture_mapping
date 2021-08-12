@@ -44,7 +44,7 @@ species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv
 tuna_list <- species_list$species[species_list$aq_group=="tuna"]
 tuna_list
 
-## write out tuna taxa and production for Juliette
+## write out tuna taxa and production
 fao_tuna_taxa_prod <- fao %>%
   filter(species %in% tuna_list) %>%  
   filter(!is.na(value)) %>%
@@ -78,7 +78,7 @@ write.csv(fao_tuna, here("marine/tuna/tuna_farms/data/fao_mariculture_tuna.csv")
 ```
 
 ```{r}
-## write out bivalve taxa and production for Juliette
+## explore out bivalve taxa and production 
 fao_tuna_taxa_prod <- fao %>%
   filter(species %in% tuna_list) %>%  
   filter(!is.na(value)) %>%

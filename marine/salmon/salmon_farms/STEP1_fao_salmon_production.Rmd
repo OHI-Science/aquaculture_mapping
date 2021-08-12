@@ -29,7 +29,7 @@ source(here('workflow/common.R'))
 ```
 
 
-Subset the data to include only the species and countries we are interested in.  Then summarize by total tonnes of salmonids per country/year. (There are multiple salmon species)
+Subset the data to include only the species and countries we are interested in. Then summarize by total tonnes of salmonids per country/year. (There are multiple salmon species)
 
 ```{r}
 
@@ -53,7 +53,8 @@ fao_salmon <- fao %>%
   filter(value>=500) %>%  # countries with less do not appear to be stable producers at this point
   group_by(country, iso3c, year) %>%
   summarize(fao_tonnes_production = sum(value)) %>%
-  arrange(country, iso3c, year)
+  arrange(country, iso3c, year) %>%
+  filter(year == 2017)
 
  
 write.csv(fao_salmon, here("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv"), row.names=FALSE)
@@ -70,19 +71,29 @@ unique(explore$country) # - 16 countries
 ```
 
 ```{r}
-## write out bivalve taxa and production for Juliette
+## explore out salmon taxa and production
 fao_salmon_taxa_prod <- fao %>%
   filter(species %in% salmon_list) %>%  
   filter(!is.na(value)) %>%
   arrange(-value, country) %>%
-  group_by(country, year) %>%
+  group_by(country, species, year) %>%
   summarise(value = sum(value)) %>%
   filter(value>=500) %>% # countries with less do not appear to be stable producers at this point
-  filter(year == 2017)
+  filter(year == 2017) 
 
-sum(fao_salmon_taxa_prod$value) # 2754210 - adds 458 tonnes 
+sum(fao_salmon_taxa_prod$value) # 2753752 - adds 458 tonnes 
 
 unique(fao_salmon_taxa_prod$country) # 16 countries 
+
+
+test <- fao_salmon_taxa_prod %>%
+  filter(str_detect(species, "almon"))
+
+unique(test$country)
+
+sum(test$value)
+
+2753752 - 2569126
 ```
 
 

@@ -37,7 +37,11 @@ cell_rast_df <- raster_df(food_raster) %>%
 
 ## food 81km2 at equator 
 eez_81 <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/eez_validation_mask.tif"))
-plot(area(eez_81))
+plot(raster::area(eez_81))
+
+cellStats(raster::area(eez_81), "mean")
+
+test <- data.frame(raster::values(raster::area(eez_81)))
 
 
 ## 36km2 equal area
@@ -63,7 +67,7 @@ quarter_crs <- crs(eez_quart_cell)
 Read in validation dataset 
 
 ```{r}
-validation_all <- readRDS(file.path("data/all_validation_farms.rds"))  %>%
+validation_all <- readRDS(file.path("data/all_validation_farms_fix_shrimp.rds"))  %>%
   mutate(species_group = case_when(type == "salmon" ~ "Salmonidae fish",
                           type == "bivalve" ~ "Unfed or algae fed bivalve molluscs",
                           type == "shrimp" ~ "Shrimps and prawns", 
@@ -159,7 +163,7 @@ cellStats(rast_stack, "sum")
  
 Use our EEZ mask to create a confusion matrix for CEA 36km2 cell sizes 
 
- - AUC of ~0.61
+ - AUC of ~0.60
 ```{r}
 
 
@@ -182,7 +186,7 @@ eez_cells_df <- as.data.frame(rast_stack) %>%
   mutate(cell = row_number()) %>% 
   filter(cell %in% c(world_coast$cell)) 
 
-sum(eez_cells_df$predicted, na.rm = TRUE) # 8446
+sum(eez_cells_df$predicted, na.rm = TRUE) # 8442
 
 sum(eez_cells_df$real, na.rm = TRUE) # 8377
 
@@ -193,7 +197,7 @@ test <- rast_stack*eez_36_cea
 
 cellStats(test,"sum") 
 # layer.1 layer.2 
-#    8455    7917 
+#    8442    8377 
 
 ## we are losing some farms...
 
@@ -279,7 +283,7 @@ print(auc@y.values)
 
 Use our EEZ mask to create a confusion matrix for CEA 25km2 cell sizes 
 
- - AUC of ~0.59 - worse than 36km2... makes sense! 
+ - AUC of ~0.58 - worse than 36km2... makes sense! 
 ```{r}
 
 val_rast <- rasterize(val_farms_cea_25, eez_25_cea, field = "count_farms", fun = "sum")
@@ -326,7 +330,7 @@ eez_cells_df <- as.data.frame(rast_stack) %>%
   mutate(cell = row_number()) %>% 
   filter(cell %in% c(world_coast$cell)) 
 
-sum(eez_cells_df$predicted, na.rm = TRUE) # 8450
+sum(eez_cells_df$predicted, na.rm = TRUE) # 8445
 
 sum(eez_cells_df$real, na.rm = TRUE) # 8386
 
@@ -337,7 +341,7 @@ test <- rast_stack*eez_25_cea
 
 cellStats(test,"sum") 
 # layer.1 layer.2 
-#    8450    8386 
+#    8445    8386 
 
 
 #### make a confusion matrix 
@@ -420,7 +424,7 @@ print(auc@y.values)
 
 Use our EEZ mask to create a confusion matrix for 0.25 X 0.25 degree cell sizes (about 769.3152km2 at equator). Average cell size is 490.3108 km2
 
- - AUC of ~0.7241861 ; makes sense that is it better! 
+ - AUC of ~7042 ; makes sense that is it better! 
  
 ```{r}
 test <- raster::area(eez_quart_cell)
@@ -435,9 +439,6 @@ plot(val_rast)
 cellStats(val_rast, "sum")
 
 plot(val_rast, col = "black")
-#s <- raster::select(val_rast)
-#plot(s)
-
 
 
 real_rast <- rasterize(real_farms_quart, eez_quart_cell, field = "count_farms", fun = "sum")
@@ -477,7 +478,7 @@ sum(eez_cells_df$predicted, na.rm = TRUE) # 8124
 
 sum(eez_cells_df$real, na.rm = TRUE) # 8080
 
-## still missing some farms.. but nothing egregious. This is probably ok. The results wouldn't change much even if we had the extra farms. This is likely due to reprojection weirdness
+## still missing some farms.. but nothing egregious. This is probably ok. The results wouldn't change much even if we had the extra farms. 
 
 
 test <- rast_stack*eez_quart_cell
@@ -728,100 +729,6 @@ print(auc@y.values)
 
 
 
-
-
-
-
-
-Resampling test: 
-```{r}
-
-### Manual equal rebalancing
-z_ind <- which(eez_cells_df$pred_count == 1)
-zz_ind <- which(eez_cells_df$pred_count == 0)
-
-
-nsamp = 3455
-pick_z <- sample(z_ind, nsamp)
-pick_zz <- sample(zz_ind, nsamp)
-
-new_data <- eez_cells_df[c(pick_z, pick_zz), ]
-
-
-confusion_mat <- caret::confusionMatrix(data = as.factor(new_data$pred_count), reference = as.factor(new_data$real_count))
-
-confusion_mat
-
-library(ROCR)
-  
- 
-pred = new_data$pred_count
-
-pred = prediction(pred, new_data$real_count)
-
-perf = performance(pred, "acc")
-plot(perf)
-
-perf_cost <- performance(pred, "cost")
-plot(perf_cost)
-
-roc = performance(pred, "tpr", "fpr")
-
-plot(roc, colorize = T, lwd=2)
-abline(a=0, b=1)
-
-auc = performance(pred, measure = "auc")
-print(auc@y.values)
-# 0.7264348
-
-
-
-
-#### Over/undersampling 
-install.packages("ROSE")
-library(ROSE)
-
-test <- eez_cells_df %>%
-  filter(pred_count == 1)
-
-## not sure what the statistically correct way of picking the sampling number is... 
-data_balanced_under <- ovun.sample(pred_count ~ real_count, data = eez_cells_df, method = "under", N = 8455)
-table(data_balanced_under$data)
-
-#           real_count
-# pred_count    0    1
-#          0 4894  106
-#          1 2761  694
-
-## still pretty unbalanced, but it is a lot better than it was... 
-
-
-recall <- 694/(694+106) # 0.8675
-
-precision <- 694 / (694 + 2761) # 0.20
-
-accuracy <- (4894 + 2761)/(4894 + 2761 + 106 + 694) # 0.91
-
-f_measure <- (2*recall*precision)/(recall + precision) # 0.33
-
-sensitivity = (4894)/(4894 + 2761) # 0.64
-
-balanced_accuracy <- (recall + sensitivity)/2 # 0.75 - this is also the AUC - which is pretty good.
-
-g_measure <- sqrt(precision*recall) # 0.42
-
-false_pos_rate <- 2761/(2761+4894) # 0.36
-
-
-```
-
-
-
-
-
-
-
- 
 
 
 

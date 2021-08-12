@@ -37,7 +37,7 @@ fao <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   filter(environment %in% c("Marine", "Brackishwater"))
 
 
-## Read in fao data and get a species list for salmon 
+## Read in fao data and get a species list for shrimp
 species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
   distinct(species, aq_group)
 
@@ -45,7 +45,7 @@ species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv
 shrimp_list <- species_list$species[species_list$aq_group=="shrimps_prawns"]
 shrimp_list
 
-## write out shrimp taxa and production for Juliette
+## write out shrimp taxa and production
 fao_shrimp_taxa_prod <- fao %>%
   filter(species %in% shrimp_list) %>%  
   filter(!is.na(value)) %>%
@@ -55,6 +55,11 @@ fao_shrimp_taxa_prod <- fao %>%
   dplyr::filter(year == 2017) %>%
   summarize(fao_tonnes_production = sum(value)) %>%
   arrange(country, iso3c, species, year)
+
+taxa_group <- fao_shrimp_taxa_prod %>%
+  group_by(species) %>%
+  summarise(tonnes = sum(fao_tonnes_production)) %>%
+  mutate(percent = tonnes/sum(tonnes))
   
 write.csv(fao_shrimp_taxa_prod, here("marine/shrimp/shrimp_farms/data/fao_mariculture_shrimp_taxa_production.csv"), row.names=FALSE)
 
@@ -106,7 +111,7 @@ sum(explore$fao_tonnes_production)
 ```
 
 ```{r}
-## write out shrimp taxa and production for Juliette
+## explore out shrimp taxa and production 
 fao_shrimp_taxa_prod <- fao %>%
   filter(species %in% shrimp_list) %>%  
   filter(!is.na(value)) %>%

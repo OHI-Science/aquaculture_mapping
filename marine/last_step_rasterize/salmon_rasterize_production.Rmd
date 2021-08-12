@@ -33,7 +33,6 @@ source(here("_spatial/template_raster.R"))
 gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
 
 gadm_latlon <- raster::projectRaster(gadm, food_raster, method="ngb", over=TRUE)
-plot(gadm_latlon)
 
 gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
   mutate(reg_id = as.numeric(reg_id))
@@ -43,10 +42,17 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-all_farms <- readRDS("data/all_modeled_marine_farms.rds")
+# all_farms <- readRDS("data/all_modeled_marine_farms.rds")
+
+all_farms <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv") %>%
+      st_as_sf(., 
+           coords = c("X", "Y"),
+           crs = crs(food_raster), 
+           agr = "constant")  
+
 
 salmon_farms <- all_farms %>%
-  filter(type == "salmon")
+  filter(species_group == "Salmonidae fish")
 
 ```
 
@@ -70,7 +76,7 @@ table(farms_sf$check)
 # USA:CAN
 
 mapview(filter(farms_sf, check == "RUS:RUS"))
-mapview(farms_sf)
+mapview(farms_sf, cex = "tonnes_per_farm")
 # some annoying mismatches due to raster resolution. Fix these
 
 farms_sf_correct <- farms_sf %>%
@@ -128,7 +134,7 @@ farms_prod <- farms_sf_correct %>%
   group_by(NAME_0) %>%
   add_tally() %>%
   ungroup() %>%
-  mutate(tonnes_per_farm = fao_tonnes_production/n) %>%
+  # mutate(tonnes_per_farm = fao_tonnes_production/n) %>%
   dplyr::select(iso3c, tonnes_per_farm, geometry)
 
 ```
@@ -159,6 +165,8 @@ mapview(salmon_raster_check)
 
 salmon_raster <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum, background=0)
 plot(log(salmon_raster + 1))
+# s <- raster::select(salmon_raster)
+# plot(s)
 
 salmon_raster_df <- as.data.frame(salmon_raster, xy=TRUE) %>%
   dplyr::select(x,y, tonnes_production=layer)
@@ -168,6 +176,6 @@ sum(salmon_raster_df$tonnes_production) # 2753752
 sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 2753752
 sum(fao$fao_tonnes_production) #2753752
 
-write_csv(salmon_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/salmon/salmon_farm_updated.csv")
+write_csv(salmon_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/salmon/updated/salmon_farm_updated.csv")
 
 ```

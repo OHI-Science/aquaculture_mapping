@@ -35,10 +35,34 @@ path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_location
 
 ```{r}
 
-all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv")
+all_farms <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv")
 
 all_farms_sf <- all_farms %>%
   st_as_sf(coords =c("X", "Y")) 
+
+
+sum(all_farms$tonnes_per_farm) # 29638328
+
+
+data_type_A <- all_farms %>%
+  filter(data_type_2 == "A")
+
+sum(data_type_A$tonnes_per_farm) # 3568135
+
+data_type_no_A <- all_farms %>%
+  filter(data_type_2 != "A")
+sum(data_type_no_A$tonnes_per_farm) # 26070193
+
+
+26070193/29638328 # 0.8796108
+
+
+test <- all_farms %>%
+  filter(species_group == "General marine fish") 
+
+sum(test$tonnes_per_farm) # 3909255
+
+3909255/29638328 # 0.1318986
 
 ```
 

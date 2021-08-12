@@ -1,9 +1,12 @@
 ---
-title: "Exploring FAO aquaculture data"
+title: "Prepping FAO aquaculture data"
+author: "Gage Clawson (USCB, NCEAS, OHI)"
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
+
+This script preps and classifies the FAO aquaculture data to the appropriate production types and species. 
 
 ```{r}
 library(tidyverse)
@@ -15,6 +18,8 @@ source('https://raw.githubusercontent.com/OHI-Science/ohiprep_v2019/gh-pages/wor
 source(here('workflow/common.R'))
 ```
 
+
+Read in the raw FAO data
 ```{r}
 
 fao <- read_csv("/home/shares/food-systems/Food_footprint/_raw_data/FAO_aquaculture/v_2020/FAO_GlobalAquacultureProduction_Quantity_1950_2018.csv")
@@ -88,7 +93,7 @@ test <- fao %>%
 ```
 
 
-## explore marine
+## Prep marine and brackish-water
 ```{r}
 
 marine <- fao %>%
@@ -127,15 +132,19 @@ fao_marine_clean <- fao_marine %>%
 
 ```
 
-Classify species into aquaculture groups 
+Classify species into mariculture groups consistent with MacLeod et al. 2020 (https://www.nature.com/articles/s41598-020-68231-8)
+
+Need to classify into these groups, for easier mapping and pressure calculations:
+ - Bivalves (Unfed or algae fed bivalve molluscs)
+ - Tuna (Bluefin tuna)
+ - Salmonids (Salmonidae fish)
+ - Shrimps and Prawns
+ - crustaceans (Non-shrimp crustaceans)
+ - marine fish general (General marine fish)
+
+
 ```{r}
-# Need to classify into these groups, for easier mapping and pressure calculations: 
-#  - Bivalves
-#  - Tuna
-#  - Salmonids
-#  - Shrimps and Prawns
-#  - crustaceans
-#  - marine fish general (all the other finfish species)
+
 
 ## Make a dataframe of each unique species to hand check what category they should fall into
 check <- fao_marine_clean %>%
@@ -203,14 +212,17 @@ fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
    dplyr::filter(value >= 500) %>%
   group_by(aq_group, country, species, year) %>%
   summarise(tonnes = sum(value)) %>%
-  ungroup() # %>%
-  # dplyr::filter(tonnes >= 500) %>%
- #  group_by(country, year) %>%
- #  summarise(total_tonnes = sum(tonnes))# %>%
- # # arrange(aq_group)
+  ungroup() 
 
 write.csv(fao_1, "marine/STEP1_species_groups/int/tonnes_per_country_group.csv", row.names = FALSE)
 
+
+```
+
+
+Explore the data
+
+```{r}
 ## Take a look at the data 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "bivalves")
@@ -223,19 +235,19 @@ sum(test$total_tonnes) # 5094133
 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "crustaceans")
-sum(test$total_tonnes) # 5094133
+sum(test$total_tonnes) # 
 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "marine_fish_general")
-sum(test$total_tonnes) # 5094133
+sum(test$total_tonnes) # 
 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "tuna")
-sum(test$total_tonnes) # 5094133
+sum(test$total_tonnes) #
 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "salmonids")
-sum(test$total_tonnes) # 5094133
+sum(test$total_tonnes) #
 
 
 aq_groups <- read.csv("marine/STEP1_species_groups/int/marine_groups.csv")

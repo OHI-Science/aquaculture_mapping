@@ -29,8 +29,6 @@ source(here('workflow/common.R'))
 ```
 
 
-
-
 Subset the data to include only the species (marine fish general) and countries we are interested in. Then summarize by total tonnes of finfish per country/year.
 
 ```{r}
@@ -47,7 +45,7 @@ species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv
 finfish_list <- species_list$species[species_list$aq_group=="marine_fish_general"]
 finfish_list
 
-## write out marine fish taxa and production for Juliette
+## write out marine fish taxa and production
 fao_finfish_taxa_prod <- fao %>%
   filter(species %in% finfish_list) %>%  
   filter(!is.na(value)) %>%
@@ -92,7 +90,7 @@ all_groups_included <- aquaculture_groups %>%
 ```
 
 ```{r}
-## write out bivalve taxa and production for Juliette
+## explore out bivalve taxa and production
 fao_finfish_taxa_prod <- fao %>%
   filter(species %in% finfish_list) %>%  
   filter(!is.na(value)) %>%

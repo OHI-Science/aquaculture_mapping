@@ -5,6 +5,8 @@ date: "06/21/2021"
 output: html_document
 ---
 
+This script calculates an average distance to closest port from all of the known mariculture locations. 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```

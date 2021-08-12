@@ -1,11 +1,13 @@
 ---
-title: "FAO crustaceam production"
+title: "FAO crustacean production"
 author: "Gage Clawson (UCSB, NCEAS, OHI)"
 date: "12/14/2020"
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
+
+## Clean FAO crustacean data
 
 All data is ultimately adjusted to FAO production data.  This script cleans the fao mariculture data and subsets it to to the relevant years of data and species (crustaceans).
 
@@ -44,7 +46,7 @@ species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv
 crustaceans_list <- species_list$species[species_list$aq_group=="crustaceans"]
 crustaceans_list
 
-## write out crustacean taxa and production for Juliette
+## write out crustacean taxa and production
 fao_crustaceans_taxa_prod <- fao %>%
   filter(species %in% crustaceans_list) %>%  
   filter(!is.na(value)) %>%
@@ -58,7 +60,7 @@ fao_crustaceans_taxa_prod <- fao %>%
   mutate(total = sum(fao_tonnes_production)) %>%
   mutate(perc = fao_tonnes_production/total)
   
-  
+## write out a file with the specific taxa included  
 write.csv(fao_crustaceans_taxa_prod, here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans_taxa_production.csv"), row.names=FALSE)
 
 # include only crustacean
@@ -72,7 +74,9 @@ fao_crustaceans <- fao %>%
   arrange(country, iso3c, year) 
  
 write.csv(fao_crustaceans, here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv"), row.names=FALSE)
-        
+   
+
+## explore the data     
  explore <- read_csv(here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
    filter(year==2017) %>%
    arrange(-fao_tonnes_production) %>%
@@ -85,7 +89,7 @@ unique(explore$country) # 6 countries
 ```
 
 ```{r}
-## write out bivalve taxa and production for Juliette
+## look at crustacean taxa and production
 fao_crustaceans_taxa_prod <- fao %>%
   filter(species %in% crustaceans_list) %>%  
   filter(!is.na(value)) %>%

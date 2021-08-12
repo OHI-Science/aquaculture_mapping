@@ -38,25 +38,16 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-# data <- read_csv("marine/output/all_marine_farms.csv") %>% 
-#   st_as_sf(., 
-#            coords = c("lon", "lat"),
-#            crs = crs(food_raster), 
-#            agr = "constant") %>%
-#   mutate(source = "real")
+all_farms <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv") %>%
+      st_as_sf(., 
+           coords = c("X", "Y"),
+           crs = crs(food_raster), 
+           agr = "constant")  
 
 
-all_farms <- readRDS("data/all_modeled_marine_farms.rds")
-
-# all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
-#   map_df(., readRDS) %>% 
-#   rename(iso3c = iso3) %>% 
-#  dplyr::mutate(source = "modeled") %>% 
-#   #left_join(tonnage_per_farms)
-#   rbind(data)
 
 crust_farms <- all_farms %>%
-  filter(type == "crustaceans")
+  filter(species_group == "Non-shrimp crustaceans")
 ```
 
 
@@ -78,8 +69,7 @@ unique(farms_sf$iso3c)
 
 # some annoying mismatches due to raster resolution. Fix these
 # CHN:HKG
-# CHN:MAC
-# MMR:THA
+# CHN:PRK
 
 unique(farms_sf$NAME_1)
 
@@ -87,10 +77,8 @@ farms_sf_correct <- farms_sf %>%
   mutate(GID_0 = as.character(GID_0)) %>%
   mutate(NAME_0 = as.character(NAME_0)) %>%
   mutate(NAME_1 = as.character(NAME_1)) %>%
-  mutate(GID_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "CHN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% c("CHN:HKG", "CHN:MAC"), "China", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% c("MMR:THA"), "MMR", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% c("MMR:THA"), "Myanmar", NAME_0))
+  mutate(GID_0 = ifelse(check %in% c("CHN:HKG", "CHN:PRK"), "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% c("CHN:HKG", "CHN:PRK"), "China", NAME_0))
 
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
@@ -132,7 +120,7 @@ farms_prod <- farms_sf_correct %>%
   group_by(NAME_0) %>%
   add_tally() %>%
   ungroup() %>%
-  mutate(tonnes_per_farm = fao_tonnes_production/n) %>%
+  # mutate(tonnes_per_farm = fao_tonnes_production/n) %>%
   dplyr::select(iso3c, tonnes_per_farm, geometry) 
 
 ```
@@ -163,6 +151,8 @@ sum(fao$fao_tonnes_production) # 401719.1
 
 crustacean_raster_check <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum)
 plot(log(crustacean_raster_check+1))
+# s <- raster::select(crustacean_raster_check)
+# plot(s)
 cellStats(crustacean_raster_check, stat = "sum", na.rm = TRUE) # 401719.1
 
 
@@ -178,6 +168,6 @@ sum(crustacean_raster_df$tonnes_production) # 401719.1
 sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 401719.1
 sum(fao$fao_tonnes_production) # 401719.1
 
-write_csv(crustacean_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/crustaceans/crustaceans_farm_updated.csv")
+write_csv(crustacean_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/crustaceans/updated/crustaceans_farm_updated.csv")
 
 ```

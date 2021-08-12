@@ -43,23 +43,15 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and converted to spatial dataframe
 ```{r}
 
-# data <- read_csv("marine/output/all_marine_farms.csv") %>% 
-#   st_as_sf(., 
-#            coords = c("lon", "lat"),
-#            crs = crs(food_raster), 
-#            agr = "constant") 
+all_farms <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv") %>%
+      st_as_sf(., 
+           coords = c("X", "Y"),
+           crs = crs(food_raster), 
+           agr = "constant")  
 
-
-all_farms <- readRDS("data/all_modeled_marine_farms.rds")
-
-# all_farms <- list.files("data/temp_data/temp_marine_final", pattern = "rds$", full.names = TRUE) %>% 
-#   map_df(., readRDS) %>% 
-#   dplyr::rename(iso3c = iso3) %>% 
-#   dplyr::mutate(source = "modeled") %>% 
-#   rbind(data %>% mutate(source = "real"))
 
 bivalve_farms <- all_farms %>%
-  filter(type == "bivalve")
+  filter(species_group == "Unfed or algae fed bivalve molluscs")
 
 
 ```
@@ -83,13 +75,13 @@ mapview(farms_sf)
 
 # CHN:HKG
 # CHN:MAC
-# ESP:FRA
+# CHN:PRK
+# DEU:NLD
 # HKG:CHN
 # IRL:GBR
+# MYS:BRN
 # NLD:DEU
-# PRK:RUS
 # SVN:HRV
-# THA:MMR
 # TWN:CHN
 # USA:CAN
 
@@ -102,20 +94,20 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:HKG", "China", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CHN:MAC", "CHN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:MAC", "China", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "ESP:FRA", "ESP", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "ESP:FRA", "Spain", NAME_0)) %>%    
+    mutate(GID_0 = ifelse(check %in% "CHN:PRK", "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CHN:PRK", "China", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "DEU:NLD", "DEU", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "DEU:NLD", "Germany", NAME_0)) %>%    
   mutate(GID_0 = ifelse(check %in% "HKG:CHN", "HKG", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "HKG:CHN", "Hong Kong", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "IRL:GBR", "IRL", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "IRL:GBR", "Ireland", NAME_0)) %>% 
+    mutate(GID_0 = ifelse(check %in% "MYS:BRN", "MYS", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "MYS:BRN", "Malaysia", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "NLD:DEU", "NLD", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "NLD:DEU", "Netherlands", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "PRK:RUS", "PRK", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "PRK:RUS", "North Korea", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "SVN:HRV", "SVN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "SVN:HRV", "Slovenia", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "THA:MMR", "THA", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "THA:MMR", "Thailand", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "TWN:CHN", "TWN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "TWN:CHN", "Taiwan", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "USA:CAN", "USA", GID_0)) %>%
@@ -161,13 +153,13 @@ farms_prod <- farms_sf_correct %>%
   group_by(NAME_0) %>%
   add_tally() %>%
   ungroup() %>%
-  mutate(tonnes_per_farm = fao_tonnes_production/n) %>%
+  # mutate(tonnes_per_farm = fao_tonnes_production/n) %>%
   dplyr::select(iso3c, tonnes_per_farm, geometry)
 
 farms_sf_prod <- st_as_sf(farms_prod)
 
 ## write the production data so that we can use it for the nutrient layer. 
-st_write(farms_sf_prod, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/bivalve/prod_data_by_cell_iso3c.shp", delete_dsn = TRUE) ## overwrite file if already there
+st_write(farms_sf_prod, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/bivalve/updated/prod_data_by_cell_iso3c.shp", delete_dsn = TRUE) ## overwrite file if already there
 
 ```
 
@@ -206,6 +198,6 @@ sum(bivalve_raster_df$tonnes_production) # 17435623
 sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 17435623
 sum(fao$fao_tonnes_production) # 17435623
 
-write_csv(bivalve_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/bivalve/bivalve_farm_updated.csv")
+write_csv(bivalve_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/bivalve/updated/bivalve_farm_updated.csv")
 
 ```

@@ -1,6 +1,9 @@
 ---
 title: "Prep ASC data"
+author: "Gage Clawson (USCB, NCEAS, OHI)"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 Prep the aquaculture stewardship data and save as a shp to use for the different species groups.
@@ -84,88 +87,3 @@ mapview(ASC_all_sf$geometry)
 
 st_write(ASC_all_sf, "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/ASC_data/ASC_all_sf.shp", overwrite = TRUE)
 ```
-
-See how many countries from FAO are represented in ASC for marine_fish_general category
-
-```{r}
-fao_marine_fish <- fao_all %>%
-  dplyr::filter(aq_group == "marine_fish_general")
-
-ASC_marine_fish <- ASC_all_sf %>%
-  dplyr::filter(aq_group == "marine_fish_general")
-
-setdiff(fao_marine_fish$country, ASC_marine_fish$cert_country)
-
-#  [1] "Bangladesh"               "Cambodia"                 "China"                   
-#  [4] "China, Hong Kong SAR"     "Costa Rica"               "Cyprus"                  
-#  [7] "Egypt"                    "France"                   "India"                   
-# [10] "Indonesia"                "Iran (Islamic Rep. of)"   "Israel"                  
-# [13] "Italy"                    "Korea, Republic of"       "Malaysia"                
-# [16] "Malta"                    "Mauritius"                "Norway"                  
-# [19] "Philippines"              "Portugal"                 "Saudi Arabia"            
-# [22] "Singapore"                "Taiwan Province of China" "Tunisia"                 
-# [25] "United Arab Emirates"   
-
-
-setdiff(ASC_marine_fish$cert_country, fao_marine_fish$country)
-# [1] "Netherlands" "Denmark"     "Germany"   
-
-unique(ASC_marine_fish$cert_country)
-```
-
-See how many countries from FAO are represented in ASC for bivalves category
-
-```{r}
-fao_bivalve <- fao_all %>%
-  dplyr::filter(aq_group == "bivalves")
-
-ASC_bivalve <- ASC_all_sf %>%
-  dplyr::filter(aq_group == "bivalves")
-
-setdiff(fao_bivalve$country, ASC_bivalve$cert_country)
-
-#  [1] "Brazil"                   "Bulgaria"                 "Cambodia"                
-#  [4] "Canada"                   "China, Hong Kong SAR"     "Croatia"                 
-#  [7] "Cuba"                     "Denmark"                  "French Polynesia"        
-# [10] "Germany"                  "Greece"                   "Guernsey"                
-# [13] "India"                    "Indonesia"                "Ireland"                 
-# [16] "Italy"                    "Jersey"                   "Korea, Dem. People's Rep"
-# [19] "Malaysia"                 "Netherlands"              "Norway"                  
-# [22] "Philippines"              "Russian Federation"       "Slovenia"                
-# [25] "Spain"                    "Sweden"                   "Taiwan Province of China"
-# [28] "Thailand"                        "United States of America"  
-
-
-setdiff(ASC_bivalve$cert_country, fao_bivalve$country)
-# United kingdom spelled differently.. don't worry about it 
-
-unique(ASC_bivalve$cert_country)
-```
-
-Tuna
-```{r}
-fao_tuna <- fao_all %>%
-  dplyr::filter(aq_group == "tuna")
-
-ASC_tuna <- ASC_all_sf %>%
-  dplyr::filter(aq_group == "tuna")
-
-
-
-unique(fao_tuna$country)
-```
-
-Crustaceans
-```{r}
-fao_crust <- fao_all %>%
-  dplyr::filter(aq_group == "crustaceans")
-
-ASC_crust <- ASC_all_sf %>%
-  dplyr::filter(aq_group == "crustaceans")
-
-
-
-unique(fao_crust$country)
-```
-
-

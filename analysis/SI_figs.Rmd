@@ -54,7 +54,7 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # Read in farms data and convert to sf
 
 ```{r}
-all_farms_sf <- read_csv("all_marine_aquaculture_farms_sources_31km.csv") %>%
+all_farms_sf <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv") %>%
     st_as_sf(., 
            coords = c("X", "Y"),
            crs = crs(food_raster), 
@@ -86,7 +86,7 @@ mapview(test) ## one weird MFG from ASC.. i think these are fine. Justifiable si
 
 ```{r}
 
-all_farms <- read_csv("all_marine_aquaculture_farms_sources_31km.csv")
+all_farms <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv")
 
 unique(sort(all_farms$country))
 
@@ -139,7 +139,7 @@ for(i in 1:6){
   count_green <- count_green_df$n
   
     
-if(is.empty(count_green) == TRUE){
+if(is_empty(count_green) == TRUE){
     count_green = 0
   }
     
@@ -151,7 +151,7 @@ if(is.empty(count_green) == TRUE){
   count_yellow <- count_yellow_df$n
   
     
-if(is.empty(count_yellow) == TRUE){
+if(is_empty(count_yellow) == TRUE){
     count_yellow = 0
   }
     
@@ -163,7 +163,7 @@ if(is.empty(count_yellow) == TRUE){
   
   count_red  <- count_red_df$n
   
-if(is.empty(count_red) == TRUE){
+if(is_empty(count_red) == TRUE){
     count_red = 0
   }
     
@@ -257,7 +257,7 @@ for(i in c(1:6)){
   count_green <- count_green_df$n
   
     
-if(is.empty(count_green) == TRUE){
+if(is_empty(count_green) == TRUE){
     count_green = 0
   }
     
@@ -269,7 +269,7 @@ if(is.empty(count_green) == TRUE){
   count_yellow <- count_yellow_df$n
   
     
-if(is.empty(count_yellow) == TRUE){
+if(is_empty(count_yellow) == TRUE){
     count_yellow = 0
   }
     
@@ -281,7 +281,7 @@ if(is.empty(count_yellow) == TRUE){
   
   count_red  <- count_red_df$n
   
-if(is.empty(count_red) == TRUE){
+if(is_empty(count_red) == TRUE){
     count_red = 0
   }
     
@@ -373,7 +373,7 @@ First map:
   count_green <- count_green_df$n
   
     
-if(is.empty(count_green) == TRUE){
+if(is_empty(count_green) == TRUE){
     count_green = 0
   }
     
@@ -385,7 +385,7 @@ if(is.empty(count_green) == TRUE){
   count_yellow <- count_yellow_df$n
   
     
-if(is.empty(count_yellow) == TRUE){
+if(is_empty(count_yellow) == TRUE){
     count_yellow = 0
   }
     
@@ -397,7 +397,7 @@ if(is.empty(count_yellow) == TRUE){
   
   count_red  <- count_red_df$n
   
-if(is.empty(count_red) == TRUE){
+if(is_empty(count_red) == TRUE){
     count_red = 0
   }
     
@@ -471,7 +471,7 @@ ggsave("analysis/si_figs/workflow_fig_1.jpg")
   count_green <- count_green_df$n
   
     
-if(is.empty(count_green) == TRUE){
+if(is_empty(count_green) == TRUE){
     count_green = 0
   }
     
@@ -483,7 +483,7 @@ if(is.empty(count_green) == TRUE){
   count_yellow <- count_yellow_df$n
   
     
-if(is.empty(count_yellow) == TRUE){
+if(is_empty(count_yellow) == TRUE){
     count_yellow = 0
   }
     
@@ -495,7 +495,7 @@ if(is.empty(count_yellow) == TRUE){
   
   count_red  <- count_red_df$n
   
-if(is.empty(count_red) == TRUE){
+if(is_empty(count_red) == TRUE){
     count_red = 0
   }
     

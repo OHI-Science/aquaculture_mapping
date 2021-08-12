@@ -1,7 +1,13 @@
 ---
-title: "Untitled"
+title: "Estimate tonnage per farm and farms to place"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "10/09/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
+
+In this script we estimate the average tonnage per known farm for 2017 and estimate the remaining number of farms to place for data-limited countries. 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)

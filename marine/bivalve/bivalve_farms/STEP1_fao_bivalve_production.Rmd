@@ -6,7 +6,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-All data is ultimately adjusted to FAO production data.  This script cleans the fao mariculture data and subsets it to to the relevant years of data and species (bivalve).
+All data is ultimately adjusted to FAO production data. This script cleans the fao mariculture data and subsets it to to the relevant years of data and species (bivalve).
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -35,7 +35,7 @@ fao <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
   filter(environment %in% c("Marine", "Brackishwater"))
 
 
-## Read in fao data and get a species list for salmon 
+## Read in fao data and get a species list for bivalve 
 species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv"))  %>%
   distinct(species, aq_group)
 
@@ -43,7 +43,7 @@ species_list <- read.csv(here("marine/STEP1_species_groups/int/marine_groups.csv
 bivalve_list <- species_list$species[species_list$aq_group=="bivalves"]
 bivalve_list
 
-## write out bivalve taxa and production for Juliette
+## write out bivalve taxa and production
 fao_bivalve_taxa_prod <- fao %>%
   filter(species %in% bivalve_list) %>%  
   filter(!is.na(value)) %>%
@@ -59,9 +59,6 @@ fao_bivalve_taxa_prod <- fao %>%
 sum(fao_bivalve_taxa_prod$fao_tonnes_production) # 17435623
 unique(fao_bivalve_taxa_prod$country) # 42 countries
   
-## When doing the filter for >500 tonnes by taxa group: 
-# sum(fao_bivalve_taxa_prod$value) # 17446096
-# unique(fao_bivalve_taxa_prod$country) # 43 countries - senegal added
 
 write.csv(fao_bivalve_taxa_prod, here("marine/bivalve/bivalve_farms/data/fao_mariculture_bivalve_taxa_production.csv"), row.names=FALSE)
 
@@ -89,5 +86,5 @@ explore <- fao_bivalve %>%
   dplyr::filter(year == 2017)
 ```
 
-
+Species included: 
 Abalones nei, American cupped oyster, Aquatic invertebrates nei, Australian mussel, Blacklip pearl oyster, Blood cockle, Blue mussel, Butter clam, Chilean mussel, Cholga mussel, Choro mussel, Clams, etc. nei, Common edible cockle, Constricted tagelus, Cortez oyster, Cupped oysters nei, European flat oyster, Flat and cupped oysters nei, Green mussel, Grooved carpet shell, Indian backwater oyster, Inflated ark, Japanese carpet shell, Japanese hard clam, Japanese sea cucumber, Korean mussel, Mangrove cupped oyster, Marine molluscs nei, Mediterranean mussel, New Zealand mussel, Northern quahog, Pacific cupped oyster, Pacific geoduck, Pen shells nei, Penguin wing oyster, Perlemoen abalone, Peruvian calico scallop, Red abalone, Sand gaper, Scallops nei, Sea cucumbers nei, Sea mussels nei, Sea snails, Sea squirts nei, Sea urchins nei, Slipper cupped oyster, South American rock mussel, Yesso scallop

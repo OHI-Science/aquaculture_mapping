@@ -1,7 +1,14 @@
 ---
-title: "Gapfilling the number of farms to add for shrimp countries based on tonnes of production"
+title: "Gapfilling the number of farms to add for crustacean countries based on tonnes of production"
+author: "Gage Clawson (NCEAS, UCSB, OHI)"
+date: "12/14/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
+
+
+This script takes the number of farms information collected in STEP2 and calculates a global tonnes of production per farm, and calculates the number of remaining farms needed to place in our placement model. 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)

@@ -170,64 +170,126 @@ pre code {
 <div id="mapping-marine-aquaculture" class="section level1">
 <h1>Mapping marine aquaculture</h1>
 <p>Written by: Gage Clawson</p>
-<div id="code" class="section level3">
-<h3>Code</h3>
+<div id="code" class="section level2">
+<h2>Code</h2>
 <p>Here is an overview of the organization of files and data:</p>
-<p>This series of folders/scripts preps the aquaculture layers.</p>
-<p><strong>Prepping production data</strong></p>
-<p>To start, you should complete “STEP1_species_groups” first, in the <strong>aquaculture/marine</strong> folder. - This folder prepares the FAO aquaculture data to be split into our 6 different species groups; general marine finfish, bivalves, salmon, tuna, crustaceans, and shrimp. - There are 2 scripts in this folder: - STEP1_species_groups.Rmd: This script classifies the FAO data into our species groups - STEP2_ASC_data_prep.Rmd: This script preps the aquaculture stewardship data and saves it as a .shp to use for the different species groups.</p>
-<p><strong>Compiling aquaculture locations and information</strong></p>
-<p>Within each folder, there is a species_farms folder. The farms folder has a series of scripts which places aquaculture farms for each species group.</p>
+<p>This series of folders/scripts preps mariculture mapping layers.</p>
+<div id="prepping-production-data" class="section level3">
+<h3>Prepping production data</h3>
+<p>To start, you should complete the scripts in the <strong>marine/STEP1_species_groups</strong> folder. - This folder prepares the FAO aquaculture data to be split into our 6 different species groups; general marine finfish, bivalves, salmon, tuna, crustaceans, and shrimp. - There are 2 scripts in this folder: - STEP1_species_groups.Rmd: This script classifies the FAO data into our species groups - STEP2_ASC_data_prep.Rmd: This script preps the aquaculture stewardship csv data and saves it as a .shp to use for the different species groups.</p>
+</div>
+<div id="compiling-aquaculture-locations-and-information" class="section level3">
+<h3>Compiling aquaculture locations and information</h3>
+<p>Within each species group folder, there is a species_farms folder. The farms folder has a series of scripts which places aquaculture farms for each species group.</p>
 <p>I completed the species folders in the following order:</p>
 <ul>
-<li>salmon
+<li>marine/salmon/
 <ul>
-<li>salmon_farm</li>
+<li>salmon_farm/
+<ul>
+<li>STEP1_fao_salmon_production.Rmd</li>
+<li>STEP2_salmon_farm_locations.Rmd</li>
+<li>STEP3_gapfill_salmon.Rmd</li>
 </ul></li>
-<li>shrimp
-<ul>
-<li>shrimp_farm</li>
 </ul></li>
-<li>bivalve
+<li>marine/shrimp/
 <ul>
-<li>bivalve_farm</li>
+<li>shrimp_farm/
+<ul>
+<li>STEP1_fao_shrimp_production.Rmd</li>
+<li>STEP2_shrimp_farm_locations.Rmd</li>
+<li>STEP3_gapfill_shrimp.Rmd</li>
 </ul></li>
-<li>marine_fish_general
-<ul>
-<li>finfish_farm</li>
 </ul></li>
-<li>tuna
+<li>marine/bivalve/
 <ul>
-<li>tuna_farm</li>
+<li>bivalve_farm/
+<ul>
+<li>STEP1_fao_bivalve_production.Rmd</li>
+<li>STEP2_bivalve_farm_locations.Rmd</li>
+<li>STEP3_gapfill_bivalve.Rmd</li>
 </ul></li>
-<li>crustaceans
+</ul></li>
+<li>marine/marine_fish_general/
 <ul>
-<li>crustacean_farm</li>
+<li>finfish_farm/
+<ul>
+<li>STEP1_fao_finfish_production.Rmd</li>
+<li>STEP2_finfish_farm_locations.Rmd</li>
+<li>STEP3_gapfill_finfish.Rmd</li>
+</ul></li>
+</ul></li>
+<li>marine/tuna/
+<ul>
+<li>tuna_farm/
+<ul>
+<li>STEP1_fao_tuna_production.Rmd</li>
+<li>STEP2_tuna_farm_locations.Rmd</li>
+<li>STEP3_gapfill_tuna.Rmd</li>
+</ul></li>
+</ul></li>
+<li>marine/crustaceans/
+<ul>
+<li>crustaceans_farm/
+<ul>
+<li>STEP1_fao_crustacean_production.Rmd</li>
+<li>STEP2_crustacean_farm_locations.Rmd</li>
+<li>STEP3_gapfill_crustacean.Rmd</li>
+</ul></li>
 </ul></li>
 </ul>
 <p>In each of these folders there are 3 scripts. Once the three scripts in each folder are complete, move back a folder, into <strong>aquaculture_mapping/marine</strong> and complete <strong>compile_data_for_placement.Rmd</strong>.</p>
 <ul>
-<li>This script compiles all of the known farm locations (taken from steps 1-3 in each farm folder) into a file, and compiles all of the total farms needed to be placed (and gapfilled) into a file. These files will be plugged into our suitability layer and place farms on an overall map.</li>
+<li><p><strong>marine/compile_data_for_placement.Rmd</strong></p></li>
+<li><p>This script compiles all of the known farm locations (taken from steps 1-3 in each farm folder) into a file, and compiles all of the total farms needed to be placed (and gapfilled) into a file. These files will be plugged into our suitability layer and place farms on an overall map.</p></li>
 </ul>
-<p><strong>Place farms with the suitability layer</strong></p>
-<p>To place farms onto our suitability layer, the scripts within the folder <strong>aquaculture_mapping/workflow</strong> folder need to be completed - These scripts place the gapfilled farm estimate numbers onto suitable locations within each country and species group.</p>
-<p><strong>Allocate and rasterize FAO reported production</strong></p>
-<p>Once that is completed, you may move into the <strong>aquaculture_mapping/marine/last_step_rasterize</strong> folder, and run each of the species groups files.</p>
+</div>
+<div id="calculate-average-distance-to-port" class="section level3">
+<h3>Calculate average distance to port</h3>
+<ul>
+<li><strong>workflow/calc_dist_to_port.Rmd</strong></li>
+<li>This script calculates the average distance to port which will be used to place farms.</li>
+</ul>
+</div>
+<div id="place-farms-with-the-suitability-layer" class="section level3">
+<h3>Place farms with the suitability layer</h3>
+<ul>
+<li><p><strong>workflow/place_unknown_farms.Rmd</strong></p></li>
+<li><p>Places farms onto our suitability layer.</p></li>
+<li><p>This scripts place the gapfilled farm estimate numbers onto suitable locations within each country and species group.</p></li>
+</ul>
+</div>
+<div id="create-a-validation-dataset-by-placing-known-farms-onto-the-suitability-layer" class="section level3">
+<h3>Create a validation dataset by placing known farms onto the suitability layer</h3>
+<ul>
+<li><p><strong>workflow/coast_buffer.R</strong></p>
+<ul>
+<li>creates a buffered coast to conduct validation analysis on.</li>
+</ul></li>
+<li><p><strong>workflow/place_validation_farms.R</strong></p></li>
+<li><p>Places known locations of farms onto our suitability layer to create a validation dataset.</p></li>
+</ul>
+</div>
+<div id="allocate-and-rasterize-fao-reported-production" class="section level3">
+<h3>Allocate and rasterize FAO reported production</h3>
+<p>Once that is completed, you may move into the <strong>marine/last_step_rasterize</strong> folder, and run each of the species groups files.</p>
 <ul>
 <li>These files rasterize the production of each species group, which will later be plugged into the food systems analysis (or any other analysis that might need FAO production distributed across the mariculture map).</li>
 </ul>
 <p><strong>Analysis and data check</strong></p>
-<p>Once all of those are completed, you can find the <strong>analysis</strong> folder, which data check and conduct some summarization numbers for the final paper.</p>
+<p>Once all of those are completed, you can find the <strong>analysis</strong> folder, which data checks, conducts some summarization numbers for the final paper, and creates figures.</p>
 <p>Good luck!</p>
 <div id="general-roadmap" class="section level4">
 <h4>General Roadmap:</h4>
 <ol style="list-style-type: decimal">
-<li>Complete files in <strong>STEP1_species_group</strong></li>
-<li>Within each species folder, complete steps 1 - 3.</li>
+<li>Jump into <strong>aquaculture_mapping/marine</strong> folder and complete the files in <strong>STEP1_species_group</strong></li>
+<li>Within each species folder, complete steps 1 - 3 in the farms folder.</li>
 <li>Jump back a folder and complete <strong>compile_data_for_placement.Rmd</strong></li>
 <li>Complete files in <strong>aquaculture_mapping/workflow</strong> to place farms that need placement.</li>
 <li>Complete the files in <strong>aquaculture_mapping/marine/last_step_rasterize/</strong></li>
+<li>Complete summary stats and figures in <strong>analysis</strong> folder.</li>
 </ol>
+</div>
 </div>
 </div>
 </div>

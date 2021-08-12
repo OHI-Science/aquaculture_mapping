@@ -1,3 +1,6 @@
+## This script will place specific number of farms with unknown locations using our location modelling approach.
+
+
 #### load libraries and data ####
 #------------------------------------------------------------------------------#
 library(sf)
@@ -28,10 +31,11 @@ blank_raster[] <- 1
 
 the_crs <- crs(fake_raster, asText = TRUE)
 
-
-ports_raw <- st_read("/home/shares/food-systems/Food_footprint/_raw_data/world_port_index/Commercial_ports.shp") %>%
+## New port data for 2019
+ports_raw <- st_read("/home/shares/food-systems/Food_footprint/_raw_data/world_port_index/d2019/WPI.shp") %>%
   st_transform(the_crs) %>%
-  filter(HARB_SIZE_ != "L") # remove L ports
+  filter(HARBORSIZE != "L", # filter out large ports 
+         HARBORTYPE != "LC") # filter out lake or canals
 
 
 data <- read_csv("marine/output/all_marine_farms.csv") %>% 
@@ -60,9 +64,9 @@ arctic_fixed <- inverted_land + arctic_fixed
 arctic_fixed[arctic_fixed[]==2] <- 1 ## add land mask
 
 
-for (i in 36:length(unique(need_national_allocation$iso3c))) {
-  
-  # i = 2
+for (i in 1:length(unique(need_national_allocation$iso3c))) {
+
+  # i = 7
   ## 1.a get country shape file
   this_iso3 <- unique(need_national_allocation$iso3c)[i]
   
@@ -110,15 +114,20 @@ for (i in 36:length(unique(need_national_allocation$iso3c))) {
     
     this_eez <- st_crop(this_eez, this_bbox)
     
+
   }else if(this_iso3 == "RUS"){
     this_bbox <- st_bbox(c(xmin = 28, xmax = 180, ymax = 66, ymin = 39.72669), crs = st_crs(this_area)) ## make it easier since the arctic will be classed out later anyways
     
     this_eez <- st_crop(this_eez, this_bbox)
     
+
+    
   } else if(this_iso3 == "NZL"){
     this_bbox <- st_bbox(c(xmin = 160.6098, xmax = 180, ymax = -25.88826, ymin = -55.94930), crs = st_crs(this_area)) ## make it easier since the arctic will be classed out later anyways
     
     this_eez <- st_crop(this_eez, this_bbox)
+    
+
     
   } else{
     
@@ -132,7 +141,12 @@ for (i in 36:length(unique(need_national_allocation$iso3c))) {
     this_bbox <- st_bbox(c(xmin = this_bbox_xmin, xmax = this_bbox_xmax, ymax = 66, ymin =this_bbox_ymin), crs = st_crs(this_area))
     
     this_eez <- st_crop(this_eez, this_bbox)
+
   }
+  
+  shrimp_info = ifelse(any(this_farm_info$type == "shrimp"), "yes", "no")
+  
+  
   
   ## 1.e filter for ports and coast line of this country
   this_coast <- this_country %>%
@@ -155,54 +169,163 @@ for (i in 36:length(unique(need_national_allocation$iso3c))) {
   dis_to_port_rast <- distanceFromPoints(this_raster_area, these_ports)
   port_test_rast <- dis_to_port_rast
   
+  
   # 31.30463*1000 # 31304.63 meters 
-  # 18.85009*1000 # 18850.09 meters
   
   port_test_rast[port_test_rast >31305] <- NA # acceptable distance to port # we are doing 2; the mean (31.305 kilometers) and median (18.850 kilometers) of distance from known locations to ports 
   port_test_rast[port_test_rast<1000] <- NA # need to be 1km away from ports/shipping lanes
   suitability_rast <- port_test_rast + arctic_fixed # add in arctic mask
+  
+  suitability_rast_shrimp <- port_test_rast ## save a suitability raster for shrimp placement
+  
   #plot(suitability_rast)
   # mapview(suitability_rast)
   # mapview(port_test_rast)
   # plot(arctic_fixed)
 
-  this_coast_meters <- st_transform(this_simplified_coast, crs = "+proj=moll") %>% ## transform to a crs that can buffer in meters 
-    st_buffer(dist = 200) %>% # buffer in meters km 
-    st_cast("MULTILINESTRING") %>%
-    st_transform(crs = crs(the_crs)) %>%  # 
-    st_difference(this_country) %>% 
-    mutate(info = "names")
-  
-  this_cell_polygons <- rasterToPolygons(suitability_rast)%>% 
-    st_as_sf() %>% 
-    st_union()%>% 
-    sf::st_as_sf()
-  
-  this_suitable_coast <- st_intersection(this_coast_meters, this_cell_polygons) %>%
-   st_collection_extract("LINESTRING") %>%  # comment this out for <= 200m
-    as_Spatial() 
-  
+
 
   
-# regularly sample points along line
-  this_farm_points <- sp::spsample(this_suitable_coast, n=the_farm_number*100, type = "random") %>% 
-    sf::st_as_sf() %>%
-    sample_n(the_farm_number) %>% 
-    mutate(
-      iso3 = this_iso3,
-      type = this_type_vector
-    ) 
+  if(shrimp_info == "no"){
+    
+    ## place points normally, without shrimp 
+    
+    this_coast_meters <- st_transform(this_simplified_coast, crs = "+proj=moll") %>% ## transform to a crs that can buffer in meters 
+      st_buffer(dist = 200) %>% # buffer in meters km 
+      st_cast("MULTILINESTRING") %>%
+      st_transform(crs = crs(the_crs)) %>%  # 
+      st_difference(this_country) %>% 
+      mutate(info = "names")
+    
+    this_cell_polygons <- rasterToPolygons(suitability_rast)%>% 
+      st_as_sf() %>% 
+      st_union()%>% 
+      sf::st_as_sf()
+    
+    this_suitable_coast <- st_intersection(this_coast_meters, this_cell_polygons) %>%
+      st_collection_extract("LINESTRING") %>%  # comment this out for <= 200m
+      as_Spatial() 
+    
+    
+    
+    # regularly sample points along line
+    this_farm_points <- sp::spsample(this_suitable_coast, n=the_farm_number*100, type = "random") %>% 
+      sf::st_as_sf() %>%
+      sample_n(the_farm_number) %>% 
+      mutate(
+        iso3 = this_iso3,
+        type = this_type_vector
+      ) 
+    
+   
+  }else{  
   
-  if (nrow(this_farm_points) != the_farm_number) break
+    #### Place shrimp farms if needed ####
+    this_type_vector <- this_farm_info %>% 
+      group_by(type) %>% 
+      tidyr::expand(types = seq(1:num_farms)) %>% 
+      filter(type != "shrimp") %>%
+      pull(type) %>% 
+      sample()
+    
+    this_type_vector_shrimp <- this_farm_info %>% 
+      group_by(type) %>% 
+      tidyr::expand(types = seq(1:num_farms)) %>% 
+      filter(type == "shrimp") %>%
+      pull(type) %>% 
+      sample()
+    
+    
+    this_coast_shrimp <- st_transform(this_simplified_coast, crs = "+proj=moll") %>%     
+      st_buffer(dist = 100) %>% # buffer in meters km 
+      st_cast("MULTILINESTRING") %>%
+      st_transform(crs = crs(the_crs)) %>% 
+      st_difference(this_eez) %>%
+      mutate(info = "names")
+    
+   # this_cell_polygons_shrimp <- rasterToPolygons(suitability_rast_shrimp) %>% 
+      this_cell_polygons_shrimp <- rasterToPolygons(suitability_rast)%>% 
+      st_as_sf() %>% 
+      st_union()%>% 
+      sf::st_as_sf()
+    
+    this_suitable_coast_shrimp <- st_intersection(this_coast_shrimp, this_cell_polygons_shrimp) %>%
+      st_collection_extract("LINESTRING") %>%  
+      as_Spatial() 
+    # mapview(this_suitable_coast_shrimp)
+    
+    
+    the_farm_number_shrimp_df <- this_farm_info %>%
+      filter(type == "shrimp")
+    
+    the_farm_number_shrimp = the_farm_number_shrimp_df$num_farms
+    
+    
+    # regularly sample points along line
+    this_farm_points_shrimp <- sp::spsample(this_suitable_coast_shrimp, n=the_farm_number_shrimp*100, type = "random") %>% 
+      sf::st_as_sf() %>%
+      sample_n(the_farm_number_shrimp) %>% 
+      mutate(
+        iso3 = this_iso3,
+        type = this_type_vector_shrimp
+      ) 
+    
+    
+    #### Place all other farms than shrimp farms ####
+    this_coast_meters <- st_transform(this_simplified_coast, crs = "+proj=moll") %>% ## transform to a crs that can buffer in meters 
+      st_buffer(dist = 200) %>% # buffer in meters km 
+      st_cast("MULTILINESTRING") %>%
+      st_transform(crs = crs(the_crs)) %>%  # 
+      st_difference(this_country) %>% 
+      mutate(info = "names")
+    
+    
+    this_cell_polygons <- rasterToPolygons(suitability_rast)%>% 
+      st_as_sf() %>% 
+      st_union()%>% 
+      sf::st_as_sf()
+    
+    this_suitable_coast <- st_intersection(this_coast_meters, this_cell_polygons) %>%
+      st_collection_extract("LINESTRING") %>%  # comment this out for <= 200m
+      as_Spatial() 
+    
+    
+    the_farm_number_df <- this_farm_info %>%
+      filter(type != "shrimp")
+    
+    the_farm_number = sum(the_farm_number_df$num_farms)
+    
+    if(the_farm_number != 0){
+    
+    # regularly sample points along line
+    this_farm_points_no_shrimp <- sp::spsample(this_suitable_coast, n=the_farm_number*100, type = "random") %>% 
+      sf::st_as_sf() %>%
+      sample_n(the_farm_number) %>% 
+      mutate(
+        iso3 = this_iso3,
+        type = this_type_vector
+      ) 
+    
+    this_farm_points <- rbind(this_farm_points_no_shrimp, this_farm_points_shrimp)
+    
+    } else{
+      
+      
+      this_farm_points <- this_farm_points_shrimp
+    }
+    
+    # mapview(this_farm_points, zcol = "type")
+  
+  }
   
   #UNCOMMENT WHEN SAVING! 
-  write_rds(this_farm_points, paste0("data/temp_data/temp_31km/temp_farms_", i, ".rds"))
+  write_rds(this_farm_points, paste0("data/temp_data/temp_final_shrimp_fix/temp_farms_", i, ".rds"))
   print(paste0(i, " - ",this_iso3, " has been saved"))
   
 }
 
-# save a file for 18km, 31km
-all_farms <- list.files("data/temp_data/temp_31km", pattern = "rds$", full.names = TRUE) %>% 
+# save a file for all farms
+all_farms <- list.files("data/temp_data/temp_final_shrimp_fix", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   dplyr::mutate(source = "modeled") %>% 
@@ -211,6 +334,16 @@ all_farms <- list.files("data/temp_data/temp_31km", pattern = "rds$", full.names
 
 test <- all_farms %>%
   filter(iso3c == "USA")
+
+mapview(test, zcol = "source")
+
+test <- all_farms %>%
+  filter(type == "shrimp", 
+         source == "modeled")
+
+mapview(test)
+
+## rerun CRI, GTM, MEX, MYS, IDN, COL, PAN
 
 n_placed_known <- all_farms %>% 
   st_set_geometry(NULL) %>% 
@@ -238,13 +371,4 @@ testing %>%
   right_join(need_national_allocation)
 
 
-write_rds(all_farms, "data/all_modeled_marine_farms_31km.rds")
-
-
-
-plotted <- all_farms %>% 
-  filter(iso3c == "USA")
-
-mapview(plotted, 
-        zcol = "source")
-
+write_rds(all_farms, "data/all_modeled_marine_farms_final.rds")
