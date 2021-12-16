@@ -71,7 +71,7 @@ There are 23 states with marine coasts.
 
  - Alabama, North Carolina, Virginia, Rhode Island
 
-**There is general info on lease holders, what they farm, and what municipality or city they are in for 6 states:** 
+**There is general info on lease holders, what they farm, and what municipality or city they are in for 7 states:** 
 
  - California: general areas with acreage for commercial farms
  - Oregon: map of places were commercial harvest/growing is allowed
@@ -79,14 +79,15 @@ There are 23 states with marine coasts.
  - New Jersey: Have pdf maps of all existing shellfish leases and those issued in 2020
  - Massachusetts: Have number of growers per municipality with acreage and species type; also a subset of farms are available in the NE data viewer.
  - South Carolina: Apparently have 9 oyster farms as of 2021
+ - Washington: Approximate locations of commercial net pens. 
  
 **Subset of farms downloadable for 1 state:**
 
  - Florida: A map of mariculture farms which are at risk of oil spills
  
-**Couldn't really find any information on 5 states:**
+**Couldn't really find any information on 4 states:**
 
- - Hawaii, Washington, Texas, Louisiana, Mississippi
+ - Hawaii, Texas, Louisiana, Mississippi
  
 **Probably no mariculture for 2 states:**
 
@@ -358,6 +359,22 @@ https://www.mass.gov/doc/2020-dmf-annual-report/download
 
 
 
+### Washington
+
+Approved growing areas map
+
+ - https://fortress.wa.gov/doh/oswpviewer/index.html
+ 
+ 
+"DNR leases deep water sites for finfish net pens and floating shellfish rafts and longlines. Salmon aquaculture operations have existed in Washington since the 1970s and are scattered throughout Puget Sound. Current net pen leases include salmon aquaculture, delayed-release salmon, and herring. The use of floating shellfish culture began in 1975 with mussel raft culture in Penn Cove. Current floating shellfish culture on rafts or longlines include oysters, mussels, and scallops."
+
+Locations of commercial marine net pens
+ - https://ecology.wa.gov/Water-Shorelines/Shoreline-coastal-management/Aquaculture/Net-pens
+ 
+![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/washington_pens.png)
+
+
+
 ## Subset available
 
 
@@ -446,10 +463,6 @@ fl <- subset(state, region %in% c("florida"))
 
 ```
 
-Offshore aquaculture in Florida
-
- - As far as I can tell, none yet: https://www.flseagrant.org/aquaculture/openocean/
- 
 Other than the above, I can't find much info for Florida. Google maps shows a couple shrimp farms. 
  
  
@@ -491,19 +504,6 @@ http://www.texasaquaculture.org/TxShrimpFms.html
 ![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/texas_shrimp.png)
 
 
-### Washington
-
-Approved growing areas map
-
- - https://fortress.wa.gov/doh/oswpviewer/index.html
- 
- 
-"DNR leases deep water sites for finfish net pens and floating shellfish rafts and longlines. Salmon aquaculture operations have existed in Washington since the 1970s and are scattered throughout Puget Sound. Current net pen leases include salmon aquaculture, delayed-release salmon, and herring. The use of floating shellfish culture began in 1975 with mussel raft culture in Penn Cove. Current floating shellfish culture on rafts or longlines include oysters, mussels, and scallops."
-
-What we used for global: 
-Our Sound, Our Salmon, 2017. [Accessed January 31, 2020] http://www.moldychum.com/violations-prompt-washington-state-cancel-atlantic-salmon-farm-lease/
- 
-![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/puget_sound.png)
 
 ### Hawaii 
 
@@ -536,9 +536,7 @@ https://hdoa.hawaii.gov/ai/aquaculture-and-livestock-support-services-branch/aqu
 
 Take a look at the species in the US that FAO reports
 
- - These totals really don't match what NOAA reports in their 2019 report... They report 44094 metric tonnes of marine aquaculture production for 2018... versus 203687 from FAO. I think this has to do with NOAA reporting meat weight and FAO reporting live weight (includes shells)
- - https://media.fisheries.noaa.gov/2021-05/FUS2019-FINAL-webready-2.3.pdf?null=
- - NOAA also reports that the Gulf region produces the most marine aquaculture by volume.. which seems problematic for us considering we have very poor data for the Gulf states.
+ 
 ```{r, message=FALSE}
 fao_data_all <- read_csv("../../data/fao_aquaculture_clean.csv")
 
@@ -575,4 +573,22 @@ marine_na <- fao_data_us_group %>%
 # 203687 total tonnes for marine.. does this seem correct? 
 ```
 
+FAO reports 16 different marine species of production in 2018. Additionally, there were 4 species that were previously harvested but had no harvest for 2018. FAO reports a total of 203687 live weight tonnes for 2018. 
 
+NOAA Fisheries of the United States 2019 Report: 
+https://media.fisheries.noaa.gov/2021-05/FUS2019-FINAL-webready-2.3.pdf?null=
+
+ - NOAA report 44094 metric tonnes of marine aquaculture production for 2018... versus 203687 from FAO. I think this has to do with NOAA reporting meat weight and FAO reporting live weight (includes shells)
+ - NOAA also reports that the Gulf region produces th e most marine aquaculture by volume.. which seems problematic for us considering we have very poor farm level data for the Gulf states.
+
+![gulf](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/us_mariculture.png)
+
+2018 Census of Aquaculture: https://www.nass.usda.gov/Publications/AgCensus/2017/Online_Resources/Aquaculture/Aqua.pdf
+ 
+ - Table 1 shows aquaculture farms per state, but it is not split between marine and freshwater from what I can tell. Also split by species group (mollusk, crustaceans, etc.)
+ - Table 10 shows saltwater acres and number of farms used for aquaculture production. However, there are landlocked states, so we don't know if it is actually marine or on-land saltwater aquaculture. It does seem reasonable that this would be pretty close to the actual number of farms.. 
+ - Table 11 shows sources of water, with "Saltwater" included. This is just where the water comes from. 
+ - Table 12 mollusks off bottom seems reasonable to think most of these will be in marine environments. Almost all of the states listed are coastal states. 
+
+ - It seems like "Mollusks off bottom", "Mollusks on bottom", "Sea vegetables" are the only ones that I am 80% sure are marine farms... 
+ - They also have data at the county level. I know this wouldn't be perfect, but we could filter for coastal counties. 
