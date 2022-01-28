@@ -27,7 +27,7 @@ library(here)
 library(mapview)
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
-fao_salmon <- read_csv("marine/salmon/salmon_farm/data/fao_mariculture_salmon.csv") %>%
+fao_salmon <- read_csv("marine/salmon/salmon_farms/data/fao_mariculture_salmon.csv") %>%
      dplyr::filter(year == 2017) 
 
 sort(unique(fao_salmon$country))
@@ -318,21 +318,34 @@ mapview(test)
 
 Source: 
 http://aquaculture.scotland.gov.uk/
+
+To download: 
+
+http://aquaculture.scotland.gov.uk/data/site_details.aspx
+
+Click "CSV export"
+
 ```{r}
-## get scotland data: http://aquaculture.scotland.gov.uk/
-# Load in data and select sites that have been producing in the last 3 years
 
-#### TODO #### This could probably be improved by setting up a way to webscrape these data... not sure how this was compiled previously. 
+## load in data and select active sites, "Seawater" and "Seawater and Freshwater sites", and any sites that contain "Salmon" "Arctic Char" or "Rainbow Trout"
 
-scotland_csv <- as.data.frame(read_csv(file.path(path, "Scotland/Scotland_site_details.csv")))
+scotland_csv <- as.data.frame(read_csv(file.path(path, "Scotland/Scotland_site_details_2021_raw.csv")))
 
+unique(scotland_csv$Species)
 
-# Subset to salmon farms
+# Subset to salmonidae farms
 sub_scotland <- scotland_csv %>% 
   dplyr::select(ID = `Marine Scotland Site ID`, Easting, Northing, `Producing in Last 3 Years`, `Aquaculture Type`, `Water Type`, Species, subregion = `Local Authority` ) %>% 
-  filter(`Producing in Last 3 Years` == c("Yes", "New"),
-         `Water Type` %in% c("Seawater", "Freshwater and Seawater"), 
-         grepl("Salmon", Species))
+  filter(`Producing in Last 3 Years` %in% c("Yes", "New"),
+         `Water Type` %in% c("Seawater", "Freshwater and Seawater"),
+         str_detect(Species, "Salmon|Trout"))
+
+unique(sub_scotland$Species)
+
+
+
+## While there are >350 sites in the data which are deemed to have produced Salmonidae species, only 110 of them have operated in the past 3 years, which is what we include in our map. 
+
 
 new_names <- data.frame(subregion = c("Argyll and Bute", "North Ayrshire", "Western Isles", "Shetland", "Orkney", "Highland"),
                          subregion_new = c("Argyll & Clyde", "Argyll & Clyde", "Outer Hebrides", "Shetland Isles", "Orkney Islands", 
@@ -356,7 +369,7 @@ farms_scotland <- farms_scotland %>%
   mutate(iso3c = "GBR") %>%
   mutate(data_quality = 5)
 
-write_csv(farms_scotland, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_scotland.csv"))
+write_csv(farms_scotland, here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5/farms_scotland.csv"))
 
 ```
 
@@ -589,13 +602,15 @@ Our Sound, Our Salmon, 2017. [Accessed January 31, 2020] http://www.moldychum.co
 farms_ps <- read.csv(file.path(path, "USA/PugetSound/USA_PugetSound_AtSalmon.csv")) %>%
   mutate(iso3c = "USA") %>%
   dplyr::select(lon, lat, iso3c) %>%
-  mutate(data_quality = 2) 
+  mutate(data_quality = 2) %>%
+  mutate(subregion = "Washington")
 
-write_csv(farms_ps, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_ps_usa.csv"))
+write_csv(farms_ps, here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5/farms_ps_usa.csv"))
 
 ```
 
 ## US Northeast
+DEPRECATED:
 Source:
 Northeast Regional Ocean Council, 2018. Northeast ocean data: aquaculture. [Accessed January 17, 2020] 
 
@@ -603,31 +618,31 @@ Northeast Regional Ocean Council, 2018. Northeast ocean data: aquaculture. [Acce
  
 ```{r}
 
-us_ne <- st_read(file.path(path,"USA/NE/US_NE_Aquaculture.shp"))
-
-
-# id salmon and active sites
-salmon_species <- grep("Salmon|salmon", unique(us_ne$allSpecies), value=TRUE)
-
-us_ne_salmon <- us_ne %>%
-  filter(allSpecies %in% salmon_species) %>%
-  filter(status == "Active")
-
-us_ne_salmon_mol <- st_transform(us_ne_salmon, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
-us_ne_salmon_pts <- st_centroid(us_ne_salmon_mol)
-# check
-plot(st_geometry(us_ne_salmon_mol))
-plot(st_geometry(st_centroid(us_ne_salmon_mol)), add=TRUE)
-
-us_ne_salmon_pts_latlon <- st_transform(us_ne_salmon_pts, crs = "+init=epsg:4326") 
-
-farms_us_ne <- data.frame(do.call(rbind, st_geometry(us_ne_salmon_pts_latlon))) 
-names(farms_us_ne) <- c("lon", "lat")
-farms_us_ne <- farms_us_ne %>%
-  mutate(iso3c = "USA") %>%
-  mutate(data_quality = 2)
-
-write_csv(farms_us_ne, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_ne_usa.csv"))
+# us_ne <- st_read(file.path(path,"USA/NE/US_NE_Aquaculture.shp"))
+# 
+# 
+# # id salmon and active sites
+# salmon_species <- grep("Salmon|salmon", unique(us_ne$allSpecies), value=TRUE)
+# 
+# us_ne_salmon <- us_ne %>%
+#   filter(allSpecies %in% salmon_species) %>%
+#   filter(status == "Active")
+# 
+# us_ne_salmon_mol <- st_transform(us_ne_salmon, crs = "+init=epsg:3035") # convert to equal area projection to find centroids.
+# us_ne_salmon_pts <- st_centroid(us_ne_salmon_mol)
+# # check
+# plot(st_geometry(us_ne_salmon_mol))
+# plot(st_geometry(st_centroid(us_ne_salmon_mol)), add=TRUE)
+# 
+# us_ne_salmon_pts_latlon <- st_transform(us_ne_salmon_pts, crs = "+init=epsg:4326")
+# 
+# farms_us_ne <- data.frame(do.call(rbind, st_geometry(us_ne_salmon_pts_latlon)))
+# names(farms_us_ne) <- c("lon", "lat")
+# farms_us_ne <- farms_us_ne %>%
+#   mutate(iso3c = "USA") %>%
+#   mutate(data_quality = 2)
+# 
+# write_csv(farms_us_ne, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_ne_usa.csv"))
 
 ```
 
@@ -946,19 +961,57 @@ write_csv(farms_all_ISL, here("marine/salmon/salmon_farm/data/known_farm_sites_2
 
 ```
 
+
+# United States
+
+## Maine 
+
+
+Locations of aquaculture leases in Maine, 2019. Maine Department of Marine Resources. https://dmr-maine.opendata.arcgis.com/datasets/maine::mainedmr-aquaculture-aq-leases/about
+
+
+```{r}
+maine_aq_lease <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maine/MaineDMR_Aquaculture_-_AQ_Leases/MaineDMR_Aquaculture_-_AQ_Leases.shp"))
+
+# mapview(maine_aq_lease)
+
+maine_aq_lease_active <- maine_aq_lease %>%
+  dplyr::filter(STATUS == "A") %>% # 149 leases
+  dplyr::filter(str_detect(PRIMARYSP, "Salmon")) # 22 leases.. matches the northeast data
+ 
+us_me_salmon_mol <- st_transform(maine_aq_lease_active, crs = "+init=epsg:3035") # convert to equal area projection to find centroids.
+us_me_salmon_pts <- st_centroid(us_me_salmon_mol)
+# check
+plot(st_geometry(us_me_salmon_mol))
+plot(st_geometry(st_centroid(us_me_salmon_mol)), add=TRUE)
+
+us_me_salmon_pts_latlon <- st_transform(us_me_salmon_pts, crs = "+init=epsg:4326")
+
+farms_us_me <- data.frame(do.call(rbind, st_geometry(us_me_salmon_pts_latlon)))
+names(farms_us_me) <- c("lon", "lat")
+farms_us_me <- farms_us_me %>%
+  mutate(iso3c = "USA") %>%
+  mutate(data_quality = 2) %>%
+  mutate(subregion = "Maine")
+
+write_csv(farms_us_me, here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5/farms_maine_usa.csv"))
+
+```
+
+
 # Join cell count dataframes
 
 ```{r}
 
-farm_files <- list.files(here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5"), full=TRUE)
+farm_files <- list.files(here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5"), full=TRUE)
 all_farms = plyr::ldply(farm_files, read_csv)
 
 all_farms_1 <- all_farms %>%
   dplyr::select(-data_quality)
 
-write.csv(all_farms_1, here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon.csv"), row.names = FALSE)
+write.csv(all_farms_1, here("marine/salmon/salmon_farms/data/global_salmon_farm_lat_lon.csv"), row.names = FALSE)
 
-write.csv(all_farms, here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv"), row.names = FALSE)
+write.csv(all_farms, here("marine/salmon/salmon_farms/data/global_salmon_farm_lat_lon_quality.csv"), row.names = FALSE)
 
 # all_farms <- read_csv(here("marine/salmon/salmon_farm/data/global_salmon_farm_lat_lon_quality.csv"), col_types = "ddccd")
 

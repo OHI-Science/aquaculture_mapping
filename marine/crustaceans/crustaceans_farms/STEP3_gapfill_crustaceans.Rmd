@@ -18,15 +18,21 @@ Read in all the relevant farm datasets... the only one that is represented for c
 
 ```{r}
 
-no_info_files <- list.files(here("marine/crustaceans/crustacean_farms/data/no_info_1"), full=TRUE)
+no_info_files <- list.files(here("marine/crustaceans/crustaceans_farms/data/no_info_1"), full=TRUE)
 no_info_1 = plyr::ldply(no_info_files, read_csv)
 
+farm_files <- list.files(here("marine/crustaceans/crustaceans_farms/data/known_farm_sites_2_4_5"), full=TRUE)
+all_known_farms = plyr::ldply(farm_files, read_csv) %>%
+  mutate(type = "crustaceans")
+
+subset_gapfill_2 <- all_known_farms %>%
+  filter(data_quality == 2)
 
 ```
 
 Read in relevant production data
 ```{r}
-crustaceans_tonnes <- read_csv(here::here("marine/crustaceans/crustacean_farms/data/fao_mariculture_crustaceans.csv")) %>%
+crustaceans_tonnes <- read_csv(here::here("marine/crustaceans/crustaceans_farms/data/fao_mariculture_crustaceans.csv")) %>%
   mutate(type = "crustaceans") %>%
   filter(year == 2017)
 ```
@@ -56,12 +62,43 @@ gapfill_1 <- no_info_1 %>%
 
 ```
 
+Gapfill CHN (data quality = 2)
+
+```{r}
+## start with the subset of locations that need gapfilling based on tonnes/farm
+gapfill_2 <- subset_gapfill_2 %>%
+  group_by(iso3c, type) %>%
+  summarise(n_existing_farms = n()) %>%
+  ungroup() %>%
+  left_join(crustaceans_tonnes) %>%
+  mutate(avg_tonnes_per_farm = avg_global_shrimp_tonnes_per_farm) %>%
+  mutate(tonnes_accounted_for = avg_tonnes_per_farm*n_existing_farms) %>%
+  mutate(tonnes_remaining = fao_tonnes_production - tonnes_accounted_for) %>%
+  mutate(tonnes_remaining = ifelse(tonnes_remaining <= 0, 0, tonnes_remaining)) %>%
+  mutate(num_additional_farms = ceiling(tonnes_remaining/avg_tonnes_per_farm)) %>%
+  dplyr::select(iso3c, type, num_additional_farms, avg_tonnes_per_farm) %>%
+  mutate(estimated = 1) %>%
+  filter(num_additional_farms != 0)
+
+
+number_additional_points <- 
+  rbind(gapfill_1, gapfill_2)
+  
+```
+
+
 ```{r}
   
 
 ## write this out to our data folder
 
-write.csv(gapfill_1, here("marine/crustaceans/crustacean_farms/output/crustaceans_points_to_add_final.csv"), row.names = FALSE)
+write.csv(number_additional_points, here("marine/crustaceans/crustaceans_farms/output/crustaceans_points_to_add_final.csv"), row.names = FALSE)
+
+all_known_farms_final <- all_known_farms %>%
+  dplyr::select(-data_quality)
+
+
+write.csv(all_known_farms_final, here("marine/crustaceans/crustaceans_farms/output/all_known_crustaceans_farms_final.csv"), row.names = FALSE)
 ```
 
 
@@ -72,7 +109,7 @@ Data check
 
 
 
-test_2 <- gapfill_1 %>%
+test_2 <- number_additional_points %>%
   dplyr::select(iso3c)
 
 length(unique(test_2$iso3c)) ## 6 countries

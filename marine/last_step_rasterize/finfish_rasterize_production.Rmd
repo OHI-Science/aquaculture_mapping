@@ -78,16 +78,15 @@ mapview(farms_sf)
 
 # CHN:HKG
 # CHN:PRK
+# CHN:TWN
 # CYP:XAD
 # ESP:PRT
 # GRC:ALB
 # GRC:TUR
 # HKG:CHN
 # IDN:MYS
-# MYS:BRN
 # MYS:SGP
 # SGP:MYS
-# TWN:CHN
 
 
 farms_sf_correct <- farms_sf %>%
@@ -98,6 +97,8 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:HKG", "China", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CHN:PRK", "CHN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:PRK", "China", NAME_0)) %>%
+    mutate(GID_0 = ifelse(check %in% "CHN:TWN", "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CHN:TWN", "China", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CYP:XAD", "CYP", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CYP:XAD", "Cyprus", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "ESP:PRT", "ESP", GID_0)) %>%
@@ -110,22 +111,16 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "HKG:CHN", "Hong Kong", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "IDN:MYS", "IDN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "IDN:MYS", "Indonesia", NAME_0)) %>% 
-  mutate(GID_0 = ifelse(check %in% "MYS:BRN", "MYS", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MYS:BRN", "Malaysia", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "MYS:SGP", "MYS", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "MYS:SGP", "Malaysia", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "SGP:MYS", "SGP", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "SGP:MYS", "Singapore", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "TWN:CHN", "TWN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "TWN:CHN", "Taiwan", NAME_0)) 
+  mutate(NAME_0 = ifelse(check %in% "SGP:MYS", "Singapore", NAME_0)) 
   
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
 
 
 
-
-mapview(farms_sf_correct) # this all looks reasonable, no crazy points
 ```
 
 
@@ -202,9 +197,9 @@ plot(log(finfish_raster + 1))
 finfish_raster_df <- as.data.frame(finfish_raster, xy=TRUE) %>%
   dplyr::select(x,y, tonnes_production=layer)
 
-cellStats(finfish_raster, stat = "sum") # 3901214
-sum(finfish_raster_df$tonnes_production) # 3901214
-sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 3901214
+cellStats(finfish_raster, stat = "sum") # 3909255
+sum(finfish_raster_df$tonnes_production) # 3909255
+sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 3909255
 sum(fao$fao_tonnes_production) #3901214
 
 write_csv(finfish_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/marine_fish_general/updated/marine_fish_general_farm_updated.csv")

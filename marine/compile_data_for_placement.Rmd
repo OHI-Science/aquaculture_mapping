@@ -12,7 +12,7 @@ Read in all known farms data and bind together for one file.
 ```{r}
 bivalve_farms <- read_csv(here("marine/bivalve/bivalve_farms/output/all_known_bivalve_farms_final.csv"))
   
-# crustacean_farms <- read_csv(here("marine/crustaceans/crustacean_farms/output/all_known_crustacean_farms_final.csv")) ## there are none
+crustacean_farms <- read_csv(here("marine/crustaceans/crustaceans_farms/output/all_known_crustaceans_farms_final.csv")) ## there are none
   
 finfish_farms <-  read_csv(here("marine/marine_fish_general/finfish_farms/output/all_known_finfish_farms_final.csv"))
   
@@ -20,12 +20,12 @@ shrimp_farms <-  read_csv(here("marine/shrimp/shrimp_farms/output/all_known_shri
   
 tuna_farms <-  read_csv(here("marine/tuna/tuna_farms/output/all_known_tuna_farms_final.csv"))
   
-salmon_farms <-  read_csv(here("marine/salmon/salmon_farm/output/all_known_salmon_farms_final.csv")) %>%
+salmon_farms <-  read_csv(here("marine/salmon/salmon_farms/output/all_known_salmon_farms_final.csv")) %>%
   dplyr::select(-subregion)
 
 ## bind together
 
-all_farms <- rbind(bivalve_farms, finfish_farms, shrimp_farms, tuna_farms, salmon_farms)
+all_farms <- rbind(bivalve_farms, finfish_farms, shrimp_farms, tuna_farms, salmon_farms, crustacean_farms)
   
 ## now write to our output folder
 write.csv(all_farms, here("marine/output/all_marine_farms.csv"), row.names = FALSE)
@@ -39,7 +39,7 @@ Read in the points to add data and bind together for one file.
 ```{r}
 bivalve_farms_add <- read_csv(here("marine/bivalve/bivalve_farms/output/bivalve_points_to_add_final.csv"))
   
-crustacean_farms_add <- read_csv(here("marine/crustaceans/crustacean_farms/output/crustaceans_points_to_add_final.csv")) 
+crustacean_farms_add <- read_csv(here("marine/crustaceans/crustaceans_farms/output/crustaceans_points_to_add_final.csv")) 
   
 finfish_farms_add <-  read_csv(here("marine/marine_fish_general/finfish_farms/output/marine_fish_general_points_to_add_final.csv"))
   
@@ -47,7 +47,7 @@ shrimp_farms_add <-  read_csv(here("marine/shrimp/shrimp_farms/output/shrimp_poi
   
 tuna_farms_add<-  read_csv(here("marine/tuna/tuna_farms/output/tuna_points_to_add_final.csv"))
   
-salmon_farms_add <-  read_csv(here("marine/salmon/salmon_farm/output/salmon_points_to_add_final.csv"))
+salmon_farms_add <-  read_csv(here("marine/salmon/salmon_farms/output/salmon_points_to_add_final.csv"))
 
 all_point_additions <- rbind(bivalve_farms_add, crustacean_farms_add, finfish_farms_add, shrimp_farms_add, tuna_farms_add, salmon_farms_add)
 
@@ -66,7 +66,7 @@ countries_2 <- data.frame(iso3c = unique(all_point_additions$iso3c))
 
 all_countries <- rbind(countries_1, countries_2)
 
-unique(all_countries$iso3c) # 73 total countries mapped 
+length(unique(all_countries$iso3c)) # 73 total countries mapped 
 ```
 
 

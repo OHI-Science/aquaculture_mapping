@@ -17,6 +17,7 @@ library(dplyr)
 library(sf)
 library(raster)
 library(mapview)
+library(tidyverse)
 
 source(here("_spatial/template_raster.R"))
 
@@ -73,19 +74,21 @@ mapview(farms_sf)
 # some annoying mismatches due to raster resolution. Fix these
 
 # CHN:HKG
-# CHN:MAC
 # CHN:PRK
+# CHN:VNM
 # CRI:PAN
 # HND:NIC
 # HND:SLV
+# IDN:MYS 
 # IRN:IRQ
+# KHM:VNM 
 # MEX:USA
 # MYS:BRN
 # MYS:SGP
 # PAN:CRI
 # SAU:KWT
 # SLV:GTM
-# TWN:CHN
+# THA:MYS - 
 
 farms_sf_correct <- farms_sf %>%
   mutate(GID_0 = as.character(GID_0)) %>%
@@ -93,8 +96,8 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_1 = as.character(NAME_1)) %>%
   mutate(GID_0 = ifelse(check %in% "CHN:HKG", "CHN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:HKG", "China", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "CHN:MAC", "CHN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "CHN:MAC", "China", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "CHN:VNM", "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CHN:VNM", "China", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CHN:PRK", "CHN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:PRK", "China", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "CRI:PAN", "CRI", GID_0)) %>%
@@ -105,6 +108,10 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "HND:SLV", "Honduras", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "IRN:IRQ", "IRN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "IRN:IRQ", "Iran", NAME_0)) %>%  
+    mutate(GID_0 = ifelse(check %in% "IDN:MYS", "IDN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "IDN:MYS", "Indonesia", NAME_0)) %>%  
+      mutate(GID_0 = ifelse(check %in% "KHM:VNM", "KHM", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "KHM:VNM", "Cambodia", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "MEX:USA", "MEX", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "MEX:USA", "Mexico", NAME_0)) %>% 
   mutate(GID_0 = ifelse(check %in% "MYS:BRN", "MYS", GID_0)) %>%
@@ -116,9 +123,9 @@ farms_sf_correct <- farms_sf %>%
   mutate(GID_0 = ifelse(check %in% "SAU:KWT", "SAU", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "SAU:KWT", "Saudi Arabia", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "SLV:GTM", "SLV", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "SLV:GTM", "El Salvador", NAME_0)) %>%  
-  mutate(GID_0 = ifelse(check %in% "TWN:CHN", "TWN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "TWN:CHN", "Taiwan", NAME_0)) 
+  mutate(NAME_0 = ifelse(check %in% "SLV:GTM", "El Salvador", NAME_0)) %>%
+  mutate(GID_0 = ifelse(check %in% "THA:MYS", "THA", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "THA:MYS", "Thailand", NAME_0)) 
   
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
@@ -195,10 +202,10 @@ plot(log(shrimp_raster + 1))
 shrimp_raster_df <- as.data.frame(shrimp_raster, xy=TRUE) %>%
   dplyr::select(x,y, tonnes_production=layer)
 
-cellStats(shrimp_raster, stat = "sum") # 5094133
-sum(shrimp_raster_df$tonnes_production) # 5094133
-sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 5094133
-sum(fao$fao_tonnes_production) # 5094133
+cellStats(shrimp_raster, stat = "sum") # 5097823
+sum(shrimp_raster_df$tonnes_production) # 5097823
+sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 5097823
+sum(fao$fao_tonnes_production) # 5094133 - a bit off bc of rounding with our model
 
 write_csv(shrimp_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/shrimp/updated/shrimp_farm_updated.csv")
 

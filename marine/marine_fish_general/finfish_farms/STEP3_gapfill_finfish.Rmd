@@ -75,7 +75,7 @@ tonnes_per_farm <- comprehensive_farms_total %>%
   left_join(marine_fish_general_tonnes) %>%
   mutate(tonnes_per_farm = fao_tonnes_production/n_farms)
 
-write.csv(tonnes_per_farm, "output/finfish_comp_tonnes_per_farm.csv", row.names = FALSE)
+write.csv(tonnes_per_farm, "marine/marine_fish_general/finfish_farms/output/finfish_comp_tonnes_per_farm.csv", row.names = FALSE)
 
 
 avg_global_marine_fish_general_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)

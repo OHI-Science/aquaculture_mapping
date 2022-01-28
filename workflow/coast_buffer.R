@@ -40,18 +40,18 @@ data <- read_csv("marine/output/all_marine_farms.csv") %>%
            crs = crs(food_raster), 
            agr = "constant") 
 
-
-data <- read_csv("all_marine_aquaculture_farms_sources_31km.csv") %>% 
-  st_as_sf(., 
-           coords = c("X", "Y"),
-           crs = crs(food_raster), 
-           agr = "constant") %>%
-  filter(data_type_2 == "A")
+ 
+# data <- read_csv("all_marine_aquaculture_farms_sources_31km.csv") %>% 
+#   st_as_sf(., 
+#            coords = c("X", "Y"),
+#            crs = crs(food_raster), 
+#            agr = "constant") %>%
+#   filter(data_type_2 == "A")
 
 
 need_validation_allocation <- data %>%
   st_drop_geometry() %>%
-  group_by(iso3c, species_group) %>%
+  group_by(iso3c, type) %>%
   summarise(num_farms = n()) %>%
   ungroup()
 
@@ -137,7 +137,13 @@ for (i in 1:length(unique(need_validation_allocation$iso3c))) {
 # [1] "ARE" "AUS" "BGR" "BLZ" "CAN" "CHL" "CYP" "DNK" "ESP" "FIN" "FRA" "FRO" "GBR" "GRC" "HKG" "IRL" "ITA" "JEY" "MEX"
 # [20] "MLT" "NOR" "PYF" "SAU" "SWE" "USA"
 
+mydir <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/validation_coast_buffer"
+delfiles <- dir(path=mydir ,pattern="*.tif.aux.xml")
+file.remove(file.path(mydir, delfiles))
+
+
 all_coasts <- list.files("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/validation_coast_buffer", pattern = "temp_eez", full.names = TRUE)
+
 
 # all_coasts_stack <- raster::stack(all_coasts)
 # plot(all_coasts_stack[[18]], col = "red")
@@ -147,10 +153,10 @@ allrasters <- lapply(all_coasts, raster)
 
 allrasters$fun <- sum
 
-plot(allrasters[[12]])
+plot(allrasters[[18]])
 
-s <- raster::select(allrasters[[12]])
-plot(s)
+# s <- raster::select(allrasters[[12]])
+# plot(s)
 
 ## mosaic works 
 
@@ -190,10 +196,6 @@ plot(area(mos))
 
 plot(mos_cea, col = "black")
 plot(mos, col = "black")
-
-cellStats(mos, "sum") # 42484
-
-cellStats(mos_cea, "sum") # 149651
 
 writeRaster(mos_cea, file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/eez_validation_mask_cea_36km.tif"), overwrite = TRUE)
 

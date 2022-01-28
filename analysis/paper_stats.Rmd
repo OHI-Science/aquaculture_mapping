@@ -41,7 +41,7 @@ all_farms_sf <- all_farms %>%
   st_as_sf(coords =c("X", "Y")) 
 
 
-sum(all_farms$tonnes_per_farm) # 29638328
+sum(all_farms$tonnes_per_farm) # 29642964
 
 
 data_type_A <- all_farms %>%
@@ -51,10 +51,10 @@ sum(data_type_A$tonnes_per_farm) # 3568135
 
 data_type_no_A <- all_farms %>%
   filter(data_type_2 != "A")
-sum(data_type_no_A$tonnes_per_farm) # 26070193
+sum(data_type_no_A$tonnes_per_farm) # 26074829
 
 
-26070193/29638328 # 0.8796108
+26074829/29642964 # 0.8796296 # ~88% of production is data limited 
 
 
 test <- all_farms %>%
@@ -88,15 +88,15 @@ by_data_type <- all_farms %>%
 
 by_data_type
 # A tibble: 3 x 4
-#   data_type                                   n_obs total_obs   pct
-#   <chr>                                       <int>     <int> <dbl>
-# 1 known location                               9750     95341  10.2
-# 2 modeled location, estimated number of farms 75073     95341  78.7
-# 3 modeled location, known number of farms     10519     95341  11.0
+#   data_type                                    n_obs total_obs   pct
+#   <chr>                                        <int>     <int> <dbl>
+# 1 known locations                              16032     95331  16.8
+# 2 modeled locations, estimated number of farms 69348     95331  72.7
+# 3 modeled locations, known number of farms      9951     95331  10.4
 
 # How many countries have spatial locations information?
 known_countries <- all_farms %>%
-  filter(data_type == "known location") %>%
+  filter(data_type == "known locations") %>%
   distinct(iso3c)
 
 
@@ -105,16 +105,16 @@ known_countries <- all_farms %>%
 chn_data_estimated <- all_farms %>%
   filter(iso3c == "CHN") 
 # 58166 points
-58166/95342 # 0.6099201 = 61%
+58166/95443 # 0.6094318 = ~61%
 
 
 chn_data_known <- all_farms %>%
   filter(iso3c == "CHN") %>%
-  filter(data_type == "known location") # 15 locations 
+  filter(data_type == "known locations") # 5739 locations 
 
 # Chile, Norway, and Ireland provided a substantial number of known locations (>1000).
 top_known <- all_farms %>%
-  filter(data_type == "known location") %>%
+  filter(data_type == "known locations") %>%
   group_by(iso3c) %>%
     summarise(n_obs = n())
 
@@ -134,11 +134,11 @@ unique(no_info$country)
 
 mar_production <- read_csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv")
 
-sum(no_info$tonnes_per_farm) # 155205.1
+sum(no_info$tonnes_per_farm) # 156132.3
 
 sum(mar_production$total_tonnes) # 29623515
 
-155205.1/29623515 # 0.005239253
+156132.3/29623515 # 0.005270553
 
 chn_production <- mar_production %>%
   filter(country == "China")
@@ -196,7 +196,7 @@ sum(prod_total$total_tonnes) # 29623515
 
 Countries with comprehensive farm locations 
 
-However, 16 countries (representing 10% of fish and invertebrate mariculture production) had comprehensive farm locations across all taxa (i.e. no estimation or interpolation required, Table S3)
+However, 17 countries (representing 10% of fish and invertebrate mariculture production) had comprehensive farm locations across all taxa (i.e. no estimation or interpolation required, Table S3)
 ```{r}
 
 all_comp <- all_farms %>%
@@ -227,19 +227,21 @@ sum(comp_prod$total_tonnes) # 3203584
 
 Countries with comprehensive "number of farm" information
 
-"Thirty-six of the countries in the table have comprehensive “number of farm” data across all types of mariculture they produce (data types A, B, or C), accounting for 12% of the global fish and invertebrate mariculture production (Albania, Belize, Bulgaria, Canada, Chile, Colombia, Croatia, Cyprus, Denmark, El Salvador, Faroe Islands, Finland, French Polynesia, Germany, Greece, Guatemala, Guernsey, Hong Kong, Ireland, Italy, Jersey, Madagascar, Malta, Netherlands, New Zealand, Norway, Peru, Portugal, Singapore, Slovenia, South Africa, Sri Lanka, Tunisia, Turkey, United Arab Emirates, United Kingdom)."
+"Thirty-six countries have comprehensive “number of farm” data across all types of mariculture they produce (data types A, B, or C), accounting for 12% of the global fish and invertebrate mariculture production."
 
 ```{r}
-
 all_comp <- all_farms %>%
   group_by(iso3c) %>%
-  mutate(check = all(data_type_2 %in% c("A", "B", "C"))) %>%
-  filter(check == TRUE)
+  mutate(check = all(data_type_2 %in% c("A","B","C"))) %>%
+  filter(check == TRUE) 
+
 sort(unique(all_comp$country))
+
+print(unique(all_comp$country))
 
 cat(paste(sort(unique(all_comp$country)), collapse= "', '"))
 
-# Albania', 'Belize', 'Bulgaria', 'Canada', 'Chile', 'Colombia', 'Croatia', 'Cyprus', 'Denmark', 'El Salvador ', 'Faroe Islands', 'Finland', 'French Polynesia', 'Germany', 'Greece', 'Guatemala', 'Guernsey', 'Hong Kong ', 'Ireland', 'Italy', 'Jersey', 'Madagascar', 'Malta', 'Netherlands', 'New Zealand', 'Norway', 'Peru', 'Portugal', 'Singapore', 'Slovenia', 'South Africa', 'Sri Lanka', 'Tunisia', 'Turkey', 'United Arab Emirates', 'United Kingdom
+# 'Albania', 'Belize', 'Bulgaria', 'Canada', 'Chile', 'Colombia', 'Croatia', 'Cyprus', 'Denmark', 'El Salvador ', 'Faroe Islands', 'Finland', 'French Polynesia', 'Germany', 'Greece', 'Guatemala', 'Guernsey', 'Hong Kong ', 'Ireland', 'Italy', 'Jersey', 'Madagascar', 'Malta', 'Netherlands', 'New Zealand', 'Norway', 'Peru', 'Portugal', 'Singapore', 'Slovenia', 'South Africa', 'Sri Lanka', 'Tunisia', 'Turkey', 'United Arab Emirates', 'United Kingdom'
 
 ## how much production do they account for? 
 
@@ -250,13 +252,11 @@ comp_prod <- mar_production %>%
 
 sum(comp_prod$total_tonnes) # 3788091
 
-3788091/31011413 # 0.1221515 ~ 10%
-
-
+3788091/31011413 # 0.1221515 ~ 12%
 ```
 
 
-Using the country/species grouping combinations with presumed comprehensive farm count data (N=74, 17% of production included, data type A/B/C, see Table S3)
+"Using the country/species grouping combinations with presumed comprehensive farm count data (N=74, 17% of production included, data type A/B/C, see Table S3)"
 ```{r}
 
 test <- all_farms %>%
@@ -265,12 +265,34 @@ test <- all_farms %>%
 
 cat(paste(sort(unique(test$country)), collapse= "', '"))
 
+
+length(unique(test$country))
+
 sum(test$tonnes_per_farm)
  
 4963244/29623515 # 0.1675441 ~ 17%
 
+test2 <- test %>%
+  group_by(country, species_group) %>%
+  summarise(n()) # 74 combos
+
 ```
 
+```{r}
+by_data_type_spp <- all_farms %>%
+  group_by(data_type, species_group) %>%
+  summarise(n_obs = n()) %>%
+  mutate(total_obs = sum(n_obs)) %>% 
+  ungroup() %>%
+  mutate(pct = n_obs/total_obs*100)
+
+by_spp <- all_farms %>%
+  group_by(species_group) %>%
+  summarise(n_obs = n()) %>%
+  mutate(total_obs = sum(n_obs)) %>% 
+  ungroup() %>%
+  mutate(pct = n_obs/total_obs*100)
+```
 
 
 

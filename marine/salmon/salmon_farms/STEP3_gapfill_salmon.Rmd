@@ -70,15 +70,14 @@ tonnes_per_farm <- comprehensive_farms_total %>%
   left_join(salmon_tonnes) %>%
   mutate(tonnes_per_farm = fao_tonnes_production/n_farms)
 
-write.csv(tonnes_per_farm, "output/salmon_comp_tonnes_per_farm.csv", row.names = FALSE)
-
+write.csv(tonnes_per_farm, "marine/salmon/salmon_farms/output/salmon_comp_tonnes_per_farm.csv", row.names = FALSE)
 
 avg_global_salmon_tonnes_per_farm = mean(tonnes_per_farm$tonnes_per_farm)
-avg_global_salmon_tonnes_per_farm # 927.156
+avg_global_salmon_tonnes_per_farm # 927.156 v1; 938.2249 v2 ; 866.4024 v3 after scotland correction
 
 
 med_global_salmon_tonnes_per_farm = median(tonnes_per_farm$tonnes_per_farm)
-med_global_salmon_tonnes_per_farm # 520.5484
+med_global_salmon_tonnes_per_farm # 520.5484 v1; 520.5484 v2 ; 520.5484 v3
 ```
 
 Now let's gapfill those that are data quality = 2 and data quality = 1
@@ -129,7 +128,7 @@ number_additional_points <- all_number_3 %>%
 
 ## write this out to our final data folder
 
-write.csv(number_additional_points, here("marine/salmon/salmon_farm/output/salmon_points_to_add_final.csv"), row.names = FALSE)
+write.csv(number_additional_points, here("marine/salmon/salmon_farms/output/salmon_points_to_add_final.csv"), row.names = FALSE)
 ```
 
 Now lets make the file with all of the known farms 
@@ -138,7 +137,7 @@ Now lets make the file with all of the known farms
 all_known_farms_final <- all_known_farms %>%
   dplyr::select(-data_quality)
 
-write.csv(all_known_farms_final, here("marine/salmon/salmon_farm/output/all_known_salmon_farms_final.csv"), row.names = FALSE)
+write.csv(all_known_farms_final, here("marine/salmon/salmon_farms/output/all_known_salmon_farms_final.csv"), row.names = FALSE)
 ```
 
 Data check 

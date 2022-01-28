@@ -36,38 +36,40 @@ cell_rast_df <- raster_df(food_raster) %>%
 ## establish CRSs 
 
 ## food 81km2 at equator 
-eez_81 <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/eez_validation_mask.tif"))
+eez_81 <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/data_type_A_eez/eez_validation_mask.tif"))
 plot(raster::area(eez_81))
-
+plot(eez_81)
 cellStats(raster::area(eez_81), "mean")
 
 test <- data.frame(raster::values(raster::area(eez_81)))
 
 
 ## 36km2 equal area
-eez_36_cea <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/eez_validation_mask_cea_36km.tif"))
+eez_36_cea <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/data_type_A_eez/eez_validation_mask_cea_36km.tif"))
+plot(eez_36_cea)
 
 new_crs <- "+proj=cea +lat_ts=45 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
 new_raster <- raster(nrows=3000, ncols=4736, xmn=-14207430, xmx=14208570, ymn=-9000182, ymx=8999818, crs = new_crs)
 
 ## 25km2 equal area
-eez_25_cea <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/eez_validation_mask_cea_25km.tif"))
+eez_25_cea <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/data_type_A_eez/eez_validation_mask_cea_25km.tif"))
 
 cea_25_crs <- crs(eez_25_cea)
 plot(eez_25_cea)
 
 
 ## 1/4 degree cells 
-eez_quart_cell <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/eez_validation_mask_quarter_degree.tif"))
+eez_quart_cell <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/data_type_A_eez/eez_validation_mask_quarter_degree.tif"))
 
 quarter_crs <- crs(eez_quart_cell)
+
 
 ```
 
 Read in validation dataset 
 
 ```{r}
-validation_all <- readRDS(file.path("data/all_validation_farms_fix_shrimp.rds"))  %>%
+validation_all <- readRDS(file.path("data/all_validation_farms_resubmission.rds"))  %>%
   mutate(species_group = case_when(type == "salmon" ~ "Salmonidae fish",
                           type == "bivalve" ~ "Unfed or algae fed bivalve molluscs",
                           type == "shrimp" ~ "Shrimps and prawns", 
@@ -86,12 +88,11 @@ data_type_val <- validation_all %>%
   left_join(table_3_iso3c, by = c("iso3c", "species_group"))
 
 data_type_A <- data_type_val %>%
-  filter(data_type_2 == "A") 
+ filter(data_type_2 %in% c("A"))
 
-mapview(data_type_A, zcol = "source") 
 
 table_3_A <- table_3_iso3c %>%
-  filter(data_type_2 == "A")
+  filter(data_type_2 %in% c("A"))
 
 ```
 
@@ -138,7 +139,7 @@ Rasterize data to count number of farms per raster cell with 36km2 equal area
 val_rast <- rasterize(val_farms_cea_36, new_raster, field = "count_farms", fun = "sum")
 plot(val_rast)
 
-cellStats(val_rast, "sum")
+cellStats(val_rast, "sum") # 8552
 
 plot(val_rast, col = "black")
 #s <- raster::select(val_rast)
@@ -149,14 +150,14 @@ plot(val_rast, col = "black")
 real_rast <- rasterize(real_farms_cea_36, new_raster, field = "count_farms", fun = "sum")
 plot(real_rast)
 
-cellStats(real_rast, "sum") # 8455
+cellStats(real_rast, "sum") # 8552
 plot(real_rast, col = "black")
 
 rast_stack <- stack(val_rast, real_rast)
 cellStats(rast_stack, "sum")
 
 # layer.1 layer.2 
-#    8455    8455 
+#    8552    8552 
 
 ```
 
@@ -186,9 +187,9 @@ eez_cells_df <- as.data.frame(rast_stack) %>%
   mutate(cell = row_number()) %>% 
   filter(cell %in% c(world_coast$cell)) 
 
-sum(eez_cells_df$predicted, na.rm = TRUE) # 8442
+sum(eez_cells_df$predicted, na.rm = TRUE) # 8535
 
-sum(eez_cells_df$real, na.rm = TRUE) # 8377
+sum(eez_cells_df$real, na.rm = TRUE) # 8473
 
 ## still missing some farms.. but nothing egregious. This is probably ok. The results wouldn't change much even if we had the extra ~80 farms 
 
@@ -197,7 +198,7 @@ test <- rast_stack*eez_36_cea
 
 cellStats(test,"sum") 
 # layer.1 layer.2 
-#    8442    8377 
+#    8535    8473 
 
 ## we are losing some farms...
 
@@ -208,73 +209,72 @@ confusion_mat <- caret::confusionMatrix(data = as.factor(eez_cells_df$pred_count
 confusion_mat
 
 # Confusion Matrix and Statistics
-# 
 #           Reference
 # Prediction       0       1
-#          0 1171915    2492
-#          1    2762     695
+#          0 1171909    2552
+#          1    2721     682
 #                                           
 #                Accuracy : 0.9955          
-#                  95% CI : (0.9954, 0.9957)
+#                  95% CI : (0.9954, 0.9956)
 #     No Information Rate : 0.9973          
-#     P-Value [Acc > NIR] : 1.0000000       
+#     P-Value [Acc > NIR] : 1.00000         
 #                                           
-#                   Kappa : 0.207           
+#                   Kappa : 0.2033          
 #                                           
-#  Mcnemar's Test P-Value : 0.0002063       
+#  Mcnemar's Test P-Value : 0.02069         
 #                                           
-#             Sensitivity : 0.9976          
-#             Specificity : 0.2181          
-#          Pos Pred Value : 0.9979          
-#          Neg Pred Value : 0.2010          
+#             Sensitivity : 0.9977          
+#             Specificity : 0.2109          
+#          Pos Pred Value : 0.9978          
+#          Neg Pred Value : 0.2004          
 #              Prevalence : 0.9973          
 #          Detection Rate : 0.9949          
 #    Detection Prevalence : 0.9971          
-#       Balanced Accuracy : 0.6079          
+#       Balanced Accuracy : 0.6043          
 #                                           
-#        'Positive' Class : 0    
+#        'Positive' Class : 0  
 
-library(pROC)
-roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE) # 0.6019
-
-
-library(pROC)
-library(randomForest)
-
-
-roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE, percent = TRUE, xlab = "False Positive Percentage", ylab = "True Positive Percentage", col = "#377eb8", lwd = 4, print.auc = TRUE) # 0.6068
-
-roc.info <- roc(eez_cells_df$real_count, eez_cells_df$pred_count, legacy.axes = TRUE)
-
-roc.df <- data.frame(tpp = roc.info$sensitivities*100,
-                     fpp = (1-roc.info$specificities)*100,
-                     thresholds = roc.info$thresholds)
-
-
-#### ROC curve try #2
-# https://www.datatechnotes.com/2019/03/how-to-create-roc-curve-in-r.html
-
-library(ROCR)
-  
- 
-pred = eez_cells_df$pred_count
-
-pred = prediction(pred, eez_cells_df$real_count)
-
-perf = performance(pred, "acc")
-plot(perf)
-
-perf_cost <- performance(pred, "cost")
-plot(perf_cost)
-
-roc = performance(pred, "tpr", "fpr")
-
-plot(roc, colorize = T, lwd=2)
-abline(a=0, b=1)
-
-auc = performance(pred, measure = "auc")
-print(auc@y.values)
-# 0.6091016
+# library(pROC)
+# roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE) # 0.6019
+# 
+# 
+# library(pROC)
+# library(randomForest)
+# 
+# 
+# roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE, percent = TRUE, xlab = "False Positive Percentage", ylab = "True Positive Percentage", col = "#377eb8", lwd = 4, print.auc = TRUE) # 0.6068
+# 
+# roc.info <- roc(eez_cells_df$real_count, eez_cells_df$pred_count, legacy.axes = TRUE)
+# 
+# roc.df <- data.frame(tpp = roc.info$sensitivities*100,
+#                      fpp = (1-roc.info$specificities)*100,
+#                      thresholds = roc.info$thresholds)
+# 
+# 
+# #### ROC curve try #2
+# # https://www.datatechnotes.com/2019/03/how-to-create-roc-curve-in-r.html
+# 
+# library(ROCR)
+#   
+#  
+# pred = eez_cells_df$pred_count
+# 
+# pred = prediction(pred, eez_cells_df$real_count)
+# 
+# perf = performance(pred, "acc")
+# plot(perf)
+# 
+# perf_cost <- performance(pred, "cost")
+# plot(perf_cost)
+# 
+# roc = performance(pred, "tpr", "fpr")
+# 
+# plot(roc, colorize = T, lwd=2)
+# abline(a=0, b=1)
+# 
+# auc = performance(pred, measure = "auc")
+# print(auc@y.values)
+# # 0.6091016
 
 ```
 
@@ -283,7 +283,7 @@ print(auc@y.values)
 
 Use our EEZ mask to create a confusion matrix for CEA 25km2 cell sizes 
 
- - AUC of ~0.58 - worse than 36km2... makes sense! 
+ - AUC of ~0.59 - worse than 36km2... makes sense! 
 ```{r}
 
 val_rast <- rasterize(val_farms_cea_25, eez_25_cea, field = "count_farms", fun = "sum")
@@ -300,14 +300,14 @@ plot(val_rast, col = "black")
 real_rast <- rasterize(real_farms_cea_25, eez_25_cea, field = "count_farms", fun = "sum")
 plot(real_rast)
 
-cellStats(real_rast, "sum") # 8455
+cellStats(real_rast, "sum") # 8552
 plot(real_rast, col = "black")
 
 rast_stack <- stack(val_rast, real_rast)
 cellStats(rast_stack, "sum")
-
+ 
 # layer.1 layer.2 
-#    8455    8455 
+#    8552    8552 
 
 
 
@@ -330,9 +330,9 @@ eez_cells_df <- as.data.frame(rast_stack) %>%
   mutate(cell = row_number()) %>% 
   filter(cell %in% c(world_coast$cell)) 
 
-sum(eez_cells_df$predicted, na.rm = TRUE) # 8445
+sum(eez_cells_df$predicted, na.rm = TRUE) # 8536
 
-sum(eez_cells_df$real, na.rm = TRUE) # 8386
+sum(eez_cells_df$real, na.rm = TRUE) # 8482
 
 ## still missing some farms.. but nothing egregious. This is probably ok. The results wouldn't change much even if we had the extra ~80 farms. This is likely due to reprojection weirdness
 
@@ -341,7 +341,7 @@ test <- rast_stack*eez_25_cea
 
 cellStats(test,"sum") 
 # layer.1 layer.2 
-#    8445    8386 
+#    8536    8482 
 
 
 #### make a confusion matrix 
@@ -354,77 +354,38 @@ confusion_mat
 # 
 #           Reference
 # Prediction       0       1
-#          0 1689389    2864
-#          1    3071     654
+#          0 1689310    2929
+#          1    3100     639
 #                                           
-#                Accuracy : 0.9965          
-#                  95% CI : (0.9964, 0.9966)
+#                Accuracy : 0.9964          
+#                  95% CI : (0.9964, 0.9965)
 #     No Information Rate : 0.9979          
-#     P-Value [Acc > NIR] : 1.000000        
+#     P-Value [Acc > NIR] : 1.00000         
 #                                           
-#                   Kappa : 0.1788          
+#                   Kappa : 0.1731          
 #                                           
-#  Mcnemar's Test P-Value : 0.007496        
+#  Mcnemar's Test P-Value : 0.02857         
 #                                           
 #             Sensitivity : 0.9982          
-#             Specificity : 0.1859          
+#             Specificity : 0.1791          
 #          Pos Pred Value : 0.9983          
-#          Neg Pred Value : 0.1756          
+#          Neg Pred Value : 0.1709          
 #              Prevalence : 0.9979          
 #          Detection Rate : 0.9961          
 #    Detection Prevalence : 0.9978          
-#       Balanced Accuracy : 0.5920          
+#       Balanced Accuracy : 0.5886          
 #                                           
-#        'Positive' Class : 0 
-
-library(pROC)
-roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE) # 0.6019
+#        'Positive' Class : 0               
+                             
 
 
-library(pROC)
-library(randomForest)
-
-
-roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE, percent = TRUE, xlab = "False Positive Percentage", ylab = "True Positive Percentage", col = "#377eb8", lwd = 4, print.auc = TRUE) # 0.6068
-
-roc.info <- roc(eez_cells_df$real_count, eez_cells_df$pred_count, legacy.axes = TRUE)
-
-roc.df <- data.frame(tpp = roc.info$sensitivities*100,
-                     fpp = (1-roc.info$specificities)*100,
-                     thresholds = roc.info$thresholds)
-
-
-#### ROC curve try #2
-# https://www.datatechnotes.com/2019/03/how-to-create-roc-curve-in-r.html
-
-library(ROCR)
-  
- 
-pred = eez_cells_df$pred_count
-
-pred = prediction(pred, eez_cells_df$real_count)
-
-perf = performance(pred, "acc")
-plot(perf)
-
-perf_cost <- performance(pred, "cost")
-plot(perf_cost)
-
-roc = performance(pred, "tpr", "fpr")
-
-plot(roc, colorize = T, lwd=2)
-abline(a=0, b=1)
-
-auc = performance(pred, measure = "auc")
-print(auc@y.values)
-# 0.5920433
 
 ```
 
 
 Use our EEZ mask to create a confusion matrix for 0.25 X 0.25 degree cell sizes (about 769.3152km2 at equator). Average cell size is 490.3108 km2
 
- - AUC of ~7042 ; makes sense that is it better! 
+ - AUC of ~72.05 ; makes sense that is it better! 
  
 ```{r}
 test <- raster::area(eez_quart_cell)
@@ -444,14 +405,14 @@ plot(val_rast, col = "black")
 real_rast <- rasterize(real_farms_quart, eez_quart_cell, field = "count_farms", fun = "sum")
 plot(real_rast)
 
-cellStats(real_rast, "sum") # 8455
+cellStats(real_rast, "sum") # 8552
 plot(real_rast, col = "black")
 
 rast_stack <- stack(val_rast, real_rast)
 cellStats(rast_stack, "sum")
 
 # layer.1 layer.2 
-#    8455    8455 
+#    8552    8552 
 
 
 
@@ -476,16 +437,16 @@ eez_cells_df <- as.data.frame(rast_stack) %>%
 
 sum(eez_cells_df$predicted, na.rm = TRUE) # 8124
 
-sum(eez_cells_df$real, na.rm = TRUE) # 8080
+sum(eez_cells_df$real, na.rm = TRUE) # 8173
 
-## still missing some farms.. but nothing egregious. This is probably ok. The results wouldn't change much even if we had the extra farms. 
+## still missing some farms..
 
 
 test <- rast_stack*eez_quart_cell
 
 cellStats(test,"sum") 
 # layer.1 layer.2 
-#    8124    8080 
+#    8124    8173  
 
 
 #### make a confusion matrix 
@@ -498,156 +459,289 @@ confusion_mat
 # 
 #           Reference
 # Prediction     0     1
-#          0 84497   619
-#          1   982   527
+#          0 84570   639
+#          1   902   514
 #                                           
-#                Accuracy : 0.9815          
-#                  95% CI : (0.9806, 0.9824)
-#     No Information Rate : 0.9868          
+#                Accuracy : 0.9822          
+#                  95% CI : (0.9813, 0.9831)
+#     No Information Rate : 0.9867          
 #     P-Value [Acc > NIR] : 1               
 #                                           
-#                   Kappa : 0.3878          
+#                   Kappa : 0.3912          
 #                                           
-#  Mcnemar's Test P-Value : <2e-16          
+#  Mcnemar's Test P-Value : 2.486e-11       
 #                                           
-#             Sensitivity : 0.9885          
-#             Specificity : 0.4599          
-#          Pos Pred Value : 0.9927          
-#          Neg Pred Value : 0.3492          
-#              Prevalence : 0.9868          
-#          Detection Rate : 0.9754          
-#    Detection Prevalence : 0.9826          
-#       Balanced Accuracy : 0.7242          
+#             Sensitivity : 0.9894          
+#             Specificity : 0.4458          
+#          Pos Pred Value : 0.9925          
+#          Neg Pred Value : 0.3630          
+#              Prevalence : 0.9867          
+#          Detection Rate : 0.9763          
+#    Detection Prevalence : 0.9837          
+#       Balanced Accuracy : 0.7176          
 #                                           
-#        'Positive' Class : 0  
+#        'Positive' Class : 0               
+                                
 
-recall <- 527/(527+619) # 0.46
-
-precision <- 527 / (527 + 982) # 0.3492379
-
-accuracy <- (84497 + 982)/(84497 + 982 + 527 + 619) # 0.9867706
-
-f_measure <- (2*recall*precision)/(recall + precision) # 0.33
-
-specificity = (84497)/(84497 + 982) # 0.9885118
-
-balanced_accuracy <- (recall + specificity)/2 # 0.7242 - this is also the AUC - which is pretty good.
-
-g_measure <- sqrt(precision*recall) # 0.401
-
-
-library(pROC)
-roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE) # 0.7242
-
-
-library(pROC)
-library(randomForest)
-
-
-roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE, percent = TRUE, xlab = "False Positive Percentage", ylab = "True Positive Percentage", col = "#377eb8", lwd = 4, print.auc = TRUE) # 72.42
-
-roc.info <- roc(eez_cells_df$real_count, eez_cells_df$pred_count, legacy.axes = TRUE)
-
-roc.df <- data.frame(tpp = roc.info$sensitivities*100,
-                     fpp = (1-roc.info$specificities)*100,
-                     thresholds = roc.info$thresholds)
-
-
-#### ROC curve try #2
-# https://www.datatechnotes.com/2019/03/how-to-create-roc-curve-in-r.html
-
-library(ROCR)
-  
- 
-pred = eez_cells_df$pred_count
-
-pred = prediction(pred, eez_cells_df$real_count)
-
-perf = performance(pred, "acc")
-plot(perf)
-
-perf_cost <- performance(pred, "cost")
-plot(perf_cost)
-
-roc = performance(pred, "tpr", "fpr")
-
-plot(roc, colorize = T, lwd=2)
-abline(a=0, b=1)
-
-auc = performance(pred, measure = "auc")
-print(auc@y.values)
-# 0.7241861
 
 ```
 
 
 
-Use our EEZ mask to create a confusion matrix for XX degree cell sizes (about 81km2 at equator)
 
- - AUC of ~ 0.5950; about the same as the 25km2 size. Makes sense, because the average area is somewhere around there (since this isnt equal area). 
+
+Use our suitability mask to create a confusion matrix for XX degree cell sizes (about 81km2 at equator, ~10km of coastline) with data type A real farms 
+
+ - What % of data type A real farms fall into a suitable cell?
+ - What % fall out of a suitable cell? 
+ - What % of suitable cells do not have any farms in them? 
+ - etc. 
+
+
+At 5 arc minute resolution (~10 km of coastline at the equator), when comparing our suitable areas to data type A real farms, we have a balanced accuracy of 0.81. Conducting this same analysis at a coarser resolution of 0.25 degrees (~30 km of coastline at the equator), we see a higher balanced accuracy of xx. Given this, we suggest utilizing our maps at a resolution of 5 arc minutes or larger, as 5 arc minutes produces a defensible accuracy, and aligns with other types of food production maps (e.g. MAPSPAM, FAO, etc). 
+
+When comparing to the coarser resolution of 0.25 degrees, the AUC jumps to 0.84. 
+
 ```{r}
 
-val_rast <- rasterize(validation_farms, eez_81, field = "count_farms", fun = "sum")
-plot(val_rast)
+suitability_81 <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suitability.tif")
+plot(suitability_81)
 
-cellStats(val_rast, "sum")
+real_rast <- rasterize(real_farms 
+                       , 
+                       suitability_81, field = "count_farms", fun = "sum")
 
-plot(val_rast, col = "black")
-#s <- raster::select(val_rast)
-#plot(s)
+plot(real_rast, col = 'red')
 
-
-
-real_rast <- rasterize(real_farms, eez_81, field = "count_farms", fun = "sum")
-plot(real_rast)
-
-cellStats(real_rast, "sum") # 8455
+cellStats(real_rast, "sum") # 8179
 plot(real_rast, col = "black")
 
-rast_stack <- stack(val_rast, real_rast)
-cellStats(rast_stack, "sum")
 
-# layer.1 layer.2 
-#    8455    8455 
+# norway_suit <- raster::crop(suitability_81, extent(-25, 50, 50, 75))
+# norway_farm <- raster::crop(real_rast, extent(-25, 50, 50, 75))
+# 
+# plot(norway_suit)
+# plot(norway_farm, add = TRUE, col = "red")
+# 
+# chile_suit <- raster::crop(suitability_81, extent(-80, -70, -44, -40))
+# chile_farm <- raster::crop(real_rast, extent(-80, -70, -44, -40))
+# 
+# plot(chile_suit)
+# plot(chile_farm, add = TRUE, col = "red")
+# 
+real_suit_stack <- stack(real_rast, suitability_81)
+
+real_suit_df <- as.data.frame(real_suit_stack) %>%
+  mutate(layer_count = ifelse(layer >=1, 1, 0),
+         suit_count = ifelse(ocean_land_suitability >=1, 1, 0)) %>%
+  mutate(layer_count = ifelse(is.na(layer_count), 0, layer_count),
+         suit_count = ifelse(is.na(suit_count), 0, suit_count))
+# 
+# 
+# analysis1 <- real_suit_df %>%
+#   filter(layer >= 1, ocean_land_suitability == 1)
+# 
+# sum(analysis1$layer) # 8179
+# 5277/8179 # 0.6451889 = 65% of real farms fall into suitable areas...
+# 
+# analysis2 <- real_suit_df %>%
+#   filter(layer >= 1, is.na(ocean_land_suitability))
+# 
+# sum(analysis2$layer) # 2902
+# 
+# 2902/8179 # 35% fall out of suitable areas
+
+confusion_mat <- caret::confusionMatrix(data = as.factor(real_suit_df$suit_count), reference = as.factor(real_suit_df$layer_count))
+
+confusion_mat
+
+# Confusion Matrix and Statistics
+# 
+#           Reference
+# Prediction       0       1
+#          0 6402310     932
+#          1  118298    1660
+#                                           
+#                Accuracy : 0.9817          
+#                  95% CI : (0.9816, 0.9818)
+#     No Information Rate : 0.9996          
+#     P-Value [Acc > NIR] : 1               
+#                                           
+#                   Kappa : 0.0263          
+#                                           
+#  Mcnemar's Test P-Value : <2e-16          
+#                                           
+#             Sensitivity : 0.98186         
+#             Specificity : 0.64043         
+#          Pos Pred Value : 0.99985         
+#          Neg Pred Value : 0.01384         
+#              Prevalence : 0.99960         
+#          Detection Rate : 0.98147         
+#    Detection Prevalence : 0.98161         
+#       Balanced Accuracy : 0.81114         
+#                                           
+#        'Positive' Class : 0     
+
+#### Now look at other resolutions
 
 
+## 36km2 equal area
+suitability_36 <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suit_36km.tif")
+plot(suitability_36)
 
-plot(eez_81, col = "black")
+real_rast <- rasterize(real_farms_cea_36
+                       , 
+                       suitability_36, field = "count_farms", fun = "sum")
 
-world_coast <- as.data.frame(eez_81) %>%
-  mutate(cell = row_number()) %>%
-  filter(!is.na(eez_validation_mask))
+plot(real_rast, col = 'red')
 
-
-eez_cells_df <- as.data.frame(rast_stack) %>%
-  rename("predicted" = "layer.1", "real" = "layer.2") %>%
-  mutate(pred_count = ifelse(predicted >=1, 1, 0),
-         real_mod_count = ifelse(predicted >=1&real>=1, 1, 0)) %>%
-  mutate(real_count = ifelse(real>=1,1,0)) %>%
-  mutate(pred_count = ifelse(is.na(pred_count), 0, pred_count),
-         real_count = ifelse(is.na(real_count), 0, real_count), 
-         real = ifelse(is.na(real), 0, real),
-         predicted = ifelse(is.na(predicted), 0, predicted)) %>%
-  mutate(cell = row_number()) %>% 
-  filter(cell %in% c(world_coast$cell)) 
-
-sum(eez_cells_df$predicted, na.rm = TRUE) # 8452
-
-sum(eez_cells_df$real, na.rm = TRUE) # 8350
-
-## still missing some farms.. but nothing egregious. This is probably ok. The results wouldn't change much even if we had the extra farms. This is likely due to reprojection weirdness
+cellStats(real_rast, "sum") # 8552
+plot(real_rast, col = "black")
 
 
-test <- rast_stack*eez_81
+real_suit_stack <- stack(real_rast, suitability_36)
 
-cellStats(test,"sum") 
-# layer.1 layer.2 
-#    8124    8080 
+real_suit_df <- as.data.frame(real_suit_stack) %>%
+  mutate(layer_count = ifelse(layer >=1, 1, 0),
+         suit_count = ifelse(ocean_land_suit_36km >=1, 1, 0)) %>%
+  mutate(layer_count = ifelse(is.na(layer_count), 0, layer_count),
+         suit_count = ifelse(is.na(suit_count), 0, suit_count))
 
 
-#### make a confusion matrix 
+analysis1 <- real_suit_df %>%
+  filter(layer >= 1, ocean_land_suit_36km == 1)
 
-confusion_mat <- caret::confusionMatrix(data = as.factor(eez_cells_df$pred_count), reference = as.factor(eez_cells_df$real_count))
+sum(analysis1$layer) # 5505
+5505/8552 # 0.6437091 = 64% of real farms fall into suitable areas...
+
+
+confusion_mat <- caret::confusionMatrix(data = as.factor(real_suit_df$suit_count), reference = as.factor(real_suit_df$layer_count))
+
+confusion_mat
+
+# Confusion Matrix and Statistics
+# 
+#           Reference
+# Prediction        0        1
+#          0 13967424     1337
+#          1   237288     1951
+#                                           
+#                Accuracy : 0.9832          
+#                  95% CI : (0.9831, 0.9833)
+#     No Information Rate : 0.9998          
+#     P-Value [Acc > NIR] : 1               
+#                                           
+#                   Kappa : 0.0156          
+#                                           
+#  Mcnemar's Test P-Value : <2e-16          
+#                                           
+#             Sensitivity : 0.983295        
+#             Specificity : 0.593370        
+#          Pos Pred Value : 0.999904        
+#          Neg Pred Value : 0.008155        
+#              Prevalence : 0.999769        
+#          Detection Rate : 0.983068        
+#    Detection Prevalence : 0.983162        
+#       Balanced Accuracy : 0.788332        
+#                                           
+#        'Positive' Class : 0     
+
+# This makes sense given the finer resolution
+                               
+## 25km2 equal area
+suitability_25 <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suit_25km.tif")
+plot(suitability_25)
+
+real_rast <- rasterize(real_farms_cea_25
+                       , 
+                       suitability_25, field = "count_farms", fun = "sum")
+
+plot(real_rast, col = 'red')
+
+cellStats(real_rast, "sum") # 8552
+plot(real_rast, col = "black")
+
+
+real_suit_stack <- stack(real_rast, suitability_25)
+
+real_suit_df <- as.data.frame(real_suit_stack) %>%
+  mutate(layer_count = ifelse(layer >=1, 1, 0),
+         suit_count = ifelse(ocean_land_suit_25km >=1, 1, 0)) %>%
+  mutate(layer_count = ifelse(is.na(layer_count), 0, layer_count),
+         suit_count = ifelse(is.na(suit_count), 0, suit_count))
+
+
+analysis1 <- real_suit_df %>%
+  filter(layer >= 1, ocean_land_suit_25km == 1)
+
+sum(analysis1$layer) # 5518
+5518/8552 # 0.6452292 = 65% of real farms fall into suitable areas...
+
+
+confusion_mat <- caret::confusionMatrix(data = as.factor(real_suit_df$suit_count), reference = as.factor(real_suit_df$layer_count))
+
+confusion_mat
+
+# Confusion Matrix and Statistics
+# 
+#           Reference
+# Prediction        0        1
+#          0 20112053     1505
+#          1   343120     2122
+#                                           
+#                Accuracy : 0.9832          
+#                  95% CI : (0.9831, 0.9832)
+#     No Information Rate : 0.9998          
+#     P-Value [Acc > NIR] : 1               
+#                                           
+#                   Kappa : 0.0118          
+#                                           
+#  Mcnemar's Test P-Value : <2e-16          
+#                                           
+#             Sensitivity : 0.983226        
+#             Specificity : 0.585057        
+#          Pos Pred Value : 0.999925        
+#          Neg Pred Value : 0.006146        
+#              Prevalence : 0.999823        
+#          Detection Rate : 0.983051        
+#    Detection Prevalence : 0.983125        
+#       Balanced Accuracy : 0.784141        
+#                                           
+#        'Positive' Class : 0    
+
+
+## quarter degree cells 
+
+suitability_quart <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suit_quart.tif")
+plot(suitability_quart)
+
+real_rast <- rasterize(real_farms_quart
+                       , 
+                       suitability_quart, field = "count_farms", fun = "sum")
+
+plot(real_rast, col = 'red')
+
+cellStats(real_rast, "sum") # 8179
+plot(real_rast, col = "black")
+
+
+real_suit_stack <- stack(real_rast, suitability_quart)
+
+real_suit_df <- as.data.frame(real_suit_stack) %>%
+  mutate(layer_count = ifelse(layer >=1, 1, 0),
+         suit_count = ifelse(ocean_land_suit_quart >=1, 1, 0)) %>%
+  mutate(layer_count = ifelse(is.na(layer_count), 0, layer_count),
+         suit_count = ifelse(is.na(suit_count), 0, suit_count))
+
+
+analysis1 <- real_suit_df %>%
+  filter(layer >= 1, ocean_land_suit_quart == 1)
+
+sum(analysis1$layer) # 5380
+5380/8179 # 0.6577821 = 66% of real farms fall into suitable areas...
+
+
+confusion_mat <- caret::confusionMatrix(data = as.factor(real_suit_df$suit_count), reference = as.factor(real_suit_df$layer_count))
 
 confusion_mat
 
@@ -655,79 +749,34 @@ confusion_mat
 # 
 #           Reference
 # Prediction      0      1
-#          0 757504   2266
-#          1   2137    541
-#                                           
-#                Accuracy : 0.9942          
-#                  95% CI : (0.9941, 0.9944)
-#     No Information Rate : 0.9963          
-#     P-Value [Acc > NIR] : 1.00000         
-#                                           
-#                   Kappa : 0.1944          
-#                                           
-#  Mcnemar's Test P-Value : 0.05373         
-#                                           
-#             Sensitivity : 0.9972          
-#             Specificity : 0.1927          
-#          Pos Pred Value : 0.9970          
-#          Neg Pred Value : 0.2020          
-#              Prevalence : 0.9963          
-#          Detection Rate : 0.9935          
-#    Detection Prevalence : 0.9965          
-#       Balanced Accuracy : 0.5950          
-#                                           
-#        'Positive' Class : 0
-
-library(pROC)
-roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE) # 0.5950
-
-
-library(pROC)
-library(randomForest)
-
-
-roc(eez_cells_df$real_count, eez_cells_df$pred_count, plot = TRUE, percent = TRUE, xlab = "False Positive Percentage", ylab = "True Positive Percentage", col = "#377eb8", lwd = 4, print.auc = TRUE) # 0.5950
-
-roc.info <- roc(eez_cells_df$real_count, eez_cells_df$pred_count, legacy.axes = TRUE)
-
-roc.df <- data.frame(tpp = roc.info$sensitivities*100,
-                     fpp = (1-roc.info$specificities)*100,
-                     thresholds = roc.info$thresholds)
-
-
-#### ROC curve try #2
-# https://www.datatechnotes.com/2019/03/how-to-create-roc-curve-in-r.html
-
-library(ROCR)
-  
- 
-pred = eez_cells_df$pred_count
-
-pred = prediction(pred, eez_cells_df$real_count)
-
-perf = performance(pred, "acc")
-plot(perf)
-
-perf_cost <- performance(pred, "cost")
-plot(perf_cost)
-
-roc = performance(pred, "tpr", "fpr")
-
-plot(roc, colorize = T, lwd=2)
-abline(a=0, b=1)
-
-auc = performance(pred, measure = "auc")
-print(auc@y.values)
-# 0.5950
-
+#          0 709283    325
+#          1  13933    779
+#                                         
+#                Accuracy : 0.9803        
+#                  95% CI : (0.98, 0.9806)
+#     No Information Rate : 0.9985        
+#     P-Value [Acc > NIR] : 1             
+#                                         
+#                   Kappa : 0.0959        
+#                                         
+#  Mcnemar's Test P-Value : <2e-16        
+#                                         
+#             Sensitivity : 0.98073       
+#             Specificity : 0.70562       
+#          Pos Pred Value : 0.99954       
+#          Neg Pred Value : 0.05295       
+#              Prevalence : 0.99848       
+#          Detection Rate : 0.97924       
+#    Detection Prevalence : 0.97969       
+#       Balanced Accuracy : 0.84318       
+#                                         
+#        'Positive' Class : 0  
 ```
 
 
-
-
-
-
-
+```{r}
+# gentry <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/gentry/karakoenig"))
+```
 
 
 

@@ -62,28 +62,28 @@ source(here("_spatial/template_raster.R"))
 
 There are 23 states with marine coasts.
 
-**There is comprehensive downloadable data for 5 states: **
+**There is comprehensive downloadable data for 7 states: **
 
- - Maine, Alaska, New Hampshire, New York(?), Connecticut(?)
+ - Maine, Alaska, New Hampshire, Connecticut, North Carolina, Rhode Island, Alabama
  
 
-**There are publicly available map viewers (leases or farm locations) which seem to be comprehensive, but are NOT downloadable for 4 states:**
+**There are publicly available map viewers (leases or farm locations) which seem to be comprehensive, but are NOT downloadable for 1 state:**
 
- - Alabama, North Carolina, Virginia, Rhode Island
+ - Virginia
 
-**There is general info on lease holders, what they farm, and what municipality or city they are in for 7 states:** 
+**There is general info on lease holders, what they farm, and what municipality or city they are in for 6 states:** 
 
  - California: general areas with acreage for commercial farms
  - Oregon: map of places were commercial harvest/growing is allowed
- - Maryland: Have INDIVIDUAL pdf maps of all lease applications and if they were accepted or not...
  - New Jersey: Have pdf maps of all existing shellfish leases and those issued in 2020
  - Massachusetts: Have number of growers per municipality with acreage and species type; also a subset of farms are available in the NE data viewer.
  - South Carolina: Apparently have 9 oyster farms as of 2021
  - Washington: Approximate locations of commercial net pens. 
  
-**Subset of farms downloadable for 1 state:**
+**Subset of farms or outdated downloadable for 2 states:**
 
  - Florida: A map of mariculture farms which are at risk of oil spills
+ - Maryland: Have INDIVIDUAL pdf maps of all lease applications and if they were accepted or not... And was able to download lease data from 2013.
  
 **Couldn't really find any information on 4 states:**
 
@@ -91,21 +91,21 @@ There are 23 states with marine coasts.
  
 **Probably no mariculture for 2 states:**
 
- - Delaware: Commercial harvest is illegal
+ - Delaware: Commercial harvest is illegal; apparently one farm but not production (Halley)
  - Georgia: From what I could tell, oyster farming was illegal here as recent as 2020
-
+ - New York: No production (Halley) 
 
 ## Comprehensive, downloadable
 
 ### Maine
 
- - https://www.maine.gov/dmr/aquaculture/leases/aquaculturemap.html
- - I think we will want to use both "limited purpose" and regular leases.
+ - Viewer: https://www.maine.gov/dmr/aquaculture/leases/aquaculturemap.html
+ - Download: https://dmr-maine.opendata.arcgis.com/datasets/maine::mainedmr-aquaculture-aq-leases/about
+ - I think we will want to use regular leases only.
  - Limited purpose leases are for scientific or smaller/shorter term mariculture projects, that last up to 3 years.
  - I think this can be considered "comprehensive". 
- - Update to date as of September 2021.
+ - Update to date as of 2019.
  - Has species types specified. 
- - Red polygons for the leases. Blue points for the limited purpose. Limited purpose has length and width measurements, so regardless we will have area for both if needed. 
  
 ```{r echo = FALSE, warning=FALSE, message = FALSE, results = 'hide'}
 maine_aq_lease <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maine/MaineDMR_Aquaculture_-_AQ_Leases/MaineDMR_Aquaculture_-_AQ_Leases.shp"))
@@ -137,6 +137,8 @@ ggplot() +
     labs(title = "Maine data", caption = "Comprehensive, up-to-date (2021)") +
     geom_sf(data = maine_aq_lp_active, col = "blue", alpha = 0.1, size = 0.5)
 
+
+## leave out limited purpose 
 ```
 
  
@@ -201,56 +203,59 @@ nh <- counties("New Hampshire", cb = TRUE) %>%
 
 ### Connecticut 
 
-Shellfish bed managed
-
- - https://portal.ct.gov/DOAG/Aquaculture1/Aquaculture/Shellfish-Area-Classifications--Maps
- - Only Shellfish
- - Polygons 
- - I believe that these are large areas that have been **approved** for shellfish aquaculture, but not the exact locations of the aquaculture. So this probably isn't helpful.
  
+
 From the Northeast ocean council dataset: 
 
 "Connecticut – Data on Connecticut aquaculture was derived from two datasets provided by the State of Connecticut Department of Agriculture/Bureau of Aquaculture and the State of Connecticut Department of Environmental Protection. One dataset contains the location of natural shellfish beds. Natural beds managed by the state, town or used for recreational harvesting were selected from this dataset, resulting in 1855 polygons. The number of beds in use at any given time is subject to change. The second dataset contains 46 polygons representing the approximate geographical location of permitted “Certificate for Aquaculture  Operation” gear sites in the Connecticut coastal waters of Long Island Sound via the State of Connecticut Application for Joint Programmatic General Permit for Aquaculture Department of the Army General Permit. These datasets are up to date as of January 15, 2016. For more information on CT Aquaculture and Shellfish, see the CT Aquaculture Mapping Atlas."
 
-```{r echo = FALSE, warning=FALSE, message = FALSE, results = 'hide'}
 
-ct_shellfish <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Connecticut/Shellfish_Bed_Managed_shp/SHELLFISH_BED_MANAGED.shp"))
+Map combined with NY, this is what we need (seaweed and shellfish). We will extract the data using the methods described below: https://www.arcgis.com/apps/webappviewer/index.html?id=f8799cefbb4c4751a209710d14b9ad46
 
-ct <- counties("Connecticut", cb = TRUE) 
+Current as of 2019
 
-  ggplot() +
-  geom_sf(data = ct_shellfish, col = "red") + 
-    geom_sf(data = ct, fill = "gray") + 
-  theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),
-        axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) + 
-    labs(title = "Connecticut data", caption = "Not Comprehensive, General 'approved' areas")
+
+Extract data following these protocols: https://stackoverflow.com/questions/50161492/how-do-i-scrape-data-from-an-arcgis-online-map/50213419#50213419
+
+
+CT points json: https://services7.arcgis.com/9fAJJI91yoj2y4Yi/arcgis/rest/services/ConnecticutShellfishOnline2018Draft/FeatureServer/0/query?where=0%3D0&outFields=%2A&f=json
+
+CT polygons json: https://services7.arcgis.com/9fAJJI91yoj2y4Yi/arcgis/rest/services/ConnecticutShellfishOnline2018Draft/FeatureServer/1/query?where=0%3D0&outFields=%2A&f=json
+
+
+Roadmap for polygons
+
+Viewer: https://www.arcgis.com/apps/webappviewer/index.html?id=f8799cefbb4c4751a209710d14b9ad46
+
+Item data endpoint (just replace id): https://www.arcgis.com/sharing/rest/content/items/f8799cefbb4c4751a209710d14b9ad46/data
+
+Search for layer you want and grab link ("CT Aquaculture Gear): https://services7.arcgis.com/9fAJJI91yoj2y4Yi/arcgis/rest/services/ConnecticutShellfishOnline2018Draft/FeatureServer/1
+
+Run query using that link to output geojson: https://services7.arcgis.com/9fAJJI91yoj2y4Yi/arcgis/rest/services/ConnecticutShellfishOnline2018Draft/FeatureServer/1/query?where=0%3D0&outFields=%2A&f=geojson
+
+And copy-paste the text in here to save as geojson: https://geojson.io
+
+Check the downloaded geojson file: 
+```{r}
+library(geojsonio)
+spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Connecticut/CT_Aquaculture_gear/CT_aquaculture_gear.geojson",  what = "sp") %>%
+  st_as_sf()
+
+
+mapview(spdf)
+
+# library(geojsonio)
+# spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Connecticut/CT_aquacultre_points/CT_aquaculture_points.geojson",  what = "sp") %>%
+#   st_as_sf()
+# 
+# 
+# plot(spdf)
+# 
+# mapview(spdf)
+
+
+
 ```
-
-Another map combined with NY, this is what we need (seaweed and shellfish): https://www.arcgis.com/apps/webappviewer/index.html?id=f8799cefbb4c4751a209710d14b9ad46
-
-
-### New York 
-
-
- - Lease mapper for Suffolk County: https://gis.suffolkcountyny.gov/portal/apps/View/index.html?appid=6ae708a346f340ada850544fe25ce0fb
-
- 
- - Shellfish map for NY and CT, this seems like what we would need: https://www.arcgis.com/apps/webappviewer/index.html?id=f8799cefbb4c4751a209710d14b9ad46
- - Pretty easy to pull lat/lon coordinates from the attribute table on the web map.
- - CT has species and culture type. NY only has shellfish on the map
- 
-![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/ny_shell.png)
-
-
-## Maps with no download
-
-### Alabama
-
- - "Alabama has an emerging oyster industry with 13 farms comprising of 25 acres in 2015. Shellfish farms are a source of healthy protein and can contribute to healthy marine ecosystems by cleaning the water column, providing habitat for other sea life, and helping protect shorelines from storm surges and sea level rise." from https://aop.maps.arcgis.com/apps/Cascade/index.html?appid=e97ddd2cd9cf46218cefeed813e26c87
- - This has a map... probably our best source for Alabama!: https://alaquaculture.com/state/#list-of-operating-farms
- 
-![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/alabama_Farms.png)
-
 
 ### North Carolina
 
@@ -259,10 +264,102 @@ Shellfish
  - https://deq.nc.gov/about/divisions/marine-fisheries/licenses-permits-and-leases/shellfish-lease-and-franchise#stats-and-figures
  - Comprehensive for shellfish... just need to figure out how download it. 
  - I believe Shellfish is pretty much the only mariculture that occurs in NC. 
- - Has number totals of leases 
- - Will likely need to send an email to NCDEQ
+ - Has number totals of leases.
+ - Download using protocol described for CT.
+ - Current as of 12/21/2021
  
- ![Has lease info for the entire state](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/nc_map.png)
+ 
+Roadmap to download
+
+Viewer: https://www.arcgis.com/apps/webappviewer/index.html?id=de86f3bb9e634005b12f69a8a5947367&extent=-8551979.8781%2C4121555.1994%2C-8515290.1046%2C4140072.0696%2C102100
+
+Item data endpoint (just replace id): https://www.arcgis.com/sharing/rest/content/items/de86f3bb9e634005b12f69a8a5947367/data
+
+Search for layer you want and grab link ("Leases" is the layer you want): https://services2.arcgis.com/kCu40SDxsCGcuUWO/arcgis/rest/services/Lease_DB_View/FeatureServer/2
+
+Run query using that link to output geojson: https://services2.arcgis.com/kCu40SDxsCGcuUWO/arcgis/rest/services/Lease_DB_View/FeatureServer/2/query?where=0%3D0&outFields=%2A&f=geojson
+
+And copy-paste the text in here to save as geojson: https://geojson.io. Once it shows in the map, click "Save" and Save as a geojson file. 
+
+Check to see if it worked
+```{r}
+library(geojsonio)
+spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/North_Carolina/NC_shellfish_leases.geojson",  what = "sp") %>%
+  st_as_sf()
+
+
+mapview(spdf)
+
+
+
+
+```
+ 
+### Rhode Island
+
+ - Lease map here: https://ridemgis.maps.arcgis.com/apps/webappviewer/index.html?id=8beb98d758f14265a84d69758d96742f
+ - Julia Livermore: julia.livermore@dem.ri.gov
+ - Current as of August 2021
+ - Shellfish and kelp
+ 
+ 
+Roadmap to download
+
+Viewer: https://ridemgis.maps.arcgis.com/apps/webappviewer/index.html?id=8beb98d758f14265a84d69758d96742f
+
+I found my way to here:
+https://risegis.ri.gov/hosting/rest/services/RIDEM/Marine_Fisheries_Map_Layers/MapServer/0
+
+Then run query using that link to output geojson: https://risegis.ri.gov/hosting/rest/services/RIDEM/Marine_Fisheries_Map_Layers/MapServer/0/query?where=0%3D0&outFields=%2A&f=geojson
+
+And copy-paste the text in here to save as kml (for some reason, saving as geojson was not working for this one): https://geojson.io. Once it shows in the map, click "Save" and Save as a kml file. 
+
+Check to see if it worked
+
+```{r}
+
+rhode_island <- read_sf("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Rhode_Island/ri_aq_sites.kml")
+
+mapview(rhode_island)
+
+
+```
+
+
+
+### Alabama
+
+ - "Alabama has an emerging oyster industry with 13 farms comprising of 25 acres in 2015. Shellfish farms are a source of healthy protein and can contribute to healthy marine ecosystems by cleaning the water column, providing habitat for other sea life, and helping protect shorelines from storm surges and sea level rise." from https://aop.maps.arcgis.com/apps/Cascade/index.html?appid=e97ddd2cd9cf46218cefeed813e26c87
+ - This has a map : https://alaquaculture.com/state/#list-of-operating-farms
+ - Here is an even better map with Shellfish leases!: https://aldcnr.maps.arcgis.com/apps/webappviewer/index.html?id=a32dad8dacd249ea86bcb80dd951a424
+
+
+Roadmap to download
+
+Viewer: https://aldcnr.maps.arcgis.com/apps/webappviewer/index.html?id=a32dad8dacd249ea86bcb80dd951a424
+
+Item data endpoint (just replace id): https://www.arcgis.com/sharing/rest/content/items/a32dad8dacd249ea86bcb80dd951a424/data
+
+Search for layer you want and grab link ("Leases" is the layer you want): https://services7.arcgis.com/jcVUvxpWnajErgCr/arcgis/rest/services/Shellfish_Riparian_Leases_Revised/FeatureServer/0
+
+Run query using that link to output geojson: https://services7.arcgis.com/jcVUvxpWnajErgCr/arcgis/rest/services/Shellfish_Riparian_Leases_Revised/FeatureServer/0/query?where=0%3D0&outFields=%2A&f=geojson
+
+And copy-paste the text in here to save as geojson: https://geojson.io. Once it shows in the map, click "Save" and Save as a geojson file. 
+
+Leases current as of: 11/29/2021 
+
+```{r}
+library(geojsonio)
+spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Alabama/Alabama_Shellfish_Leases.geojson",  what = "sp") %>%
+  st_as_sf()
+
+
+mapview(spdf)
+
+
+```
+
+## Maps with no download
 
 
 ### Virginia
@@ -278,14 +375,6 @@ Shellfish
  ![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/va_map.png)
 
 
-
-### Rhode Island
-
- - Lease map here: https://ridemgis.maps.arcgis.com/apps/webappviewer/index.html?id=8beb98d758f14265a84d69758d96742f
- - No download option.
- - Julia Livermore: julia.livermore@dem.ri.gov
- 
-![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/rhode_island_map.png)
 
 
 ## General lease info, areas, etc
@@ -314,17 +403,7 @@ Shellfish
  - 2020 shellfish production report: https://www.oregon.gov/oda/shared/Documents/Publications/FoodSafety/AnnualShellfishProductionReport.pdf
  
 
-
-### Maryland
-
-Shellfish
-
- - They have individual lease application maps in PDFs, but they would take forever to go through. They must have some sort of internal dataset where they store the approved lease info?: https://dnr.maryland.gov/fisheries/pages/aquaculture/applications.aspx
- - Maude Morris: maudee.morris@maryland.gov
-
-![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/maryland_apps.png)
-
-
+ 
  
 ### South Carolina
 
@@ -464,16 +543,61 @@ fl <- subset(state, region %in% c("florida"))
 ```
 
 Other than the above, I can't find much info for Florida. Google maps shows a couple shrimp farms. 
+
+
+### Maryland
+
+Shellfish
+
+ - They have individual lease application maps in PDFs, but they would take forever to go through. They must have some sort of internal dataset where they store the approved lease info?: https://dnr.maryland.gov/fisheries/pages/aquaculture/applications.aspx
+ - Maude Morris: maudee.morris@maryland.gov
+
+![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/maryland_apps.png)
+
+List of farms for VA and MD (addresses are on land though): https://oysterrecovery.org/oyster-farms/
+
+
+Maryland has a viewer for 2013 active leases: https://maryland.maps.arcgis.com/apps/webappviewer/index.html?id=f7db2acc81554601b44c13733a66a60f
  
+ - This viewer has a layer named "ActiveOysterLeases", however, it looks like the last time it was updated is 2013.. I will still download this. Worst case we use this. 
+
+I found the layer here: https://gisapps.dnr.state.md.us/arcgis2/rest/services/Biota/ActiveOysterLeases/MapServer/0
+
+Run query using that link to output json (for some reason it won't let me output geojson): https://gisapps.dnr.state.md.us/arcgis2/rest/services/Biota/ActiveOysterLeases/MapServer/0/query?where=0%3D0&outFields=%2A&f=json
+
+ 
+```{r include = FALSE}
+
+# test out package to download
+devtools::install_github("yonghah/esri2sf")
+library("esri2sf")
+
+
+
+url <- "https://gisapps.dnr.state.md.us/arcgis2/rest/services/Biota/ActiveOysterLeases/MapServer/0"
+df <- esri2sf(url)
+mapview(df)
+
+#st_write(df, file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maryland/maryland_2013_oyster_leases.shp"))
+
+```
+ 
+ 
+```{r echo = FALSE, warning=FALSE, message = FALSE, results = 'hide'}
+md <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maryland/maryland_2013_oyster_leases.shp"))
+```
+
  
 ### All states
 
  - https://aop.maps.arcgis.com/apps/Cascade/index.html?appid=e97ddd2cd9cf46218cefeed813e26c87
+ - another link to map? https://aop.maps.arcgis.com/apps/Shortlist/index.html?appid=32864a80775b4f8abaeb072f0718ee57
  - Current as of 2015 
  - Can definitely use for California to cross reference
  - Has partial data for other states too
+ - ask Halley for contact 
 
-![](/home/sgclawson/github/aquaculture_mapping/marine/united_states/pics/all_states_partial.png)
+
  
 ## Not much info
  
@@ -528,7 +652,9 @@ https://hdoa.hawaii.gov/ai/aquaculture-and-livestock-support-services-branch/aqu
  - Highly unlikely there are any marine farms here. I think marine aquaculture might be illegal here? And even if it wasn't, they most likely haven't even had a harvest since it was legalized (see above article).
  
 
+### New York
  
+ - According to Halley, there is currently no production in New York state, especially since their coastline is so small. 
 
 
 
@@ -592,3 +718,10 @@ https://media.fisheries.noaa.gov/2021-05/FUS2019-FINAL-webready-2.3.pdf?null=
 
  - It seems like "Mollusks off bottom", "Mollusks on bottom", "Sea vegetables" are the only ones that I am 80% sure are marine farms... 
  - They also have data at the county level. I know this wouldn't be perfect, but we could filter for coastal counties. 
+ 
+ 
+ 
+ 
+## Climate stressors for marine aquaculture
+
+

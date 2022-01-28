@@ -205,14 +205,24 @@ Now we need to map for each country, and assign a flag for gapfilling which will
 
 # China 
 
-Current data is from ASC, only 11 farms, so definitely not comprehensive, just a drop in the bucket compared to the produciton of China. There are likely many more farms than this. Because we can't find any information on more specific locations or specific number of farms, we will gapfill later based on global tonnes/farm. For now we need to mark the data quality as 2. 
+Current data is from ASC and https://zenodo.org/record/3881612, only 11 + 4737 = 4748 farms, so probably not comprehensive, just a drop in the bucket compared to the production of China. There are likely many more farms than this. Because we can't find any information on more specific locations or specific number of farms, we will gapfill later based on global tonnes/farm. For now we need to mark the data quality as 2. 
+
+Fu, Y., Deng, J., Wang, H., Comber, A., Yang, W., Wu, W., You, S., Lin, Y., Wang, K., 2021. A new satellite-derived dataset for marine aquaculture areas in China’s coastal region. Earth Syst. Sci. Data 13, 1829–1842. https://doi.org/10.5194/essd-13-1829-2021
+
+Fu et al., 2021
 
 ```{r}
 farms_chn <- read.csv(here("marine/bivalve/bivalve_farms/data/ASC_bivalve_farm_lat_lon.csv")) %>%
   dplyr::filter(iso3c == "CHN") %>%
   mutate(data_quality = 2)
 
-write_csv(farms_chn, here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_4_5/farms_chn.csv"))
+farms_chn_2 <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/China/split_spp/farms_biv_chn.csv") %>%
+  dplyr::select(-id) %>%
+  mutate(data_quality = 2)
+
+farms_chn_fin <- rbind(farms_chn, farms_chn_2)
+
+write_csv(farms_chn_fin, here("marine/bivalve/bivalve_farms/data/known_farm_sites_2_4_5/farms_chn.csv"))
 
 
 ```
@@ -518,18 +528,290 @@ write_csv(farms_chile, here("marine/bivalve/bivalve_farms/data/known_farm_sites_
 ```
 
 
-## USA 
+# USA 
 
-Based on the two datasets below, we have an existing 442 bivalve farms. We need to add 761 points to existing 442 (a final total of 1203 points)
+Based on the two datasets below, we have an existing 1010 bivalve farms. We need to add 193 points to existing 1010 (a final total of 1203 points)
 
-Our current information is taken from many different state level sources, but we are definitely still missing some, as California is not included...
+Our current information is taken from many different state level sources, but we are definitely still missing some, as California is not included... we have farm/lease locations from 8 different states:
 
- - However, per FAO 2005, there were 1203 saltwater shellfish farms in the USA
+ - Alaska
+ - Alabama
+ - Connecticut
+ - Maine
+ - North Carolina
+ - New Hampshire
+ - Rhode Island
+ - Washington
+
+ - However, per FAO 2005, there were 1203 saltwater shellfish farms in the USA.. unclear if this is in marine environments, but it is the best we have. 
   - http://www.fao.org/fishery/countrysector/naso_usa/en
 
 
+## Maine
+
+
+ - Viewer: https://www.maine.gov/dmr/aquaculture/leases/aquaculturemap.html
+ - Download: https://dmr-maine.opendata.arcgis.com/datasets/maine::mainedmr-aquaculture-aq-leases/about
+ - I think we will want to use regular leases only.
+ - Limited purpose leases are for scientific or smaller/shorter term mariculture projects, that last up to 3 years.
+ - I think this can be considered "comprehensive". 
+ - Update to date as of 2019.
+ - Has species types specified. 
+ 
+ 
+Locations of aquaculture leases in Maine, 2019. . Maine Department of Marine Resources. https://dmr-maine.opendata.arcgis.com/datasets/maine::mainedmr-aquaculture-aq-leases/about
+
+
+```{r}
+maine_aq_lease <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maine/MaineDMR_Aquaculture_-_AQ_Leases/MaineDMR_Aquaculture_-_AQ_Leases.shp"))
+
+# mapview(maine_aq_lease)
+
+maine_aq_lease_active <- maine_aq_lease %>%
+  dplyr::filter(STATUS == "A") %>% # 149 leases
+  dplyr::filter(str_detect(PRIMARYSP, "Oyster|Mussel|Clam|mussels|Scallop")) %>%
+  dplyr::filter(!str_detect(PRIMARYSP, "Salmon"))
+
+unique(maine_aq_lease_active$PRIMARYSP)
+  
+
+us_me_bivalve_mol <- st_transform(maine_aq_lease_active, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
+us_me_bivalve_pts <- st_centroid(us_me_bivalve_mol)
+# check
+plot(st_geometry(us_me_bivalve_mol))
+plot(st_geometry(st_centroid(us_me_bivalve_mol)), add=TRUE)
+
+us_me_bivalve_pts_latlon <- st_transform(us_me_bivalve_pts, crs = "+init=epsg:4326") 
+
+farms_us_me <- data.frame(do.call(rbind, st_geometry(us_me_bivalve_pts_latlon))) # get lat lon
+names(farms_us_me) <- c("lon", "lat") 
+farms_us_me <- farms_us_me %>%
+  mutate(iso3c = "USA") %>%
+  mutate(data_quality = 4,
+         subregion = "Maine") 
+
+mapview(us_me_bivalve_pts_latlon)
+```
+
+
+
+## Rhode Island
+
+ - Lease map here: https://ridemgis.maps.arcgis.com/apps/webappviewer/index.html?id=8beb98d758f14265a84d69758d96742f
+ - Julia Livermore: julia.livermore@dem.ri.gov
+ - Current as of August 2021
+ - Shellfish and kelp
+ 
+RIDEM Marine Fisheries Maps Approved Aquaculture Areas in Rhode Island, 2021. . Rhode Island Department of Environmental Management. https://ridemgis.maps.arcgis.com/apps/webappviewer/index.html?id=8beb98d758f14265a84d69758d96742f
+
+ 
+```{r}
+rhode_island <- read_sf("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Rhode_Island/ri_aq_sites.kml")
+
+ri_active_biv <- rhode_island %>%
+  filter(GPS_Source %in% c("Approved", "Expanded", "PD App")) %>%
+  filter(Oysters == "Yes" | Clams == "Yes" | Scallops == "Yes")
+
+us_ri_bivalve_mol <- st_transform(ri_active_biv, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
+us_ri_bivalve_pts <- st_centroid(us_ri_bivalve_mol)
+# check
+plot(st_geometry(us_ri_bivalve_mol))
+plot(st_geometry(st_centroid(us_ri_bivalve_mol)), add=TRUE)
+
+us_ri_bivalve_pts_latlon <- st_transform(us_ri_bivalve_pts, crs = "+init=epsg:4326") 
+
+mapview(us_ri_bivalve_pts_latlon)
+
+farms_us_ri <- data.frame(do.call(rbind, st_geometry(us_ri_bivalve_pts_latlon))) # get lat lon
+names(farms_us_ri) <- c("lon", "lat") 
+farms_us_ri <- farms_us_ri %>%
+  mutate(iso3c = "USA") %>%
+  mutate(data_quality = 4,
+         subregion = "Rhode Island") 
+
+```
+
+## North Carolina
+
+ - https://deq.nc.gov/about/divisions/marine-fisheries/licenses-permits-and-leases/shellfish-lease-and-franchise#stats-and-figures
+ - Comprehensive for shellfish... just need to figure out how download it. 
+ - I believe Shellfish is pretty much the only mariculture that occurs in NC. 
+ - Has number totals of leases.
+ - Download using protocol described for CT.
+ - Current as of 12/21/2021
+ 
+North Carolina Division of Marine Fisheries Shellfish Lease and Franchise Program, 2021. North Carolina Division of Marine Fisheries. https://deq.nc.gov/about/divisions/marine-fisheries/licenses-permits-and-leases/shellfish-lease-and-franchise#stats-and-figures
+
+ 
+```{r}
+library(geojsonio)
+spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/North_Carolina/NC_shellfish_leases.geojson",  what = "sp") %>%
+  st_as_sf()
+
+unique(spdf$Status)
+
+nc_active <- spdf %>%
+  filter(Status %in% c("Active", "Approved")) # 423 active leases... wow! 
+
+us_nc_bivalve_mol <- st_transform(nc_active, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
+us_nc_bivalve_pts <- st_centroid(us_nc_bivalve_mol)
+# check
+plot(st_geometry(us_nc_bivalve_mol))
+plot(st_geometry(st_centroid(us_nc_bivalve_mol)), add=TRUE)
+
+us_nc_bivalve_pts_latlon <- st_transform(us_nc_bivalve_pts, crs = "+init=epsg:4326") 
+
+mapview(us_nc_bivalve_pts_latlon)
+
+farms_us_nc <- data.frame(do.call(rbind, st_geometry(us_nc_bivalve_pts_latlon))) # get lat lon
+names(farms_us_nc) <- c("lon", "lat") 
+farms_us_nc <- farms_us_nc %>%
+  mutate(iso3c = "USA") %>%
+  mutate(data_quality = 4,
+         subregion = "North Carolina") 
+
+```
+ 
+
+
+## Alaska
+
+- https://adfg.maps.arcgis.com/apps/webappviewer/index.html?id=f3ca95493c1042b39e42a3ecb5dcad6a
+ - Will be considered "comprehensive". 
+ - Up-to-date as of 2020
+ - Specifies species type
+ - Csvs with lat lons, but have a "corner" dataset, which we could make into polygons. Has area associated with each site. 
+ - Shown in red. 
+ - Has 62 active sites. 
+ 
+ 
+Alaska Department of Fish and Game Aquatic Farming Operations, 2020. Alaska Department of Fish and Game. https://adfg.maps.arcgis.com/apps/webappviewer/index.html?id=f3ca95493c1042b39e42a3ecb5dcad6a
+
+ 
+```{r}
+alaska_details <- read.csv(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Alaska/Active Aquatic Farming Operation Details.csv"))
+
+farms_us_ak <- alaska_details %>%
+  dplyr::select("lat" = "LATITUDE", "lon" = "LONGITUDE") %>%
+  dplyr::mutate(iso3c = "USA", data_quality = 4, subregion = "Alaska")
+
+
+```
+ 
+
+## New Hampshire
+
+ - https://granit.unh.edu/data/search
+ - Comprehensive
+ - Up-to-date as of 2020
+ - Polygons 
+ - 40 sites
+ 
+NHDES Marine Aquaculture Data, 2020. New Hampshire Department of Environmental Services. https://granit.unh.edu/data
+
+
+```{r}
+nh_aq <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/New_Hampshire/GRANIT_20211011184728/2020_Aquaculture_Sites.shp")) %>% # 40 sites, assume all active
+  dplyr::filter(Shellfish == "Yes") # 39 sites
+
+us_nh_bivalve_mol <- st_transform(nh_aq, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
+us_nh_bivalve_pts <- st_centroid(us_nh_bivalve_mol)
+# check
+plot(st_geometry(us_nh_bivalve_mol))
+plot(st_geometry(st_centroid(us_nh_bivalve_mol)), add=TRUE)
+
+us_nh_bivalve_pts_latlon <- st_transform(us_nh_bivalve_pts, crs = "+init=epsg:4326") 
+
+mapview(us_nh_bivalve_pts_latlon)
+
+farms_us_nh <- data.frame(do.call(rbind, st_geometry(us_nh_bivalve_pts_latlon))) # get lat lon
+names(farms_us_nh) <- c("lon", "lat") 
+farms_us_nh <- farms_us_nh %>%
+  mutate(iso3c = "USA") %>%
+  mutate(data_quality = 4,
+         subregion = "New Hampshire") 
+```
+
+
+## Connecticut
+
+Map combined with NY, this is what we need (seaweed and shellfish): https://www.arcgis.com/apps/webappviewer/index.html?id=f8799cefbb4c4751a209710d14b9ad46
+
+Current as of 2019
+
+New York and Connecticut’s Shellfish and Seaweed Aquaculture Viewer, 2019. New York Department of Environmental Conservation. https://www.arcgis.com/apps/webappviewer/index.html?id=f8799cefbb4c4751a209710d14b9ad46 
+
+
+```{r}
+library(geojsonio)
+spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Connecticut/CT_Aquaculture_gear/CT_aquaculture_gear.geojson",  what = "sp") %>%
+  st_as_sf() %>%
+  filter(Species != "kelp",
+         ActivePerm == "yes")
+
+
+mapview(spdf)
+
+
+us_ct_bivalve_mol <- st_transform(spdf, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
+us_ct_bivalve_pts <- st_centroid(us_ct_bivalve_mol)
+# check
+plot(st_geometry(us_ct_bivalve_mol))
+plot(st_geometry(st_centroid(us_ct_bivalve_mol)), add=TRUE)
+
+us_ct_bivalve_pts_latlon <- st_transform(us_ct_bivalve_pts, crs = "+init=epsg:4326") 
+
+mapview(us_ct_bivalve_pts_latlon)
+
+farms_us_ct <- data.frame(do.call(rbind, st_geometry(us_ct_bivalve_pts_latlon))) # get lat lon
+names(farms_us_ct) <- c("lon", "lat") 
+farms_us_ct <- farms_us_ct %>%
+  mutate(iso3c = "USA") %>%
+  mutate(data_quality = 4,
+         subregion = "Connecticut") 
+```
+
+
+
+## Alabama
+
+ - Here is a map with Shellfish leases!: https://aldcnr.maps.arcgis.com/apps/webappviewer/index.html?id=a32dad8dacd249ea86bcb80dd951a424
+
+
+Alabama Marine Resources Division: Shellfish Aquaculture Siting Tool, 2021. Alabama Marine Resources Division. https://aldcnr.maps.arcgis.com/apps/webappviewer/index.html?id=a32dad8dacd249ea86bcb80dd951a424
+
+
+```{r}
+library(geojsonio)
+spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Alabama/Alabama_Shellfish_Leases.geojson",  what = "sp") %>%
+  st_as_sf() %>%
+  dplyr::filter(Status %in% c("Current", "Current Commercial"))
+
+
+mapview(spdf)
+
+us_al_bivalve_mol <- st_transform(spdf, crs = "+init=epsg:3035") # convert to equal area projealion to find centroids. 
+us_al_bivalve_pts <- st_centroid(us_al_bivalve_mol)
+# check
+plot(st_geometry(us_al_bivalve_mol))
+plot(st_geometry(st_centroid(us_al_bivalve_mol)), add=TRUE)
+
+us_al_bivalve_pts_latlon <- st_transform(us_al_bivalve_pts, crs = "+init=epsg:4326") 
+
+mapview(us_al_bivalve_pts_latlon)
+
+farms_us_al <- data.frame(do.call(rbind, st_geometry(us_al_bivalve_pts_latlon))) # get lat lon
+names(farms_us_al) <- c("lon", "lat") 
+farms_us_al <- farms_us_al %>%
+  mutate(iso3c = "USA") %>%
+  mutate(data_quality = 4,
+         subregion = "Alabama") 
+```
+
 
 ## US Northeast - NY, CT, ME, NH
+
+ Only used this for exploration
  - Regional Ocean Council 2018
  
 Source: 
@@ -537,47 +819,48 @@ Northeast Regional Ocean Council, 2018. Northeast ocean data: aquaculture. [Acce
 
 ```{r}
 
-us_ne <- st_read(file.path(path,"USA/NE/US_NE_Aquaculture.shp"))
-
-unique(us_ne$allSpecies)
-
-unique(fao_bivalve_spp$species)
-
-## need to filter allSpecies for anything with "Oyster", "Mussel", "Shellfish", "Clam", "Quahog", 
-
-# id bivalves and active sites
-bivalve_species <- grep("Oyster|Mussel|Shellfish|Clam|Quahog", unique(us_ne$allSpecies), value=TRUE)
-
-
-us_ne_bivalve <- us_ne %>%
-  filter(allSpecies %in% bivalve_species) %>%
-  filter(status == "Active")
-unique(us_ne_bivalve$state)
-
-us_ne_bivalve_mol <- st_transform(us_ne_bivalve, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
-us_ne_bivalve_pts <- st_centroid(us_ne_bivalve_mol)
-# check
-plot(st_geometry(us_ne_bivalve_mol))
-plot(st_geometry(st_centroid(us_ne_bivalve_mol)), add=TRUE)
-
-us_ne_bivalve_pts_latlon <- st_transform(us_ne_bivalve_pts, crs = "+init=epsg:4326") 
-
-farms_us_ne <- data.frame(do.call(rbind, st_geometry(us_ne_bivalve_pts_latlon))) # get lat lon
-names(farms_us_ne) <- c("lon", "lat") 
-farms_us_ne <- farms_us_ne %>%
-  mutate(iso3c = "USA") %>%
-  mutate(data_quality = 4) 
-
-# all_farms_sf <- st_as_sf(farms_us_ne, coords = c("lon", "lat"), 
-#                          crs = crs(gadm_latlon), agr = "constant")
+# us_ne <- st_read(file.path(path,"USA/NE/US_NE_Aquaculture.shp"))
 # 
-# mapview(all_farms_sf)
+# unique(us_ne$allSpecies)
+# 
+# unique(fao_bivalve_spp$species)
+# 
+# ## need to filter allSpecies for anything with "Oyster", "Mussel", "Shellfish", "Clam", "Quahog", 
+# 
+# # id bivalves and active sites
+# bivalve_species <- grep("Oyster|Mussel|Shellfish|Clam|Quahog", unique(us_ne$allSpecies), value=TRUE)
+# 
+# 
+# us_ne_bivalve <- us_ne %>%
+#   filter(allSpecies %in% bivalve_species) %>%
+#   filter(status == "Active")
+# unique(us_ne_bivalve$state)
+# 
+# us_ne_bivalve_mol <- st_transform(us_ne_bivalve, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
+# us_ne_bivalve_pts <- st_centroid(us_ne_bivalve_mol)
+# # check
+# plot(st_geometry(us_ne_bivalve_mol))
+# plot(st_geometry(st_centroid(us_ne_bivalve_mol)), add=TRUE)
+# 
+# us_ne_bivalve_pts_latlon <- st_transform(us_ne_bivalve_pts, crs = "+init=epsg:4326") 
+# 
+# farms_us_ne <- data.frame(do.call(rbind, st_geometry(us_ne_bivalve_pts_latlon))) # get lat lon
+# names(farms_us_ne) <- c("lon", "lat") 
+# farms_us_ne <- farms_us_ne %>%
+#   mutate(iso3c = "USA") %>%
+#   mutate(data_quality = 4) 
+# 
+# # all_farms_sf <- st_as_sf(farms_us_ne, coords = c("lon", "lat"), 
+# #                          crs = crs(gadm_latlon), agr = "constant")
+# # 
+# # mapview(all_farms_sf)
 
 
 ```
 
-## USA - WA, RI 
+## Washington
  - Aquaculture, Office for Coastal Management (OCM), 2018
+ - This dataset has shellfish farms for Washington and Rhode Island, we will use the Washington farms 
  
 Source: 
 Aquaculture, Office for Coastal Management (OCM), 2018. [Accessed January 17, 2020] https://www.fisheries.noaa.gov/inport/item/53129/
@@ -596,7 +879,7 @@ us_aqua_species <- us_aqua %>%
   dplyr::filter(!(species %in% c("finfish", "Atlantic salmon", "Atlantic cod", "Seaweed", "Shrimp", "Coral", "clam seed, oyster seed", "Gelidium spp., Macrocystis pyrifera, M. angustifolia, M. intergrifolia, Pelagophycus spp. Euchema uncinatum (male plants only)", "oyster seed", "In progress", "Not Available", "Hatchery", "softshell", "softshell, butter", "softshell, varnish", "butter"))) %>%
   dplyr::filter(state != "Federal waters") %>%
   dplyr::filter(!(status %in% c(NA, "Pending", "Restricted-Relay", "Not Available", "Conditional Closure", "Prohibited"))) %>%
-dplyr::filter(!(state %in% c("Maine", "Connecticut", "New York"))) ## filter out the states we already have
+dplyr::filter(!(state %in% c("Maine", "Connecticut", "New York", "North Carolina", "Alabama", "New Hampshire", "Alaska", "Rhode Island"))) ## filter out the states we already have
 
 
 
@@ -617,13 +900,21 @@ plot(st_geometry(st_centroid(us_aqua_bivalve_mol)), add=TRUE)
 
 us_aqua_bivalve_pts_latlon <- st_transform(us_aqua_bivalve_pts, crs = "+init=epsg:4326") 
 
+mapview(us_aqua_bivalve_pts_latlon)
+
+
 farms_us_aqua <- data.frame(do.call(rbind, st_geometry(us_aqua_bivalve_pts_latlon))) 
 names(farms_us_aqua) <- c("lon", "lat")
 farms_us_aqua <- farms_us_aqua %>%
-  mutate(iso3c = "USA") %>%
+  mutate(iso3c = "USA", subregion = "Washington") %>%
   mutate(data_quality = 4)
+```
 
-farms_usa_total <- rbind(farms_us_ne, farms_us_aqua)
+
+## Combine all USA data 
+
+```{r}
+farms_usa_total <- rbind(farms_us_aqua, farms_us_ak, farms_us_al, farms_us_ct, farms_us_me, farms_us_nc, farms_us_nh, farms_us_ri)
 
 all_farms_sf <- st_as_sf(farms_usa_total, coords = c("lon", "lat"),
                          crs = crs(gadm_latlon), agr = "constant")
@@ -636,7 +927,7 @@ write_csv(farms_usa_total, here("marine/bivalve/bivalve_farms/data/known_farm_si
 ## Now lets make a df for the additional points we will fill in later
 
 
-usa_additional <- data.frame(iso3c = "USA", type = "bivalve", num_additional_farms = 761 , data_quality = 4, total_farms = 1203)
+usa_additional <- data.frame(iso3c = "USA", type = "bivalve", num_additional_farms = 193 , data_quality = 4, total_farms = 1203)
 write.csv(usa_additional, here("marine/bivalve/bivalve_farms/data/subset_known_add_points_4/add_farms_usa.csv"), row.names = FALSE)
 ```
 
@@ -921,6 +1212,32 @@ test <- farms_eu_final %>%
   group_by(iso3c) %>%
   summarise(n())
 
+```
+
+
+## UK; Scotland
+ - sticking with emodnet for this, since it is comprehensive for the entire country (UK), even if a year behind the scottish gov reporting. 
+
+```{r}
+farms_eu_UK <- eu_fao_countries %>%
+  filter(COUNTRY == "United Kingdom") # 358.. but only 259 listed as active. Lets compare to the data from scottish gov.  
+mapview(farms_eu_UK)
+
+farms_uk <- farms_eu_final %>%
+  filter()
+
+## load in data and select active sites, "Seawater" and "Seawater and Freshwater sites", and any sites that contain "Salmon" "Arctic Char" or "Rainbow Trout"
+
+scotland_csv <- as.data.frame(read_csv(file.path(path, "Scotland/Scotland_site_details_2021_raw.csv")))
+
+# Subset to salmonidae farms
+sub_scotland <- scotland_csv %>% 
+  dplyr::select(ID = `Marine Scotland Site ID`, Easting, Northing, `Producing in Last 3 Years`, `Aquaculture Type`, `Water Type`, Species, subregion = `Local Authority` ) %>% 
+  filter(`Producing in Last 3 Years` == c("Yes", "New"),
+         `Water Type` %in% c("Seawater", "Freshwater and Seawater"),
+         str_detect(Species, "mussel|scallop|Oyster|oyster|urchin|Urchin|Scallop|clam|Clam")) # Only 164 reporting actgive here... however, emodnet reports sites not in scotland and in other places in the uk... so i think we should stick with that actually... especially since they grab their data from the same source.. even if outdated. 
+
+ 
 ```
 
 

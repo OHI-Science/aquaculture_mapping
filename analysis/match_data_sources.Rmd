@@ -47,6 +47,25 @@ gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Count
 # read in points and convert to spatial dataframe
 ```{r}
 
+
+library(readxl)    
+read_excel_allsheets <- function(filename, tibble = FALSE) {
+    # I prefer straight data.frames
+    # but if you like tidyverse tibbles (the default with read_excel)
+    # then just pass tibble = TRUE
+    sheets <- readxl::excel_sheets(filename)
+    x <- lapply(sheets, function(X) readxl::read_excel(filename, sheet = X))
+    if(!tibble) x <- lapply(x, as.data.frame)
+    names(x) <- sheets
+    x
+}
+
+data <- read_excel_allsheets("analysis/data/mariculture_mapping_sources_raw.xlsx")
+
+df <- plyr::ldply(data, as.data.frame) %>%
+  mutate(`Data year: farm locations` = as.character(`Data year: farm locations`),
+         `Data year: number of farms` = as.character(`Data year: number of farms`))
+
 data <- read_csv(file.path("marine/output/all_marine_farms.csv")) %>% 
   st_as_sf(., 
            coords = c("lon", "lat"),
@@ -81,7 +100,7 @@ test <- all_farms %>%
 ```{r}
 
 # read in our sources spreadsheet (manually uploaded by GC)
-sources <- read_csv("analysis/data/mariculture_mapping_sources.csv") %>%
+sources <- df %>%
   clean_names() %>%
   mutate(type = case_when(species == "Salmonids" ~ "salmon",
                           species == "Unfed or algae fed shellfish" ~ "bivalve",
@@ -96,6 +115,8 @@ mutate(species_group = case_when(species == "Salmonids" ~ "Salmonidae fish",
                           species == "General Marine Fish" ~ "General marine fish", 
                           species == "Crustaceans" ~ "Non-shrimp crustaceans")) %>% 
   mutate(data_year_number_of_farms = as.character(data_year_number_of_farms)) %>%
+ # mutate(estimated_farms = ifelse(is.na(estimated_farms), estimated_farms_2, estimated_farms)) %>%
+  dplyr::select(-id) %>%
   mutate(data_type_2 = case_when(
     known_farms_location > 0 & known_farms_no_location == 0 & estimated_farms == 0 ~ "A",
     known_farms_location == 0 & known_farms_no_location > 0 & estimated_farms == 0 ~ "B",
@@ -107,7 +128,7 @@ mutate(species_group = case_when(species == "Salmonids" ~ "Salmonidae fish",
   mutate(data_type_2 = ifelse(iso3c == "IND" & species == "Unfed or algae fed shellfish", "E", data_type_2)) ## fix some mismatches
 
 
-## data types with comprehensive # of farms are A, B, and C. These all recieve their production/# of farms to get prod per farm. 
+## data types with comprehensive # of farms are A, B, and C. These all receive their production/# of farms to get prod per farm. 
 
 ## data types D, E, and F receive global prod per farm estimates. 
 
@@ -166,7 +187,16 @@ all_farms_sources <- all_farms %>%
 
 unique(all_farms_sources$data_year)
 
+test <- all_farms_sources %>%
+  filter(iso3c == "CHN", 
+         species_group == "Shrimps and prawns")
 
+## will need to fix china bivalve and shrimp
+
+sum(all_farms_sources$tonnes_per_farm) # 29639681
+sum(all_prod$fao_tonnes_production) # 29623515
+
+29623515 - 29639681 # off by about 16k.. probably because of rounding issues 
 ```
 
 
@@ -183,8 +213,8 @@ test <- all_farms_sources %>%
 ## Have multiple location data sources...  fix these so that each point has only one of the datasources 
 
 # Salmon: CAN, USA
-# Shrimp: USA 
-# Bivalve: AUS, CAN, USA
+# Shrimp: USA, CHN 
+# Bivalve: AUS, CAN, USA, CHN
 # General marine fish: TWN
 
 ## add in subregional information
@@ -330,6 +360,43 @@ TWN_finfish_fix <- all_farms_sources_gadm %>%
   dplyr::select(iso3c, country, species_group, species, data_type, data_type_2, tonnes_per_farm, details, data_source, data_year, geometry)
 
 
+## China bivalve fix
+### There are 11 farms from ASC... 
+
+
+# read in ASC dataset for China bivalves
+farms_chn <- read.csv(here("marine/bivalve/bivalve_farms/data/ASC_bivalve_farm_lat_lon.csv")) %>%
+  dplyr::filter(iso3c == "CHN") %>%
+  mutate(data_quality = 2)
+
+## so it looks like the first 11 rows are the ASC rows.. the geometries are not as precise 
+CHN_bivalve_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "CHN", 
+               species == "Unfed or algae fed shellfish", 
+               data_type == "known locations") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2"), sep = ";") %>%
+  mutate(row = row_number()) %>%
+  mutate(data_source = ifelse(row %in% c(1:11), ds_1, ds_2)) %>%
+  mutate(data_year = 2021) %>%
+  dplyr::select(iso3c, country, species_group, species, data_type, data_type_2, tonnes_per_farm, details, data_source, data_year, geometry)
+
+## do the same for China shrimp
+
+farms_chn <- read.csv(here("marine/shrimp/shrimp_farms/data/ASC_shrimp_farm_lat_lon.csv")) %>%
+  dplyr::filter(iso3c == "CHN") %>%
+  mutate(data_quality = 2)
+
+## so it looks like the first 4 rows are the ASC rows.. the geometries are not as precise 
+CHN_shrimp_fix <- all_farms_sources_gadm %>%
+  dplyr::filter(iso3c == "CHN", 
+               species == "Shrimp", 
+               data_type == "known locations") %>%
+  separate(col = data_source, into = c("ds_1", "ds_2"), sep = ";") %>%
+  mutate(row = row_number()) %>%
+  mutate(data_source = ifelse(row %in% c(1:4), ds_1, ds_2)) %>%
+  mutate(data_year = 2021) %>%
+  dplyr::select(iso3c, country, species_group, species, data_type, data_type_2, tonnes_per_farm, details, data_source, data_year, geometry)
+
 ##### Now add these back into total dataset ##### 
 
 all_farms_sources_final <- all_farms_sources %>%
@@ -340,7 +407,9 @@ all_farms_sources_final <- all_farms_sources %>%
   filter(iso3c != "AUS"|species != "Unfed or algae fed shellfish"|data_type != "known locations") %>%
   filter(iso3c != "TWN"|species != "General Marine Fish"|data_type != "known locations") %>%
   filter(iso3c != "USA"|species != "Shrimp") %>%
-  rbind(TWN_finfish_fix, USA_bivalve_fix, USA_salmon_fix, USA_shrimp_fix, CAN_bivalve_fix, CAN_salmon_fix, AUS_bivalve_fix) %>%
+  filter(iso3c != "CHN"|species != "Unfed or algae fed shellfish"|data_type != "known locations") %>%
+  filter(iso3c != "CHN"|species != "Shrimp"|data_type != "known locations") %>%
+  rbind(TWN_finfish_fix, USA_bivalve_fix, USA_salmon_fix, USA_shrimp_fix, CAN_bivalve_fix, CAN_salmon_fix, AUS_bivalve_fix, CHN_bivalve_fix, CHN_shrimp_fix) %>%
   mutate(data_year = as.numeric(data_year)) %>%
   dplyr::select(-species)
 
@@ -349,7 +418,7 @@ unique(all_farms_sources_final$data_year)
 unique(sort(all_farms_sources$country))
 unique(sort(all_farms_sources$iso3c)) ## 73 countries - perfect! 
 unique(all_farms_sources_final$species_group)
-
+sum(all_farms_sources_final$tonnes_per_farm) # 29639681
 
 ## Now save this as a csv
 st_write(all_farms_sources_final, "data/all_marine_aquaculture_farms_sources_final.csv", layer_options = "GEOMETRY=AS_XY", delete_dsn = TRUE)
@@ -359,7 +428,7 @@ st_write(all_farms_sources_final, "data/all_marine_aquaculture_farms_sources_fin
 all_farms <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv")
 
 test <- all_farms %>%
-  filter(iso3c == "CRI", str_detect(species_group, "hrimp")) %>%
+  filter(iso3c == "GBR", str_detect(species_group, "almo")) %>%
     st_as_sf(., 
            coords = c("X", "Y"),
            crs = crs(food_raster), 

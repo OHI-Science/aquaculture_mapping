@@ -314,14 +314,21 @@ write_csv(farms_hnd, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_
 
 # China
 
-Current data is from ASC, only 4 farms, so definitely not comprehensive, just a drop in the bucket compared to the produciton of China. There are likely many more farms than this. Because we can't find any information on more specific locations or specific number of farms, we will gapfill later based on global tonnes/farm. For now we need to mark the data quality as 2. 
+Current data is from https://zenodo.org/record/3881612 and ASC, only 435 + 4 = 439 farms, so probably not comprehensive, just a drop in the bucket compared to the produciton of China. There are likely many more farms than this. Because we can't find any information on more specific locations or specific number of farms, we will gapfill later based on global tonnes/farm. For now we need to mark the data quality as 2. 
 
 ```{r}
 farms_chn <- read.csv(here("marine/shrimp/shrimp_farms/data/ASC_shrimp_farm_lat_lon.csv")) %>%
   dplyr::filter(iso3c == "CHN") %>%
   mutate(data_quality = 2)
 
-write_csv(farms_chn, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5/farms_chn.csv"))
+
+farms_chn_2 <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/China/split_spp/farms_shrimp_chn.csv") %>%
+  dplyr::select(-id) %>%
+  mutate(data_quality = 2)
+
+farms_chn_fin <- rbind(farms_chn, farms_chn_2)
+
+write_csv(farms_chn_fin, here("marine/shrimp/shrimp_farms/data/known_farm_sites_2_4_5/farms_chn.csv"))
 
 
 ```

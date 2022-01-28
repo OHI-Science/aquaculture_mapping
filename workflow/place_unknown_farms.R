@@ -62,11 +62,11 @@ arctic_fixed <- raster::resample(arctic_raster, blank_raster, method = "ngb")
 
 arctic_fixed <- inverted_land + arctic_fixed
 arctic_fixed[arctic_fixed[]==2] <- 1 ## add land mask
-
+sf::sf_use_s2(FALSE)
 
 for (i in 1:length(unique(need_national_allocation$iso3c))) {
 
-  # i = 7
+  # i = 2
   ## 1.a get country shape file
   this_iso3 <- unique(need_national_allocation$iso3c)[i]
   
@@ -90,8 +90,7 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
     st_union() %>% # union all touching polygons
     sf::st_as_sf() %>%
     ungroup()
-  #select(GID_0) %>% 
-  
+
   # plot(this_country)
   # class(this_country)
   
@@ -170,9 +169,11 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
   port_test_rast <- dis_to_port_rast
   
   
-  # 31.30463*1000 # 31304.63 meters 
+  # 31.30463*1000 # 31304.63 meters v1
+  # 39.824*1000 = 39824 meters v2
+  # 39.65138*1000 = 39651 meters v3 scotland fix 
   
-  port_test_rast[port_test_rast >31305] <- NA # acceptable distance to port # we are doing 2; the mean (31.305 kilometers) and median (18.850 kilometers) of distance from known locations to ports 
+  port_test_rast[port_test_rast >39651] <- NA # acceptable distance to port # we are doing 2; the mean (31.305 kilometers v1; changed to 39824 for v2; changed to 39651 for v3) 
   port_test_rast[port_test_rast<1000] <- NA # need to be 1km away from ports/shipping lanes
   suitability_rast <- port_test_rast + arctic_fixed # add in arctic mask
   
@@ -319,13 +320,13 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
   }
   
   #UNCOMMENT WHEN SAVING! 
-  write_rds(this_farm_points, paste0("data/temp_data/temp_final_shrimp_fix/temp_farms_", i, ".rds"))
+  write_rds(this_farm_points, paste0("data/temp_data/temp_final_resub_scotland/temp_farms_", i, ".rds"))
   print(paste0(i, " - ",this_iso3, " has been saved"))
   
 }
 
 # save a file for all farms
-all_farms <- list.files("data/temp_data/temp_final_shrimp_fix", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_final_resub_scotland", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   dplyr::mutate(source = "modeled") %>% 
@@ -343,7 +344,6 @@ test <- all_farms %>%
 
 mapview(test)
 
-## rerun CRI, GTM, MEX, MYS, IDN, COL, PAN
 
 n_placed_known <- all_farms %>% 
   st_set_geometry(NULL) %>% 

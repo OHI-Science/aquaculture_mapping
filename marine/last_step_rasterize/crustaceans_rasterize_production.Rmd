@@ -146,14 +146,14 @@ farms_sf <- st_as_sf(farms_prod)
 mapview(farms_sf)
 
 
-sum(farms_sf$tonnes_per_farm) # 401719.1
+sum(farms_sf$tonnes_per_farm) # 402573.6
 sum(fao$fao_tonnes_production) # 401719.1
 
 crustacean_raster_check <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum)
 plot(log(crustacean_raster_check+1))
 # s <- raster::select(crustacean_raster_check)
 # plot(s)
-cellStats(crustacean_raster_check, stat = "sum", na.rm = TRUE) # 401719.1
+cellStats(crustacean_raster_check, stat = "sum", na.rm = TRUE) # 402573.6
 
 
 crustacean_raster <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum, background=0)
@@ -163,9 +163,9 @@ plot(log(crustacean_raster+1))
 crustacean_raster_df <- as.data.frame(crustacean_raster, xy=TRUE) %>%
   dplyr::select(x,y, tonnes_production=layer)
 
-cellStats(crustacean_raster, stat = "sum") # 401719.1
-sum(crustacean_raster_df$tonnes_production) # 401719.1
-sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 401719.1
+cellStats(crustacean_raster, stat = "sum") # 402573.6
+sum(crustacean_raster_df$tonnes_production) # 402573.6
+sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 402573.6
 sum(fao$fao_tonnes_production) # 401719.1
 
 write_csv(crustacean_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/crustaceans/updated/crustaceans_farm_updated.csv")

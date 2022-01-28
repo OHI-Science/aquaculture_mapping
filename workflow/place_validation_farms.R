@@ -50,31 +50,32 @@ tonnage_per_farms <- read_csv("marine/output/all_points_to_add.csv") %>%
   distinct(type, avg_tonnes_per_farm)
 
 
-data_final <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv") %>%
-  mutate(type = case_when(species_group == "Salmonidae fish" ~ "salmon",
-                                   species_group == "Unfed or algae fed bivalve molluscs" ~ "bivalve",
-                                   species_group == "Shrimps and prawns" ~ "shrimp", 
-                                 species_group == "Bluefin tuna" ~ "tuna", 
-                                   species_group ==  "General marine fish" ~ "marine_fish_general",
-                          species_group == "Non-shrimp crustaceans" ~ "crustaceans")) %>%
-  filter(data_type_2 == "A") %>%
-  group_by(iso3c, type) %>%
-  summarise(num_farms = n())
-
-sum(data_final$num_farms)
+# data_final <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv") %>%
+#   mutate(type = case_when(species_group == "Salmonidae fish" ~ "salmon",
+#                                    species_group == "Unfed or algae fed bivalve molluscs" ~ "bivalve",
+#                                    species_group == "Shrimps and prawns" ~ "shrimp", 
+#                                  species_group == "Bluefin tuna" ~ "tuna", 
+#                                    species_group ==  "General marine fish" ~ "marine_fish_general",
+#                           species_group == "Non-shrimp crustaceans" ~ "crustaceans")) %>%
+#   filter(data_type_2 == "A") %>%
+#   group_by(iso3c, type) %>%
+#   summarise(num_farms = n())
+# 
+# sum(data_final$num_farms)
 
 
 need_validation_allocation <- data %>%
   st_drop_geometry() %>%
   group_by(iso3c, type) %>%
   summarise(num_farms = n()) %>%
-  ungroup() %>%
-  group_by(iso3c, type) %>%
-  filter(num_farms %in% c(data_final$num_farms)) %>%
-  filter(iso3c %in% c(data_final$iso3c))
+  ungroup() 
+# 
+# %>%
+#   group_by(iso3c, type) %>%
+#   filter(num_farms %in% c(data_final$num_farms)) %>%
+#   filter(iso3c %in% c(data_final$iso3c))
 
-sum(need_validation_allocation$num_farms) # 8470... not exactly right... but its ok, we will fix it later. 
-
+sum(need_validation_allocation$num_farms) # 16138
 
 # create arctic raster 
 arctic_raster <- raster("/home/shares/food-systems/Aquaculture_mapping/latitude_abs.tif")
@@ -88,10 +89,13 @@ arctic_fixed <- raster::resample(arctic_raster, blank_raster, method = "ngb")
 arctic_fixed <- inverted_land + arctic_fixed
 arctic_fixed[arctic_fixed[]==2] <- 1 ## add land mask
 
+sf::sf_use_s2(FALSE)
+rgdal::setCPLConfigOption("GDAL_PAM_ENABLED", "FALSE")
+
 
 for(i in 1:length(unique(need_validation_allocation$iso3c))) {
   
-  # i = 15
+  # i = 1
   ## 1.a get country shape file
   this_iso3 <- unique(need_validation_allocation$iso3c)[i]
   
@@ -135,7 +139,7 @@ for(i in 1:length(unique(need_validation_allocation$iso3c))) {
     bind_rows(this_eez)
   
   
-  ## This ifelse statement is just for USA and RUS, because if we don't restrain the bbox the bbox will span the entire globe, making the distance to ports calculation take like 5 hours... now it only takes 20 mins for USA!
+  ## This ifelse statement is just for USA, RUS, and NZL, because if we don't restrain the bbox the bbox will span the entire globe, making the distance to ports calculation take like 5 hours... now it only takes 20 mins for USA!
   if(this_iso3 == "USA"){
     
     this_bbox <- st_bbox(c(xmin = -180, xmax = -65.69972, ymax = 66, ymin = 15.56312), crs = st_crs(this_area)) ## cut out arctic since it gets cut out later anyways.
@@ -147,7 +151,14 @@ for(i in 1:length(unique(need_validation_allocation$iso3c))) {
     
     this_eez <- st_crop(this_eez, this_bbox)
     
-  }else{
+  }else if(this_iso3 == "NZL"){
+    this_bbox <- st_bbox(c(xmin = 160.6098, xmax = 180, ymax = -25.88826, ymin = -55.94930), crs = st_crs(this_area)) ## make it easier since the arctic will be classed out later anyways
+    
+    this_eez <- st_crop(this_eez, this_bbox)
+    
+    
+    
+  } else{
     
     ## 1.d get bounding box and limit to ymax = 66
     this_bbox_coords <- st_bbox(this_area)
@@ -197,18 +208,23 @@ for(i in 1:length(unique(need_validation_allocation$iso3c))) {
   # writeRaster(dis_to_port_rast, file.path("/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/global_dis_to_port_raster.tif"))
   port_test_rast <- dis_to_port_rast
   
-  # 31.30463*1000 # 31304.63 meters 
-
-  port_test_rast[port_test_rast >31305] <- NA # acceptable distance to port # we are doing 2; the mean (31.305 kilometers) and median (18.850 kilometers) of distance from known locations to ports 
+  # 31.30463*1000 # 31304.63 meters v1
+  # 39.824*1000 = 39824 meters v2
+  
+  port_test_rast[port_test_rast >39651] <- NA # acceptable distance to port # we are doing 2; the mean (39.824 kilometers)
   port_test_rast[port_test_rast<1000] <- NA # need to be 1km away from ports/shipping lanes
   suitability_rast <- port_test_rast + arctic_fixed # add in arctic mask
   #plot(suitability_rast)
   # mapview(suitability_rast)
   # mapview(port_test_rast)
   # plot(arctic_fixed)
+  # plot(port_test_rast)
   
   suitability_rast_shrimp <- port_test_rast ## save a suitability raster for shrimp placement
   
+  # writeRaster(suitability_rast, paste0("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean/suitability_rast_subset_", this_iso3, ".tif"))
+  # writeRaster(suitability_rast_shrimp, paste0("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_and_land/suitability_rast_subset_", this_iso3, ".tif"))
+
   
   if(shrimp_info == "no"){
     
@@ -345,13 +361,13 @@ for(i in 1:length(unique(need_validation_allocation$iso3c))) {
   }
   
   #UNCOMMENT WHEN SAVING! 
-  write_rds(this_farm_points, paste0("data/temp_data/temp_validation_shrimp/temp_farms_", i, ".rds"))
+  write_rds(this_farm_points, paste0("data/temp_data/temp_validation_resub_scotland/temp_farms_", i, ".rds"))
   print(paste0(i, " - ",this_iso3, " has been saved"))
   
 }
 
 # save a file for 31km
-all_farms <- list.files("data/temp_data/temp_validation_shrimp", pattern = "rds$", full.names = TRUE) %>% 
+all_farms <- list.files("data/temp_data/temp_validation_resub_scotland", pattern = "rds$", full.names = TRUE) %>% 
   map_df(., readRDS) %>% 
   rename(iso3c = iso3) %>% 
   dplyr::mutate(source = "modeled validation") %>% 
@@ -383,13 +399,108 @@ testing %>%
   right_join(need_validation_allocation)
 
 
-write_rds(all_farms, "data/all_validation_farms_fix_shrimp.rds")
+write_rds(all_farms, "data/all_validation_farms_resubmission.rds")
 
 
 
 plotted <- all_farms %>% 
-  filter(iso3c == "USA")
+  filter(iso3c == "GBR")
 
 mapview(plotted, 
         zcol = "source")
+
+
+# Mosaic all suitability rasters together, and reproject to other resolutions for validity testing: 
+all_suit <- list.files("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_and_land", pattern = "suitability", full.names = TRUE)
+
+
+# all_suit_stack <- raster::stack(all_suit_ocean)
+# plot(all_suit_stack[[18]], col = "red")
+
+
+allrasters <- lapply(all_suit, raster)
+
+allrasters$fun <- sum
+
+plot(allrasters[[57]])
+
+# s <- raster::select(allrasters[[12]])
+# plot(s)
+
+## mosaic works 
+
+mos <- do.call(mosaic, allrasters)
+plot(mos)
+
+unique(mos)
+
+
+mos[mos == 0] <- NA
+mos[mos >0] <- 1
+
+plot(mos, col = "black")
+
+
+writeRaster(mos, file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suitability.tif"), overwrite = TRUE)
+
+
+
+new_crs <- "+proj=cea +lat_ts=45 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+new_raster <- raster(nrows=3000, ncols=4736, xmn=-14207430, xmx=14208570, ymn=-9000182, ymx=8999818, crs = new_crs)
+
+mos_cea <- projectRaster(mos, new_raster, crs = new_crs)
+
+unique(mos_cea)
+plot(mos_cea)
+
+s <- raster::select(mos_cea)
+plot(s)
+
+mos_cea[mos_cea == 0] <- NA
+mos_cea[!is.na(mos_cea)] <- 1
+
+plot(area(mos_cea))
+plot(area(mos))
+
+plot(mos_cea, col = "black")
+plot(mos, col = "black")
+
+writeRaster(mos_cea, file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suit_36km.tif"), overwrite = TRUE)
+
+
+
+## need this for 25km2 cells 
+res(mos_cea) <- c(5000, 5000)
+
+mos_cea
+
+plot(mos_cea)
+
+mos_cea_25 <- projectRaster(mos, mos_cea, crs = crs(mos_cea))
+
+plot(mos_cea_25)
+plot(area(mos_cea_25))
+
+mos_cea_25[mos_cea_25 == 0] <- NA
+mos_cea_25[!is.na(mos_cea_25)] <- 1
+
+plot(mos_cea_25)
+
+writeRaster(mos_cea_25, file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suit_25km.tif"), overwrite = TRUE)
+
+
+## now reproject to 0.25 degree cell sizes 
+
+mos_quart <- mos
+res(mos_quart) <- c(0.25,0.25)
+plot(area(mos_quart))
+
+mos_quart_reproj <- projectRaster(mos, mos_quart, crs = crs(mos_quart))
+
+plot(mos_quart_reproj)
+
+unique(mos_quart_reproj)
+plot(area(mos_quart_reproj))
+
+writeRaster(mos_quart_reproj, file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suit_quart.tif"), overwrite = TRUE)
 

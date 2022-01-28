@@ -646,14 +646,22 @@ write_csv(irn_gf, here("marine/marine_fish_general/finfish_farms/data/no_info_1/
 
 
 ## China 
-Can't find any datasets of marine finfish farm locations in China. This will need to be fully gapfilled. 
 
-Source: 
-NA
+Current data is from https://zenodo.org/record/3881612 only 459 farms, so probably not comprehensive, just a drop in the bucket compared to the produciton of China. There are likely many more farms than this. Because we can't find any information on more specific locations or specific number of farms, we will gapfill later based on global tonnes/farm. For now we need to mark the data quality as 2. 
 
 ```{r}
-chn_gf <- data.frame(iso3c = "CHN", type = "marine_fish_general", num_additional_farms = NA, data_quality = 1)
-write_csv(chn_gf, here("marine/marine_fish_general/finfish_farms/data/no_info_1/gf_chn.csv")) 
+# chn_gf <- data.frame(iso3c = "CHN", type = "marine_fish_general", num_additional_farms = NA, data_quality = 1)
+# write_csv(chn_gf, here("marine/marine_fish_general/finfish_farms/data/no_info_1/gf_chn.csv")) 
+
+
+
+farms_chn <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/China/split_spp/farms_mfg_chn.csv") %>%
+  dplyr::select(-id) %>%
+  mutate(data_quality = 2)
+
+
+write_csv(farms_chn, here("marine/marine_fish_general/finfish_farms/data/known_farm_sites_2_4_5/farms_chn.csv"))
+
 
 ```
 

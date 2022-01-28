@@ -71,12 +71,12 @@ test_df_final <- dist_ports %>%
   summarise(min_dist = min(value))
 
 
-## ok so that works... i just to calculate the distance from each point in the whole known location dataset, and find the min of each column
+## ok so that works... i just need to calculate the distance from each point in the whole known location dataset, and find the min of each column
 
 
 dist_ports <- as.data.frame(st_distance(ports_raw, data)) ## calculate distance to each port from each known mariculture location
 
-write.csv(dist_ports, "int/distance_to_ports_raw.csv")
+# write.csv(dist_ports, "int/distance_to_ports_raw.csv")
 
 write.csv(dist_ports, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/distance_from_known_to_ports_raw.csv", row.names = FALSE)
 
@@ -101,17 +101,17 @@ spp_group_dist <- dist_ports_final %>%
   # filter(closest_port_km >= 1)
 
  
-mean(spp_group_dist$closest_port_km) # 31.30463 km
-sd(spp_group_dist$closest_port_km) # 32.333 km
-range(spp_group_dist$closest_port_km) #  0.1312871 to 531.2067646
-median(spp_group_dist$closest_port_km) # 18.85009 km
+mean(spp_group_dist$closest_port_km) # 31.30463 km v1; 39.82486 v2; 39.65138 v3 scotland fix
+sd(spp_group_dist$closest_port_km) # 32.333 km v1; 34.9805 v2; 34.94368 v3
+range(spp_group_dist$closest_port_km) #  0.1312871 to 531.2067646 v1; 0.1309383 533.2698526 v2; 0.1309383 533.2698526 v3
+median(spp_group_dist$closest_port_km) # 18.85009 km v1; 28.56732 v2; 28.33052 v3
 
 summary(spp_group_dist)
 
 
 spp_group_dist_final <- spp_group_dist %>%
   group_by(type) %>%
-  summarise(dist_port = mean(closest_port)) %>%
+  summarise(dist_port = mean(closest_port_km)) %>%
   ungroup()
   
 

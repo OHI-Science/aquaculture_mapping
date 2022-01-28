@@ -76,15 +76,15 @@ mapview(farms_sf)
 # CHN:HKG
 # CHN:MAC
 # CHN:PRK
-# DEU:NLD
+# CHN:TWN
+# CHN:VNM
 # HKG:CHN
 # IRL:GBR
-# MYS:BRN
+# KHM:VNM
 # NLD:DEU
 # SVN:HRV
 # TWN:CHN
 # USA:CAN
-
 
 farms_sf_correct <- farms_sf %>%
   mutate(GID_0 = as.character(GID_0)) %>%
@@ -96,14 +96,16 @@ farms_sf_correct <- farms_sf %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:MAC", "China", NAME_0)) %>%
     mutate(GID_0 = ifelse(check %in% "CHN:PRK", "CHN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "CHN:PRK", "China", NAME_0)) %>%
-  mutate(GID_0 = ifelse(check %in% "DEU:NLD", "DEU", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "DEU:NLD", "Germany", NAME_0)) %>%    
+      mutate(GID_0 = ifelse(check %in% "CHN:TWN", "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CHN:TWN", "China", NAME_0)) %>%
+      mutate(GID_0 = ifelse(check %in% "CHN:VNM", "CHN", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "CHN:VNM", "China", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "HKG:CHN", "HKG", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "HKG:CHN", "Hong Kong", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "IRL:GBR", "IRL", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "IRL:GBR", "Ireland", NAME_0)) %>% 
-    mutate(GID_0 = ifelse(check %in% "MYS:BRN", "MYS", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "MYS:BRN", "Malaysia", NAME_0)) %>%  
+    mutate(GID_0 = ifelse(check %in% "KHM:VNM", "KHM", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "KHM:VNM", "Cambodia", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "NLD:DEU", "NLD", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "NLD:DEU", "Netherlands", NAME_0)) %>%  
   mutate(GID_0 = ifelse(check %in% "SVN:HRV", "SVN", GID_0)) %>%
@@ -193,10 +195,10 @@ plot(log(bivalve_raster + 1))
 bivalve_raster_df <- as.data.frame(bivalve_raster, xy=TRUE) %>%
   dplyr::select(x,y, tonnes_production=layer)
 
-cellStats(bivalve_raster, stat = "sum") # 17435623
-sum(bivalve_raster_df$tonnes_production) # 17435623
-sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 17435623
-sum(fao$fao_tonnes_production) # 17435623
+cellStats(bivalve_raster, stat = "sum") # 17436803
+sum(bivalve_raster_df$tonnes_production) # 17436803
+sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 17436803
+sum(fao$fao_tonnes_production) # 17435623 - slightly off? 
 
 write_csv(bivalve_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/bivalve/updated/bivalve_farm_updated.csv")
 

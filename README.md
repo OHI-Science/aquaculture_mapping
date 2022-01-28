@@ -1,6 +1,5 @@
 # Mapping marine aquaculture
 
-
 Written by: Gage Clawson
 
 ## Code
@@ -24,37 +23,37 @@ Within each species group folder, there is a species_farms folder. The farms fol
 I completed the species folders in the following order: 
 
  - marine/salmon/
-   - salmon_farm/
+   - salmon_farms/
       - STEP1_fao_salmon_production.Rmd
       - STEP2_salmon_farm_locations.Rmd
       - STEP3_gapfill_salmon.Rmd
  
  - marine/shrimp/ 
-   - shrimp_farm/
+   - shrimp_farms/
       - STEP1_fao_shrimp_production.Rmd
       - STEP2_shrimp_farm_locations.Rmd
       - STEP3_gapfill_shrimp.Rmd
 
  - marine/bivalve/
-   - bivalve_farm/
+   - bivalve_farms/
       - STEP1_fao_bivalve_production.Rmd
       - STEP2_bivalve_farm_locations.Rmd
       - STEP3_gapfill_bivalve.Rmd
 
  - marine/marine_fish_general/
-   - finfish_farm/
+   - finfish_farms/
       - STEP1_fao_finfish_production.Rmd
       - STEP2_finfish_farm_locations.Rmd
       - STEP3_gapfill_finfish.Rmd
 
  - marine/tuna/
-   - tuna_farm/
+   - tuna_farms/
       - STEP1_fao_tuna_production.Rmd
       - STEP2_tuna_farm_locations.Rmd
       - STEP3_gapfill_tuna.Rmd
 
  - marine/crustaceans/
-   - crustaceans_farm/
+   - crustaceans_farms/
       - STEP1_fao_crustacean_production.Rmd
       - STEP2_crustacean_farm_locations.Rmd
       - STEP3_gapfill_crustacean.Rmd
@@ -80,11 +79,12 @@ In each of these folders there are 3 scripts. Once the three scripts in each fol
   
 ### Create a validation dataset by placing known farms onto the suitability layer
 
+ - **analysis/match_data_sources.Rmd**
+     - This script matches our data sources and modeled farms to a final farms dataset with modeled farms, known farms, all data types and all data sources. 
  - **workflow/coast_buffer.R**
      - creates a buffered coast to conduct validation analysis on. 
  - **workflow/place_validation_farms.R**
-
- - Places known locations of farms onto our suitability layer to create a validation dataset.
+     - Places known locations of farms onto our suitability layer to create a validation dataset.
  
   
 ### Allocate and rasterize FAO reported production

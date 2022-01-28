@@ -73,6 +73,7 @@ table(farms_sf$check)
 # CAN:USA
 # FIN:ALA
 # FIN:RUS
+# TUR:GRC
 # USA:CAN
 
 mapview(filter(farms_sf, check == "RUS:RUS"))
@@ -92,7 +93,9 @@ farms_sf_correct <- farms_sf %>%
   mutate(GID_0 = ifelse(check %in% "FIN:ALA", "FIN", GID_0)) %>%
   mutate(NAME_0 = ifelse(check %in% "FIN:ALA", "Finland", NAME_0)) %>%
   mutate(GID_0 = ifelse(check %in% "FIN:RUS", "FIN", GID_0)) %>%
-  mutate(NAME_0 = ifelse(check %in% "FIN:RUS", "Finland", NAME_0)) 
+  mutate(NAME_0 = ifelse(check %in% "FIN:RUS", "Finland", NAME_0))  %>%
+    mutate(GID_0 = ifelse(check %in% "TUR:GRC", "TUR", GID_0)) %>%
+  mutate(NAME_0 = ifelse(check %in% "TUR:GRC", "Turkey", NAME_0))
 
 farms_sf_correct$check <-  paste(farms_sf_correct$iso3c, farms_sf_correct$GID_0, sep=":")
 table(farms_sf_correct$check)
@@ -171,9 +174,9 @@ plot(log(salmon_raster + 1))
 salmon_raster_df <- as.data.frame(salmon_raster, xy=TRUE) %>%
   dplyr::select(x,y, tonnes_production=layer)
 
-cellStats(salmon_raster, stat = "sum") # 2753752
-sum(salmon_raster_df$tonnes_production) # 2753752
-sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 2753752
+cellStats(salmon_raster, stat = "sum") # 2756155
+sum(salmon_raster_df$tonnes_production) # 2756155
+sum(farms_sf$tonnes_per_farm, na.rm = TRUE) # 2756155
 sum(fao$fao_tonnes_production) #2753752
 
 write_csv(salmon_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/salmon/updated/salmon_farm_updated.csv")

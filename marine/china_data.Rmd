@@ -1,0 +1,163 @@
+---
+title: "Location of Salmon Farms"
+author: "Gage Clawson (UCSB, NCEAS, OHI)"
+date: "10/28/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+In this script we need to allocate the appropriate number of farms per species group from this Chinese dataset: https://zenodo.org/record/3881612
+
+In this dataset they split the aquaculture groups into "MAC" (Marine Animal Culture) and "MPC" (Marine Plant Culture). Because we exclude plant culture in our project, we can ignore this. For the MAC points, we need to allocate the appropriate number of farms to each species group which has reported production in China. 
+
+To do this, I will calculate percentages of production per each species group in China, and apply those percentages to allocate number of farms from this dataset. So for example, if Bivalves make up 90% of production in China, and there are 100 farms in this dataset, Bivalves will be allocated 90 of those farms, randomly. 
+
+We will write each dataset to Aurora, and read them in when prepping each species group farm points in each species group folder (i.e. the "shrimp/" folder or the "bivalve/" folder). 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(raster)
+library(tidyverse)
+library(stringr)
+library(rgdal)
+library(PBSmapping)
+library(maptools)
+library(sf)
+library(lwgeom)
+library(data.table)
+library(here)
+library(mapview)
+
+path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
+
+
+```
+
+# Raster
+
+Standard raster used for this analysis 
+
+```{r}
+
+source(here("_spatial/template_raster.R"))
+
+```
+
+
+# Global regions
+
+```{r}
+
+gadm <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm36mol_pyfill_10km.tif")
+
+gadm_latlon <- projectRaster(gadm, food_raster)
+
+gadm_codes <- read.csv("/home/shares/food-systems/Food_footprint/_raw_data/Country_regions/gadm_reg_codes.csv") %>% 
+  mutate(reg_id = as.numeric(reg_id))
+
+```
+
+```{r}
+
+gadm_df <- tabularaster::as_tibble(gadm_latlon, value = TRUE, cells = TRUE) %>% 
+  mutate(cellvalue = round(cellvalue, 0))
+
+gadm_reg <- dplyr::left_join(gadm_df, gadm_codes, by = c("cellvalue" = "reg_id"))
+
+```
+
+
+```{r}
+china <- st_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/China/Marine aquaculture areas in the China’s coastal region.shp")
+
+
+# MPC = marine plant culture
+# MAC = marine animal culture
+
+MAC <- china %>%
+  filter(Class == "MAC") # 5724 points.. better than what we have... how do we split it into our species classes? By %s of production/farms randomly? 
+
+plot(MAC)
+
+MAC_fix <- MAC %>%
+  st_zm(drop = TRUE) 
+
+# MAC_fix$geometry <- sf_use_s2(MAC_fix$geometry, use_s2 = FALSE)
+
+summary(MAC_fix)
+
+
+mapview(MAC_fix)
+
+## Read in production data for China
+
+prod <- read.csv("marine/STEP1_species_groups/int/tonnes_per_country_group.csv") %>%
+  filter(country == "China") %>%
+  mutate(prop = total_tonnes/sum(total_tonnes))
+
+
+chn_pts <- st_centroid(st_make_valid(MAC_fix))
+
+chn_pts_latlon <- st_transform(chn_pts, crs = "+init=epsg:4326") %>%
+  dplyr::select(geometry)
+
+plot(chn_pts_latlon)
+mapview(chn_pts_latlon)
+
+farms_chn <- data.frame(do.call(rbind, st_geometry(chn_pts_latlon)))
+names(farms_chn) <- c("lon", "lat")
+
+farms_all_chn <- farms_chn %>%
+  cbind(iso3c = "CHN") %>%
+  mutate(id = 1:5724)
+
+
+## We need 0.82762193*5724 = 4737 rows for Bivalves 
+
+farms_biv_chn <-  farms_all_chn %>%
+  slice_sample(prop = 0.82762193)
+
+## We need 0.01616285*5724 = 93 rows for crustaceans
+
+farms_crust_chn <- farms_all_chn %>%
+  dplyr::filter(!(id %in% c(farms_biv_chn$id))) %>%
+  slice_sample(n = 93)
+
+
+## We need 0.08020417*5724 = 459 rows for marine fish general
+
+farms_mfg_chn <- farms_all_chn %>%
+  dplyr::filter(!(id %in% c(farms_biv_chn$id, farms_crust_chn$id))) %>%
+  slice_sample(n = 459)
+
+
+## We need 0.07601105*5724 =  435 rows for shrimp
+
+farms_shrimp_chn <- farms_all_chn %>%
+  dplyr::filter(!(id %in% c(farms_biv_chn$id, farms_crust_chn$id, farms_mfg_chn$id))) %>%
+  slice_sample(n = 435)
+  
+435 + 459 + 93 + 4737 # perfect 
+
+
+write.csv(farms_shrimp_chn, "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/China/split_spp/farms_shrimp_chn.csv", row.names = FALSE)
+
+write.csv(farms_mfg_chn, "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/China/split_spp/farms_mfg_chn.csv", row.names = FALSE)
+
+write.csv(farms_biv_chn, "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/China/split_spp/farms_biv_chn.csv", row.names = FALSE)
+
+write.csv(farms_crust_chn, "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/China/split_spp/farms_crust_chn.csv", row.names = FALSE)
+
+## Now lets take a look at each of them
+
+check <- st_as_sf(farms_biv_chn, coords = c("lon", "lat"), 
+                         crs = crs(gadm_latlon), agr = "constant")
+
+mapview(check)
+
+```
+

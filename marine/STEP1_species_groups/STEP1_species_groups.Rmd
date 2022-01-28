@@ -247,7 +247,7 @@ sum(test$total_tonnes) #
 
 test <- fao_1 %>%
   dplyr::filter(aq_group == "salmonids")
-sum(test$total_tonnes) #
+sum(test$tonnes) # 2753752
 
 
 aq_groups <- read.csv("marine/STEP1_species_groups/int/marine_groups.csv")
@@ -288,5 +288,66 @@ fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
 sum(fao_1$total_tonnes) # 38731.97
 
 38731.97/29662247 # we exclude around 0.1% of marine aquaculture
+
+
+
+## what is the proportion of marine salmon aquaculture that we include?
+
+# we include 2753752 tonnes of marien salmon aquaculture
+fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
+ filter(environment %in% c("Marine", "Brackishwater")) %>%
+  left_join(aq_groups) %>%
+  dplyr::filter(year == 2017,
+                !is.na(value),
+                !is.na(aq_group)) %>%
+  # dplyr::filter(value < 500) %>%
+  dplyr::filter(aq_group == "salmonids") %>%
+  group_by(aq_group, country, species, year) %>%
+  summarise(tonnes = sum(value)) %>%
+  ungroup()  %>%
+  # dplyr::filter(tonnes >= 500) %>%
+  group_by(country, year) %>%
+  summarise(total_tonnes = sum(tonnes))# %>%
+ # arrange(aq_group)
+
+sum(fao_1$total_tonnes) # 2754748
+
+2753752/2754748 # we include 0.9996384
+
+
+## What proportion does freshwater salmon production account for? 
+fao_1 <- read.csv(here("data/fao_aquaculture_clean.csv")) %>%
+ # filter(environment %in% c("Marine", "Brackishwater")) %>%
+  left_join(aq_groups) %>%
+  dplyr::filter(year == 2017, 
+                Taxon_code %in% c(NA, "F"),
+                aq_group %in% c(NA, "salmonids")) %>%
+  dplyr::filter(aq_group == "salmonids"|str_detect(species, "trout|Trout|salmon|Salmon|char|Char|whitefish")) %>%
+  # dplyr::filter(year == 2017,
+               # !is.na(value)) %>%
+                #!is.na(aq_group)) %>%
+  # dplyr::filter(value < 500) %>%
+  # dplyr::filter(aq_group == "salmonids") %>%
+  group_by(aq_group, country, species, year, environment) %>%
+  summarise(tonnes = sum(value)) %>%
+  ungroup()  %>%
+  # dplyr::filter(tonnes >= 500) %>%
+  group_by(environment) %>%
+  summarise(total_tonnes = sum(tonnes, na.rm = TRUE))# %>%
+ # arrange(aq_group)
+
+fao_1
+
+# A tibble: 3 × 2
+#   environment   total_tonnes
+#   <chr>                <dbl>
+# 1 Brackishwater       28086.
+# 2 Freshwater         676537.
+# 3 Marine            2726662.
+
+2726662 + 28086 # 2754748
+
+
+676537/2754748 # 0.2455894
 ```
 

@@ -216,7 +216,7 @@ plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
 plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
 ggdraw(plot_final)
 
-ggsave(sprintf("analysis/si_figs/supp_map_fig_%s.jpg", spp_group))
+ggsave(sprintf("analysis/si_figs/supp_map_fig_%s.jpg", spp_group), units = "in", width = 8.07, height = 5.34)
 }
 
 ```
@@ -336,7 +336,7 @@ plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
 plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
 ggdraw(plot_final)
 
-ggsave(sprintf("analysis/si_figs/supp_map_fig_%s.jpg", data_type_2_id))
+ggsave(sprintf("analysis/si_figs/supp_map_fig_%s.jpg", data_type_2_id), units = "in", width = 8.07, height = 5.34)
 
 }
 
@@ -445,13 +445,12 @@ plot_y <- axis_canvas(total_map, axis = "y") +
                     breaks = c("known locations", "modeled locations, known number of farms", "modeled locations, estimated number of farms"), drop = FALSE)
  # coord_flip() 
 
-
 # Combine all plots into one
 plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
 plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
 ggdraw(plot_final)
 
-ggsave("analysis/si_figs/workflow_fig_1.jpg")
+ggsave("analysis/si_figs/workflow_fig_1.jpg", units = "in", width = 8.07, height = 5.34)
 
 ```
 
@@ -549,6 +548,6 @@ plot_final <- insert_xaxis_grob(total_map, plot_x, position = "top")
 plot_final <- insert_yaxis_grob(plot_final, plot_y, position = "right") 
 ggdraw(plot_final)
 
-ggsave("analysis/si_figs/workflow_fig_2.jpg")
+ggsave("analysis/si_figs/workflow_fig_2.jpg", units = "in", width = 8.07, height = 5.34)
 
 ```
