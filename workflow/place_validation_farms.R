@@ -59,6 +59,7 @@ need_validation_allocation <- data %>%
 
 sum(need_validation_allocation$num_farms) # 16138
 
+
 # create arctic raster 
 arctic_raster <- raster("/home/shares/food-systems/Aquaculture_mapping/latitude_abs.tif")
 crs(arctic_raster) <- crs(fake_raster)
@@ -76,6 +77,7 @@ rgdal::setCPLConfigOption("GDAL_PAM_ENABLED", "FALSE")
 
 
 for(i in 1:length(unique(need_validation_allocation$iso3c))) {
+  
   
   # i = 1
   ## 1.a get country shape file
@@ -205,9 +207,8 @@ for(i in 1:length(unique(need_validation_allocation$iso3c))) {
   suitability_rast_shrimp <- port_test_rast ## save a suitability raster for shrimp placement
   
   ## comment these out if you want to resave the suitability layers.. only need to do if the distance from port variables change.
-  # writeRaster(suitability_rast, paste0("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean/suitability_rast_subset_", this_iso3, ".tif"))
-  # writeRaster(suitability_rast_shrimp, paste0("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_and_land/suitability_rast_subset_", this_iso3, ".tif"))
-
+  # writeRaster(suitability_rast, paste0("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean/suitability_rast_subset_", this_iso3, ".tif"), overwrite = TRUE)
+  # writeRaster(suitability_rast_shrimp, paste0("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_and_land/suitability_rast_subset_", this_iso3, ".tif"), overwrite = TRUE)
   
   if(shrimp_info == "no"){
     
@@ -421,7 +422,7 @@ unique(mos)
 mos[mos == 0] <- NA
 mos[mos >0] <- 1
 
-plot(mos, col = "black")
+plot(mos)
 
 
 writeRaster(mos, file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suitability.tif"), overwrite = TRUE)
@@ -436,8 +437,6 @@ mos_cea <- projectRaster(mos, new_raster, crs = new_crs)
 unique(mos_cea)
 plot(mos_cea)
 
-s <- raster::select(mos_cea)
-plot(s)
 
 mos_cea[mos_cea == 0] <- NA
 mos_cea[!is.na(mos_cea)] <- 1
