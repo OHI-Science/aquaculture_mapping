@@ -7,8 +7,17 @@ editor_options:
   chunk_output_type: console
 ---
 
+## Summary
 
-This script tests our validation set of points against our actual known points. 
+This script tests conducts an accuracy assessment of our model vs the actual, known mariculture locations. 
+
+We try this in two different ways. 
+
+1) We compare our random placement of data type A farms into our suitable areas, to the locations of real mariculture locations. The analysis conducted uses a confusion matrix, which calculates the AUC (area under the curve) to test the accuracy of the placement of our points. However, we decided to not use this portion of the analysis in the final manuscript, because the accuracy assessment which makes more sense is conducted in bullet 2 below. 
+
+2) We compare out suitability layer with cells that contain data type A farms. This allows us to see how well our suitability layer overlaps with known, comprehensive farms. In bullet 1, we compare one instance of randomly placing farms into our suitabiltiy layer with data type A farms. I believe if we had ran the model thousands of times, randomly placing data type A farms, it would result in the same conclusion (or something very close) as just comparing our entire suitability layer with data type A farms. 
+
+We do each of these analyses at 4 different resolutions. The native 0.083 degree resolution that we work with all of the global food rasters at. 25km2 and 36km2 equal area, and 0.25 degree resolutions. This allows us to see how well our model works at different resolutions. 
 
 ```{r}
 
@@ -33,7 +42,11 @@ path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_location
 cell_rast_df <- raster_df(food_raster) %>%
   dplyr::select(1:2)
 
-## establish CRSs 
+```
+
+```{r}
+
+## establish CRSs and read in the EEZ masks
 
 ## food 81km2 at equator 
 eez_81 <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/data_type_A_eez/eez_validation_mask.tif"))
@@ -66,7 +79,10 @@ quarter_crs <- crs(eez_quart_cell)
 
 ```
 
-Read in validation dataset 
+
+## Method 1: Compare randomly placed farms to real farms
+
+Read in validation dataset.. i.e. the farms that we placed in data type A countries using our modelling technique.
 
 ```{r}
 validation_all <- readRDS(file.path("data/all_validation_farms_resubmission.rds"))  %>%
@@ -96,7 +112,8 @@ table_3_A <- table_3_iso3c %>%
 
 ```
 
-Split data
+
+Split data into real and modelled
 
 ```{r}
 validation_farms <- data_type_A %>%
@@ -488,7 +505,7 @@ confusion_mat
 
 
 
-
+## Method 2: Compare suitability layer to data type A real farms. 
 
 Use our suitability mask to create a confusion matrix for XX degree cell sizes (about 81km2 at equator, ~10km of coastline) with data type A real farms 
 
@@ -503,6 +520,8 @@ At 5 arc minute resolution (~10 km of coastline at the equator), when comparing 
 When comparing to the coarser resolution of 0.25 degrees, the AUC jumps to 0.84. 
 
 ```{r}
+
+## read in the full suitability mask 
 
 suitability_81 <- raster("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_land_suitability.tif")
 plot(suitability_81)
@@ -773,7 +792,7 @@ confusion_mat
 #        'Positive' Class : 0  
 ```
 
-
+Take a quick look at the gentry files to see what resolution they use. 
 ```{r}
 # gentry <- raster(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/gentry/karakoenig"))
 ```

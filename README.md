@@ -82,9 +82,10 @@ In each of these folders there are 3 scripts. Once the three scripts in each fol
  - **analysis/match_data_sources.Rmd**
      - This script matches our data sources and modeled farms to a final farms dataset with modeled farms, known farms, all data types and all data sources. 
  - **workflow/coast_buffer.R**
-     - creates a buffered coast to conduct validation analysis on. 
+     - creates a buffered coast + eez to conduct validation analysis on. 
  - **workflow/place_validation_farms.R**
      - Places known locations of farms onto our suitability layer to create a validation dataset.
+     - Saves the suitability layer in total to use for our validation analysis. 
  
   
 ### Allocate and rasterize FAO reported production
@@ -95,7 +96,7 @@ Once that is completed, you may move into the **marine/last_step_rasterize** fol
   
 **Analysis and data check**
 
-Once all of those are completed, you can find the **analysis** folder, which data checks, conducts some summarization numbers for the final paper, and creates figures. 
+Once all of those are completed, you can find the **analysis** folder, which data checks, conducts some summarization numbers for the final paper, creates figures, and completes the accuracy assessment of our suitability layer. 
 
 Good luck! 
 

@@ -40,13 +40,7 @@ data <- read_csv("marine/output/all_marine_farms.csv") %>%
            crs = crs(food_raster), 
            agr = "constant") 
 
- 
-# data <- read_csv("all_marine_aquaculture_farms_sources_31km.csv") %>% 
-#   st_as_sf(., 
-#            coords = c("X", "Y"),
-#            crs = crs(food_raster), 
-#            agr = "constant") %>%
-#   filter(data_type_2 == "A")
+
 
 
 need_validation_allocation <- data %>%
@@ -55,7 +49,7 @@ need_validation_allocation <- data %>%
   summarise(num_farms = n()) %>%
   ungroup()
 
-
+rgdal::setCPLConfigOption("GDAL_PAM_ENABLED", "FALSE") # this line is necessary so you don't write .tif.aux.xml files along with your .tif files. 
 
 for (i in 1:length(unique(need_validation_allocation$iso3c))) {
   
@@ -97,7 +91,7 @@ for (i in 1:length(unique(need_validation_allocation$iso3c))) {
       ms_simplify() 
     
     
-    ## buffer coast 1 mile inland
+    ## buffer coast inland a bit
     this_eez <- st_transform(this_simplified_coast, crs = "+proj=moll") %>% ## transform to a crs that can buffer in meters
       st_buffer(dist = 4000) %>% # buffer in meters km
       st_transform(crs = crs(the_crs))
@@ -137,17 +131,17 @@ for (i in 1:length(unique(need_validation_allocation$iso3c))) {
 # [1] "ARE" "AUS" "BGR" "BLZ" "CAN" "CHL" "CYP" "DNK" "ESP" "FIN" "FRA" "FRO" "GBR" "GRC" "HKG" "IRL" "ITA" "JEY" "MEX"
 # [20] "MLT" "NOR" "PYF" "SAU" "SWE" "USA"
 
-mydir <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/validation_coast_buffer"
-delfiles <- dir(path=mydir ,pattern="*.tif.aux.xml")
-file.remove(file.path(mydir, delfiles))
+## delete aux files if they were created
+# mydir <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/validation_coast_buffer"
+# delfiles <- dir(path=mydir ,pattern="*.tif.aux.xml")
+# file.remove(file.path(mydir, delfiles))
 
-
+## read in the eezs
 all_coasts <- list.files("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/validation_coast_buffer", pattern = "temp_eez", full.names = TRUE)
 
 
 # all_coasts_stack <- raster::stack(all_coasts)
 # plot(all_coasts_stack[[18]], col = "red")
-
 
 allrasters <- lapply(all_coasts, raster)
 
@@ -158,7 +152,7 @@ plot(allrasters[[18]])
 # s <- raster::select(allrasters[[12]])
 # plot(s)
 
-## mosaic works 
+## mosaic them together
 
 mos <- do.call(mosaic, allrasters)
 plot(mos)
@@ -176,6 +170,7 @@ plot(s)
 
 writeRaster(mos, file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/eez_validation_mask.tif"), overwrite = TRUE)
 
+## now write the final mosaic into different resolutions
 
 new_crs <- "+proj=cea +lat_ts=45 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
 new_raster <- raster(nrows=3000, ncols=4736, xmn=-14207430, xmx=14208570, ymn=-9000182, ymx=8999818, crs = new_crs)

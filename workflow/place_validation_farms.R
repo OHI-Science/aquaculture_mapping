@@ -1,4 +1,4 @@
-## This script will place specific number of farms with known locations using our location modelling approach. The resulting dataset will serve as a validation method for our modelling. 
+## This script will place specific number of farms with known locations using our location modelling approach. It will also save our suitability maps for each country with known farms. The resulting files will serve as validation methods for our modelling. 
 
 
 #### load libraries and data ####
@@ -50,30 +50,12 @@ tonnage_per_farms <- read_csv("marine/output/all_points_to_add.csv") %>%
   distinct(type, avg_tonnes_per_farm)
 
 
-# data_final <- read_csv("data/all_marine_aquaculture_farms_sources_final.csv") %>%
-#   mutate(type = case_when(species_group == "Salmonidae fish" ~ "salmon",
-#                                    species_group == "Unfed or algae fed bivalve molluscs" ~ "bivalve",
-#                                    species_group == "Shrimps and prawns" ~ "shrimp", 
-#                                  species_group == "Bluefin tuna" ~ "tuna", 
-#                                    species_group ==  "General marine fish" ~ "marine_fish_general",
-#                           species_group == "Non-shrimp crustaceans" ~ "crustaceans")) %>%
-#   filter(data_type_2 == "A") %>%
-#   group_by(iso3c, type) %>%
-#   summarise(num_farms = n())
-# 
-# sum(data_final$num_farms)
-
 
 need_validation_allocation <- data %>%
   st_drop_geometry() %>%
   group_by(iso3c, type) %>%
   summarise(num_farms = n()) %>%
   ungroup() 
-# 
-# %>%
-#   group_by(iso3c, type) %>%
-#   filter(num_farms %in% c(data_final$num_farms)) %>%
-#   filter(iso3c %in% c(data_final$iso3c))
 
 sum(need_validation_allocation$num_farms) # 16138
 
@@ -222,6 +204,7 @@ for(i in 1:length(unique(need_validation_allocation$iso3c))) {
   
   suitability_rast_shrimp <- port_test_rast ## save a suitability raster for shrimp placement
   
+  ## comment these out if you want to resave the suitability layers.. only need to do if the distance from port variables change.
   # writeRaster(suitability_rast, paste0("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean/suitability_rast_subset_", this_iso3, ".tif"))
   # writeRaster(suitability_rast_shrimp, paste0("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/global_maps/suitability_rasts/ocean_and_land/suitability_rast_subset_", this_iso3, ".tif"))
 
