@@ -30,6 +30,9 @@ library(janitor)
 library(rnaturalearth)
 library(spatialEco)
 library(countrycode)
+# library(remotes)
+# install_github("yonghah/esri2sf")
+library("esri2sf")
 
 
 path <- "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations"
@@ -530,7 +533,7 @@ write_csv(farms_chile, here("marine/bivalve/bivalve_farms/data/known_farm_sites_
 
 # USA 
 
-Based on the two datasets below, we have an existing 1010 bivalve farms. We need to add 193 points to existing 1010 (a final total of 1203 points)
+Based on the datasets below, we have an existing 1010 bivalve farms. We need to add 193 points to existing 1010 (a final total of 1203 points)
 
 Our current information is taken from many different state level sources, but we are definitely still missing some, as California is not included... we have farm/lease locations from 8 different states:
 
@@ -563,7 +566,8 @@ Locations of aquaculture leases in Maine, 2019. . Maine Department of Marine Res
 
 
 ```{r}
-maine_aq_lease <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maine/MaineDMR_Aquaculture_-_AQ_Leases/MaineDMR_Aquaculture_-_AQ_Leases.shp"))
+maine_aq_lease <- st_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maine/MaineDMR_Aquaculture_AQ_Leases/MaineDMR_Aquaculture_AQ_Leases.shp")
+  
 
 # mapview(maine_aq_lease)
 
@@ -598,7 +602,6 @@ mapview(us_me_bivalve_pts_latlon)
 ## Rhode Island
 
  - Lease map here: https://ridemgis.maps.arcgis.com/apps/webappviewer/index.html?id=8beb98d758f14265a84d69758d96742f
- - Julia Livermore: julia.livermore@dem.ri.gov
  - Current as of August 2021
  - Shellfish and kelp
  
@@ -606,7 +609,8 @@ RIDEM Marine Fisheries Maps Approved Aquaculture Areas in Rhode Island, 2021. . 
 
  
 ```{r}
-rhode_island <- read_sf("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Rhode_Island/ri_aq_sites.kml")
+rhode_island <- esri2sf("https://risegis.ri.gov/hosting/rest/services/RIDEM/Marine_Fisheries_Map_Layers/MapServer/0")
+mapview(rhode_island)
 
 ri_active_biv <- rhode_island %>%
   filter(GPS_Source %in% c("Approved", "Expanded", "PD App")) %>%
@@ -644,13 +648,10 @@ North Carolina Division of Marine Fisheries Shellfish Lease and Franchise Progra
 
  
 ```{r}
-library(geojsonio)
-spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/North_Carolina/NC_shellfish_leases.geojson",  what = "sp") %>%
-  st_as_sf()
+url <- "https://services2.arcgis.com/kCu40SDxsCGcuUWO/arcgis/rest/services/Lease_DB_View/FeatureServer/2"
+nc_shellfish <- esri2sf(url)
 
-unique(spdf$Status)
-
-nc_active <- spdf %>%
+nc_active <- nc_shellfish %>%
   filter(Status %in% c("Active", "Approved")) # 423 active leases... wow! 
 
 us_nc_bivalve_mol <- st_transform(nc_active, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
@@ -686,6 +687,7 @@ farms_us_nc <- farms_us_nc %>%
  
  
 Alaska Department of Fish and Game Aquatic Farming Operations, 2020. Alaska Department of Fish and Game. https://adfg.maps.arcgis.com/apps/webappviewer/index.html?id=f3ca95493c1042b39e42a3ecb5dcad6a
+
 
  
 ```{r}
@@ -741,19 +743,29 @@ Current as of 2019
 
 New York and Connecticut’s Shellfish and Seaweed Aquaculture Viewer, 2019. New York Department of Environmental Conservation. https://www.arcgis.com/apps/webappviewer/index.html?id=f8799cefbb4c4751a209710d14b9ad46 
 
+Roadmap for polygons
+
+Viewer: https://www.arcgis.com/apps/webappviewer/index.html?id=f8799cefbb4c4751a209710d14b9ad46
+
+Item data endpoint (just replace id): https://www.arcgis.com/sharing/rest/content/items/f8799cefbb4c4751a209710d14b9ad46/data
+
+Search for layer you want and grab link ("CT Aquaculture Gear): https://services7.arcgis.com/9fAJJI91yoj2y4Yi/arcgis/rest/services/ConnecticutShellfishOnline2018Draft/FeatureServer/1
+
+Now download using esri2sf R package.
 
 ```{r}
-library(geojsonio)
-spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Connecticut/CT_Aquaculture_gear/CT_aquaculture_gear.geojson",  what = "sp") %>%
+
+url <- "https://services7.arcgis.com/9fAJJI91yoj2y4Yi/arcgis/rest/services/ConnecticutShellfishOnline2018Draft/FeatureServer/1"
+ct_shellfish <- esri2sf(url) %>%
   st_as_sf() %>%
   filter(Species != "kelp",
          ActivePerm == "yes")
 
 
-mapview(spdf)
+mapview(ct_shellfish)
 
 
-us_ct_bivalve_mol <- st_transform(spdf, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
+us_ct_bivalve_mol <- st_transform(ct_shellfish, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
 us_ct_bivalve_pts <- st_centroid(us_ct_bivalve_mol)
 # check
 plot(st_geometry(us_ct_bivalve_mol))
@@ -780,17 +792,26 @@ farms_us_ct <- farms_us_ct %>%
 
 Alabama Marine Resources Division: Shellfish Aquaculture Siting Tool, 2021. Alabama Marine Resources Division. https://aldcnr.maps.arcgis.com/apps/webappviewer/index.html?id=a32dad8dacd249ea86bcb80dd951a424
 
+Roadmap to download
+
+Viewer: https://aldcnr.maps.arcgis.com/apps/webappviewer/index.html?id=a32dad8dacd249ea86bcb80dd951a424
+
+Item data endpoint (just replace id): https://www.arcgis.com/sharing/rest/content/items/a32dad8dacd249ea86bcb80dd951a424/data
+
+Search for layer you want and grab link ("Leases" is the layer you want): https://services7.arcgis.com/jcVUvxpWnajErgCr/arcgis/rest/services/Shellfish_Riparian_Leases_Revised/FeatureServer/0
+
+Download using esri2sf
 
 ```{r}
-library(geojsonio)
-spdf <- geojson_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Alabama/Alabama_Shellfish_Leases.geojson",  what = "sp") %>%
+
+al_oyster <- esri2sf("https://services7.arcgis.com/jcVUvxpWnajErgCr/arcgis/rest/services/Shellfish_Riparian_Leases_Revised/FeatureServer/0") %>%
   st_as_sf() %>%
   dplyr::filter(Status %in% c("Current", "Current Commercial"))
 
 
-mapview(spdf)
+mapview(al_oyster)
 
-us_al_bivalve_mol <- st_transform(spdf, crs = "+init=epsg:3035") # convert to equal area projealion to find centroids. 
+us_al_bivalve_mol <- st_transform(al_oyster, crs = "+init=epsg:3035") # convert to equal area projealion to find centroids. 
 us_al_bivalve_pts <- st_centroid(us_al_bivalve_mol)
 # check
 plot(st_geometry(us_al_bivalve_mol))
@@ -808,55 +829,6 @@ farms_us_al <- farms_us_al %>%
          subregion = "Alabama") 
 ```
 
-
-## US Northeast - NY, CT, ME, NH
-
- Only used this for exploration
- - Regional Ocean Council 2018
- 
-Source: 
-Northeast Regional Ocean Council, 2018. Northeast ocean data: aquaculture. [Accessed January 2020] https://www.northeastoceandata.org/data-download/
-
-```{r}
-
-# us_ne <- st_read(file.path(path,"USA/NE/US_NE_Aquaculture.shp"))
-# 
-# unique(us_ne$allSpecies)
-# 
-# unique(fao_bivalve_spp$species)
-# 
-# ## need to filter allSpecies for anything with "Oyster", "Mussel", "Shellfish", "Clam", "Quahog", 
-# 
-# # id bivalves and active sites
-# bivalve_species <- grep("Oyster|Mussel|Shellfish|Clam|Quahog", unique(us_ne$allSpecies), value=TRUE)
-# 
-# 
-# us_ne_bivalve <- us_ne %>%
-#   filter(allSpecies %in% bivalve_species) %>%
-#   filter(status == "Active")
-# unique(us_ne_bivalve$state)
-# 
-# us_ne_bivalve_mol <- st_transform(us_ne_bivalve, crs = "+init=epsg:3035") # convert to equal area projection to find centroids. 
-# us_ne_bivalve_pts <- st_centroid(us_ne_bivalve_mol)
-# # check
-# plot(st_geometry(us_ne_bivalve_mol))
-# plot(st_geometry(st_centroid(us_ne_bivalve_mol)), add=TRUE)
-# 
-# us_ne_bivalve_pts_latlon <- st_transform(us_ne_bivalve_pts, crs = "+init=epsg:4326") 
-# 
-# farms_us_ne <- data.frame(do.call(rbind, st_geometry(us_ne_bivalve_pts_latlon))) # get lat lon
-# names(farms_us_ne) <- c("lon", "lat") 
-# farms_us_ne <- farms_us_ne %>%
-#   mutate(iso3c = "USA") %>%
-#   mutate(data_quality = 4) 
-# 
-# # all_farms_sf <- st_as_sf(farms_us_ne, coords = c("lon", "lat"), 
-# #                          crs = crs(gadm_latlon), agr = "constant")
-# # 
-# # mapview(all_farms_sf)
-
-
-```
 
 ## Washington
  - Aquaculture, Office for Coastal Management (OCM), 2018

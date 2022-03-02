@@ -584,68 +584,6 @@ write_csv(farms_new_lab, here("marine/salmon/salmon_farm/data/known_farm_sites_2
 ```
 
 
-# United States
-Salmon aquaculture occurs along the Atlantic coast and in Puget sound.
-
-Puget Sound data (2018 data): http://www.moldychum.com/violations-prompt-washington-state-cancel-atlantic-salmon-farm-lease/
-
-
-## Puget Sound
-
-Source: 
-Our Sound, Our Salmon, 2017. [Accessed January 31, 2020] http://www.moldychum.com/violations-prompt-washington-state-cancel-atlantic-salmon-farm-lease/
-
- - NOT comprehensive, existing points need gapfilling
-
-```{r}
-
-farms_ps <- read.csv(file.path(path, "USA/PugetSound/USA_PugetSound_AtSalmon.csv")) %>%
-  mutate(iso3c = "USA") %>%
-  dplyr::select(lon, lat, iso3c) %>%
-  mutate(data_quality = 2) %>%
-  mutate(subregion = "Washington")
-
-write_csv(farms_ps, here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5/farms_ps_usa.csv"))
-
-```
-
-## US Northeast
-DEPRECATED:
-Source:
-Northeast Regional Ocean Council, 2018. Northeast ocean data: aquaculture. [Accessed January 17, 2020] 
-
- - NOT comprehensive, existing points need gapfilling
- 
-```{r}
-
-# us_ne <- st_read(file.path(path,"USA/NE/US_NE_Aquaculture.shp"))
-# 
-# 
-# # id salmon and active sites
-# salmon_species <- grep("Salmon|salmon", unique(us_ne$allSpecies), value=TRUE)
-# 
-# us_ne_salmon <- us_ne %>%
-#   filter(allSpecies %in% salmon_species) %>%
-#   filter(status == "Active")
-# 
-# us_ne_salmon_mol <- st_transform(us_ne_salmon, crs = "+init=epsg:3035") # convert to equal area projection to find centroids.
-# us_ne_salmon_pts <- st_centroid(us_ne_salmon_mol)
-# # check
-# plot(st_geometry(us_ne_salmon_mol))
-# plot(st_geometry(st_centroid(us_ne_salmon_mol)), add=TRUE)
-# 
-# us_ne_salmon_pts_latlon <- st_transform(us_ne_salmon_pts, crs = "+init=epsg:4326")
-# 
-# farms_us_ne <- data.frame(do.call(rbind, st_geometry(us_ne_salmon_pts_latlon)))
-# names(farms_us_ne) <- c("lon", "lat")
-# farms_us_ne <- farms_us_ne %>%
-#   mutate(iso3c = "USA") %>%
-#   mutate(data_quality = 2)
-# 
-# write_csv(farms_us_ne, here("marine/salmon/salmon_farm/data/known_farm_sites_2_4_5/farms_ne_usa.csv"))
-
-```
-
 # New Zealand
 
 We use the data from ASC for our New Zealand farms. 
@@ -967,11 +905,30 @@ write_csv(farms_all_ISL, here("marine/salmon/salmon_farm/data/known_farm_sites_2
 ## Maine 
 
 
-Locations of aquaculture leases in Maine, 2019. Maine Department of Marine Resources. https://dmr-maine.opendata.arcgis.com/datasets/maine::mainedmr-aquaculture-aq-leases/about
+Locations of aquaculture leases in Maine, 2019. Maine Department of Marine Resources. 
+ - Viewer: https://maine.maps.arcgis.com/apps/webappviewer/index.html?id=b846cf37b1d64c988f89eafa085c8b7a
+ - Download: https://dmr-maine.opendata.arcgis.com/datasets/maine::mainedmr-aquaculture-aq-leases/about
+ - We will want to use regular leases only.
+ - Limited purpose leases are for scientific or smaller/shorter term mariculture projects, that last up to 3 years.
+ - I think this can be considered "comprehensive". 
+ - Update to date as of download date
+ - Has species types specified. 
+ 
+ - geojson API link for download: https://opendata.arcgis.com/datasets/a0b3c775cfc243a2b92df328ad85c642_2.geojson
 
 
 ```{r}
-maine_aq_lease <- st_read(file.path("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maine/MaineDMR_Aquaculture_-_AQ_Leases/MaineDMR_Aquaculture_-_AQ_Leases.shp"))
+me_geojson <- geojson_read("https://opendata.arcgis.com/datasets/a0b3c775cfc243a2b92df328ad85c642_2.geojson",  what = "sp") %>% st_as_sf() %>%
+  mutate(download_date = date, 
+         data_year = year) %>%
+  clean_names()
+mapview(me_geojson)
+
+#st_write(me_geojson, "/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maine/MaineDMR_Aquaculture_AQ_Leases/MaineDMR_Aquaculture_AQ_Leases.shp", delete_dsn = TRUE)
+
+
+maine_aq_lease <- st_read("/home/shares/food-systems/Food_footprint/_raw_data/Aquaculture_locations/USA/Maine/MaineDMR_Aquaculture_AQ_Leases/MaineDMR_Aquaculture_AQ_Leases.shp")
+  
 
 # mapview(maine_aq_lease)
 
@@ -998,6 +955,24 @@ write_csv(farms_us_me, here("marine/salmon/salmon_farms/data/known_farm_sites_2_
 
 ```
 
+## Puget Sound
+
+Source: 
+Our Sound, Our Salmon, 2017. [Accessed January 31, 2020] http://www.moldychum.com/violations-prompt-washington-state-cancel-atlantic-salmon-farm-lease/
+
+ - NOT comprehensive, existing points need gapfilling
+
+```{r}
+
+farms_ps <- read.csv(file.path(path, "USA/PugetSound/USA_PugetSound_AtSalmon.csv")) %>%
+  mutate(iso3c = "USA") %>%
+  dplyr::select(lon, lat, iso3c) %>%
+  mutate(data_quality = 2) %>%
+  mutate(subregion = "Washington")
+
+write_csv(farms_ps, here("marine/salmon/salmon_farms/data/known_farm_sites_2_4_5/farms_ps_usa.csv"))
+
+```
 
 # Join cell count dataframes
 

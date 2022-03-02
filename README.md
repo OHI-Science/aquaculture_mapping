@@ -1,12 +1,14 @@
-# Mapping marine aquaculture
+# Mapping the spatial distribution of global mariculture production
 
 Written by: Gage Clawson
 
 ## Code
 
-Here is an overview of the organization of files and data:
+Repository for code and generated data for "Mapping the spatial distribution of global mariculture production", Clawson *et al* 2022. https://doi.org/10.1016/j.aquaculture.2022.738066
 
-This series of folders/scripts preps mariculture mapping layers. 
+External data are freely available from a number of different sources, all listed in the code. 
+
+To replicate the analysis, download necessary data and set up an external directory for these datasets and large files generated during the analysis process.
 
 ### Prepping production data
 
