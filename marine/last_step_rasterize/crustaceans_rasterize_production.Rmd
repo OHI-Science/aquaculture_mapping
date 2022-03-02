@@ -170,4 +170,6 @@ sum(fao$fao_tonnes_production) # 401719.1
 
 write_csv(crustacean_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/crustaceans/updated/crustaceans_farm_updated.csv")
 
+writeRaster(crustacean_raster, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/production/rasters/crustaceans_production_rast.tif")
+
 ```

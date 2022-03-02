@@ -204,4 +204,6 @@ sum(fao$fao_tonnes_production) #3901214
 
 write_csv(finfish_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/marine_fish_general/updated/marine_fish_general_farm_updated.csv")
 
+writeRaster(finfish_raster, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/production/rasters/marine_fish_general_production_rast.tif")
+
 ```

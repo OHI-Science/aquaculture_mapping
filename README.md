@@ -11,16 +11,19 @@ This series of folders/scripts preps mariculture mapping layers.
 ### Prepping production data
 
 To start, you should complete the scripts in the **marine/STEP1_species_groups** folder. 
- - This folder prepares the FAO aquaculture data to be split into our 6 different species groups; general marine finfish, bivalves, salmon, tuna, crustaceans, and shrimp. 
+ - This folder prepares the FAO aquaculture data to be split into our 6 different species groups; general marine finfish, bivalves, salmonids, tuna, other crustaceans, and shrimp/prawns. 
  - There are 2 scripts in this folder:
    - STEP1_species_groups.Rmd: This script classifies the FAO data into our species groups
    - STEP2_ASC_data_prep.Rmd: This script preps the aquaculture stewardship csv data and saves it as a .shp to use for the different species groups.
 
 ### Compiling aquaculture locations and information
 
-Within each species group folder, there is a species_farms folder. The farms folder has a series of scripts which places aquaculture farms for each species group.
+Now head back to the **aquaculture_mapping/marine/** folder. Within each species group folder, there is a species_farms folder. The farms folder has a series of scripts which places aquaculture farms for each species group. **STEP1_** preps the FAO mariculture production data to the country/species level. **STEP2_** downloads and saves all mariculture locations as x,y coordinates, and saves other relevant information for modeling. **STEP3_** estimates the remaining number of farms that need to be placed within each country and species grouping combination.
 
 I completed the species folders in the following order: 
+
+ - marine/
+    - china_data.Rmd: You need to complete this script first, because each of the species folders will use a subset of this data. This script takes Chinese remote sensed aquaculture data, and splits the data into our species categories. The data doesn't specify between species types, so we had to allocate number of farms based production percentages within China.
 
  - marine/salmon/
    - salmon_farms/
@@ -71,28 +74,25 @@ In each of these folders there are 3 scripts. Once the three scripts in each fol
 
 ### Place farms with the suitability layer
 
+ - **_spatial/create_world_maps.R** 
+  - Creates some general spatial masks that are used in the placement of farms. 
+
  - **workflow/place_unknown_farms.Rmd**
 
  - Places farms onto our suitability layer.
   - This scripts place the gapfilled farm estimate numbers onto suitable locations within each country and species group. 
   
+ - **workflow/save_suitability_layer.R**
+  - Saves the suitability layer in total to use for our validation analysis. 
   
-### Create a validation dataset by placing known farms onto the suitability layer
-
  - **analysis/match_data_sources.Rmd**
      - This script matches our data sources and modeled farms to a final farms dataset with modeled farms, known farms, all data types and all data sources. 
- - **workflow/coast_buffer.R**
-     - creates a buffered coast + eez to conduct validation analysis on. 
- - **workflow/place_validation_farms.R**
-     - Places known locations of farms onto our suitability layer to create a validation dataset.
-     - Saves the suitability layer in total to use for our validation analysis. 
- 
   
 ### Allocate and rasterize FAO reported production
 
 Once that is completed, you may move into the **marine/last_step_rasterize** folder, and run each of the species groups files. 
 
-  - These files rasterize the production of each species group, which will later be plugged into the food systems analysis (or any other analysis that might need FAO production distributed across the mariculture map). 
+  - These files rasterize the production of each species group, which will could be used for any other analysis that might need FAO production distributed across the mariculture map. 
   
 **Analysis and data check**
 

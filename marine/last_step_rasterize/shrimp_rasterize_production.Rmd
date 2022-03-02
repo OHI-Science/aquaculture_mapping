@@ -198,6 +198,7 @@ mapview(shrimp_raster_check)
 
 shrimp_raster <- rasterize(farms_sf, food_raster, field = "tonnes_per_farm", fun=sum, background=0)
 plot(log(shrimp_raster + 1))
+cellStats(shrimp_raster, "sum")
 
 shrimp_raster_df <- as.data.frame(shrimp_raster, xy=TRUE) %>%
   dplyr::select(x,y, tonnes_production=layer)
@@ -209,4 +210,5 @@ sum(fao$fao_tonnes_production) # 5094133 - a bit off bc of rounding with our mod
 
 write_csv(shrimp_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/shrimp/updated/shrimp_farm_updated.csv")
 
+writeRaster(shrimp_raster, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/production/rasters/shrimp_production_rast.tif")
 ```

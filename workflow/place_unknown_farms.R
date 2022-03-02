@@ -169,11 +169,9 @@ for (i in 1:length(unique(need_national_allocation$iso3c))) {
   port_test_rast <- dis_to_port_rast
   
   
-  # 31.30463*1000 # 31304.63 meters v1
-  # 39.824*1000 = 39824 meters v2
   # 39.65138*1000 = 39651 meters v3 scotland fix 
   
-  port_test_rast[port_test_rast >39651] <- NA # acceptable distance to port # we are doing 2; the mean (31.305 kilometers v1; changed to 39824 for v2; changed to 39651 for v3) 
+  port_test_rast[port_test_rast >39651] <- NA # acceptable distance to port # we are doing 2; the mean (changed to 39651 for v3) 
   port_test_rast[port_test_rast<1000] <- NA # need to be 1km away from ports/shipping lanes
   suitability_rast <- port_test_rast + arctic_fixed # add in arctic mask
   
@@ -333,10 +331,6 @@ all_farms <- list.files("data/temp_data/temp_final_resub_scotland", pattern = "r
   rbind(data %>% dplyr::mutate(source = "real")) %>% 
   left_join(tonnage_per_farms)
 
-test <- all_farms %>%
-  filter(iso3c == "USA")
-
-mapview(test, zcol = "source")
 
 test <- all_farms %>%
   filter(type == "shrimp", 

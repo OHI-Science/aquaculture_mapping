@@ -3,6 +3,11 @@ title: "Compile known farm locations and farms to add data"
 output: html_document
 ---
 
+This script compiles all of the location data and the modeling information data into two datasets: 
+
+ - all_marine_farms.csv : Lat/Lon locations of all known marine aquaculture farms globally.
+ - all_points_to_add.csv : Number of farms per each species group to place in suitable areas, within each country. 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```

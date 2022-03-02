@@ -166,4 +166,6 @@ sum(fao$fao_tonnes_production) # 37072.56
 
 write_csv(tuna_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/tuna/updated/tuna_farm_updated.csv")
 
+writeRaster(tuna_raster, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/production/rasters/tuna_production_rast.tif")
+
 ```

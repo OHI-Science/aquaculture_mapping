@@ -202,4 +202,6 @@ sum(fao$fao_tonnes_production) # 17435623 - slightly off?
 
 write_csv(bivalve_raster_df, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/bivalve/updated/bivalve_farm_updated.csv")
 
+writeRaster(bivalve_raster, "/home/shares/food-systems/Food_footprint/all_food_systems/dataprep/aquaculture/marine/production/rasters/bivalve_production_rast.tif")
+
 ```
